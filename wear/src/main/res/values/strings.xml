@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Eco-Guia Wear</string>
+
+    <string-array name="android_wear_capabilities">
+        <item>eco_guia_wear_radar</item>
+    </string-array>
+</resources>

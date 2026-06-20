@@ -1,0 +1,36 @@
+# Build artifacts
+/build
+/*/build
+.gradle
+/.kotlin
+
+# IDE specific
+.idea
+*.iml
+*.iws
+.project
+.settings
+.classpath
+local.properties
+
+# Android Studio
+/captures
+.externalNativeBuild
+.cxx
+*.hprof
+
+# Gradle
+.gradle/
+build/
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Secrets (Keep your keys safe!)
+*.jks
+*.keystore
+google-services.json
+
+# Navigation Safe Args
+**/generated/
