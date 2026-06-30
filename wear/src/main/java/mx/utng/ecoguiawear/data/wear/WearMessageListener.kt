@@ -22,8 +22,12 @@ class WearMessageListener(
                 repository.setLinkedToPhone(linked)
             }
             "/eco-guia/simulate/proximity" -> {
-                val distance = payload.toIntOrNull() ?: return
-                repository.setDistance(distance)
+                if (payload == "step") {
+                    repository.simulateApproach()
+                } else {
+                    val distance = payload.toIntOrNull() ?: return
+                    repository.setDistance(distance)
+                }
             }
             "/eco-guia/simulate/route" -> {
                 val parts = payload.split("/")

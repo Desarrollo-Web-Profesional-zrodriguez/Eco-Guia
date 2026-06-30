@@ -17,22 +17,15 @@ import mx.utng.ecoguiawear.domain.model.RadarMode
 import mx.utng.ecoguiawear.presentation.RadarViewModel
 import mx.utng.ecoguiawear.presentation.screens.AlertsScreen
 import mx.utng.ecoguiawear.presentation.screens.ArrivalScreen
-import mx.utng.ecoguiawear.presentation.screens.CompassScreen
 import mx.utng.ecoguiawear.presentation.screens.HapticSettingsScreen
 import mx.utng.ecoguiawear.presentation.screens.PairingScreen
-import mx.utng.ecoguiawear.presentation.screens.RadarScreen
-import mx.utng.ecoguiawear.presentation.screens.RouteSummaryScreen
-import mx.utng.ecoguiawear.presentation.screens.StealthRadarScreen
 
 object WearRoutes {
     const val PAIRING = "pairing"
-    const val RADAR = "radar"
-    const val COMPASS = "compass"
+    const val RADAR_PAGER = "radar_pager"
     const val ALERT = "alert"
     const val ARRIVAL = "arrival"
-    const val SUMMARY = "summary"
     const val SETTINGS = "settings"
-    const val STEALTH = "stealth"
 }
 
 @Composable
@@ -52,11 +45,11 @@ fun EcoGuiaWearNavGraph(viewModel: RadarViewModel) {
                             state = state,
                             onPairWithPhone = {
                                 viewModel.pairWithPhone()
-                                navController.navigate(WearRoutes.STEALTH)
+                                navController.navigate(WearRoutes.RADAR_PAGER)
                             },
                             onStartDemo = {
                                 viewModel.startDemo()
-                                navController.navigate(WearRoutes.STEALTH)
+                                navController.navigate(WearRoutes.RADAR_PAGER)
                             },
                             onViewAlerts = {
                                 navController.navigate(WearRoutes.ALERT)
@@ -64,41 +57,20 @@ fun EcoGuiaWearNavGraph(viewModel: RadarViewModel) {
                         )
                     }
                 }
-                composable(WearRoutes.RADAR) {
+                
+                composable(WearRoutes.RADAR_PAGER) {
                     ScreenScaffold {
-                        RadarScreen(
-                            state = state,
-                            onToggleRadar = viewModel::toggleRadar,
-                            onApproachDemo = {
-                                viewModel.simulateApproach()
-                                when {
-                                    viewModel.state.value.mode == RadarMode.ARRIVED -> { /* Handled by overlay */ }
-                                    viewModel.state.value.target.distanceMeters <= 20 -> navController.navigate(WearRoutes.ALERT)
-                                }
-                            },
-                            onOpenCompass = { navController.navigate(WearRoutes.COMPASS) },
-                            onOpenAlert = { navController.navigate(WearRoutes.ALERT) },
-                            onOpenArrival = { navController.navigate(WearRoutes.ARRIVAL) },
-                            onOpenSummary = { navController.navigate(WearRoutes.SUMMARY) },
-                            onOpenSettings = { navController.navigate(WearRoutes.SETTINGS) },
-                            onOpenStealth = { navController.navigate(WearRoutes.STEALTH) }
-                        )
-                    }
-                }
-                composable(WearRoutes.COMPASS) {
-                    ScreenScaffold {
-                        CompassScreen(
-                            state = state,
-                            onNext = {
-                                if (state.mode == RadarMode.ARRIVED) {
-                                    // Handled by overlay
-                                } else {
-                                    navController.navigate(WearRoutes.SUMMARY)
+                        RadarPagerScreen(
+                            viewModel = viewModel,
+                            onNavigateToPairing = {
+                                navController.navigate(WearRoutes.PAIRING) {
+                                    popUpTo(WearRoutes.PAIRING) { inclusive = true }
                                 }
                             }
                         )
                     }
                 }
+
                 composable(WearRoutes.ALERT) {
                     ScreenScaffold {
                         AlertsScreen(
@@ -111,6 +83,7 @@ fun EcoGuiaWearNavGraph(viewModel: RadarViewModel) {
                         )
                     }
                 }
+                
                 composable(WearRoutes.ARRIVAL) {
                     ScreenScaffold {
                         ArrivalScreen(
@@ -118,34 +91,14 @@ fun EcoGuiaWearNavGraph(viewModel: RadarViewModel) {
                             onOpenPhone = viewModel::openPhoneCamera,
                             onContinue = {
                                 viewModel.completeArrival()
-                                navController.navigate(WearRoutes.RADAR) {
-                                    popUpTo(WearRoutes.RADAR) { inclusive = true }
+                                navController.navigate(WearRoutes.RADAR_PAGER) {
+                                    popUpTo(WearRoutes.RADAR_PAGER) { inclusive = true }
                                 }
                             }
                         )
                     }
                 }
-                composable(WearRoutes.STEALTH) {
-                    ScreenScaffold {
-                        StealthRadarScreen(
-                            state = state,
-                            onToggleStealth = {
-                                viewModel.toggleStealthMode()
-                            },
-                            onNavigateNext = {
-                                navController.navigate(WearRoutes.RADAR)
-                            }
-                        )
-                    }
-                }
-                composable(WearRoutes.SUMMARY) {
-                    ScreenScaffold {
-                        RouteSummaryScreen(
-                            state = state,
-                            onBackToRadar = { navController.popBackStack() }
-                        )
-                    }
-                }
+
                 composable(WearRoutes.SETTINGS) {
                     ScreenScaffold {
                         HapticSettingsScreen(

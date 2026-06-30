@@ -117,6 +117,18 @@ fun ControlPanel(activity: ComponentActivity) {
             }
 
             item {
+                Text("Simulación de Avance (Brújula)", style = MaterialTheme.typography.titleSmall)
+                Button(onClick = { 
+                    scope.launch { 
+                        lastMessage = "Simulando avance..."
+                        sendMessage(activity, "/eco-guia/simulate/proximity", "step") 
+                    } 
+                }, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiary)) { 
+                    Text("Simular Paso (Brújula)") 
+                }
+            }
+
+            item {
                 Text("Estado de Sistema/Permisos", style = MaterialTheme.typography.titleSmall)
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Button(onClick = { 

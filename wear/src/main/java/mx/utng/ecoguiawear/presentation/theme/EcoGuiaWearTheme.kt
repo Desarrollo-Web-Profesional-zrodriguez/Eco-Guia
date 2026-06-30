@@ -2,6 +2,7 @@ package mx.utng.ecoguiawear.presentation.theme
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.wear.compose.material.Colors
 import androidx.wear.compose.material.MaterialTheme
 
 object EcoGuiaColors {
@@ -17,5 +18,17 @@ object EcoGuiaColors {
 
 @Composable
 fun EcoGuiaWearTheme(content: @Composable () -> Unit) {
-    MaterialTheme(content = content)
+    MaterialTheme(
+        colors = Colors(
+            primary = EcoGuiaColors.Jade,
+            secondary = EcoGuiaColors.Gold,
+            background = EcoGuiaColors.Background,
+            surface = EcoGuiaColors.Surface,
+            onPrimary = EcoGuiaColors.Background,
+            onSecondary = EcoGuiaColors.Background,
+            onBackground = EcoGuiaColors.Text,
+            onSurface = EcoGuiaColors.Text
+        ),
+        content = content
+    )
 }

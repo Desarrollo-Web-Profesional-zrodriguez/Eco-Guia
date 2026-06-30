@@ -43,7 +43,9 @@ fun EcoWearScaffold(
 @Composable
 fun ScreenHeader(title: String, subtitle: String? = null) {
     androidx.compose.foundation.layout.Column(
-        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 16.dp, bottom = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(

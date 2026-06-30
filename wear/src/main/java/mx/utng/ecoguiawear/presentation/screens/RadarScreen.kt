@@ -3,28 +3,23 @@ package mx.utng.ecoguiawear.presentation.screens
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.wear.compose.material.Chip
 import androidx.wear.compose.material.ChipDefaults
 import androidx.wear.compose.material.CompactChip
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
-import mx.utng.ecoguiawear.domain.model.RadarMode
 import mx.utng.ecoguiawear.domain.model.RadarUiState
 import mx.utng.ecoguiawear.presentation.components.CompassArrow
 import mx.utng.ecoguiawear.presentation.components.EcoWearScaffold
 import mx.utng.ecoguiawear.presentation.components.ScreenHeader
 import mx.utng.ecoguiawear.presentation.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.presentation.theme.EcoGuiaWearTheme
-
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
-import androidx.compose.ui.input.pointer.pointerInput
 
 @Composable
 fun RadarScreen(
@@ -36,20 +31,12 @@ fun RadarScreen(
     onOpenArrival: () -> Unit,
     onOpenSummary: () -> Unit,
     onOpenSettings: () -> Unit,
-    onOpenStealth: () -> Unit = {} // Added for demo
+    onOpenStealth: () -> Unit = {},
+    onNavigateBack: () -> Unit = {}
 ) {
     val target = state.target
-    val isPaused = state.mode == RadarMode.PAUSED
 
-    EcoWearScaffold(
-        modifier = Modifier.pointerInput(Unit) {
-            detectHorizontalDragGestures { _, dragAmount ->
-                if (dragAmount < -50) { // Swipe Left (<-)
-                    onOpenCompass()
-                }
-            }
-        }
-    ) {
+    EcoWearScaffold {
         item {
             ScreenHeader(
                 title = "Radar activo",
@@ -81,54 +68,41 @@ fun RadarScreen(
             )
         }
         item {
-            Chip(
-                label = { Text(if (isPaused) "Activar radar" else "Pausar radar") },
-                onClick = onToggleRadar,
-                colors = ChipDefaults.primaryChipColors(
-                    backgroundColor = if (isPaused) EcoGuiaColors.Jade else EcoGuiaColors.Surface
-                ),
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
-        item {
-            Chip(
-                label = { Text("Simular avance") },
-                onClick = onApproachDemo,
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
-        item {
             CompactChip(
-                label = { Text("Ver Brújula") },
+                label = { 
+                    Text(
+                        text = "Ver Geo-Drop",
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center
+                    ) 
+                },
                 onClick = onOpenCompass,
                 modifier = Modifier.fillMaxWidth()
             )
         }
         item {
             CompactChip(
-                label = { Text("Ver Alertas") },
-                onClick = onOpenAlert,
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
-        item {
-            CompactChip(
-                label = { Text("Ver Progreso Ruta") },
+                label = { 
+                    Text(
+                        text = "Iniciar Ruta",
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center
+                    ) 
+                },
                 onClick = onOpenSummary,
                 modifier = Modifier.fillMaxWidth()
             )
         }
         item {
             CompactChip(
-                label = { Text("Modo Sigilo") },
-                onClick = onOpenStealth,
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
-        item {
-            CompactChip(
-                label = { Text("Ajustes") },
-                onClick = onOpenSettings,
+                label = { 
+                    Text(
+                        text = "Ajustes",
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center
+                    ) 
+                },
+                onClick = onNavigateBack,
                 modifier = Modifier.fillMaxWidth()
             )
         }
