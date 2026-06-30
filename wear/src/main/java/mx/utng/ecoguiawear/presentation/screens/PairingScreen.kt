@@ -1,20 +1,39 @@
 package mx.utng.ecoguiawear.presentation.screens
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Smartphone
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.wear.compose.material.Chip
-import androidx.wear.compose.material.ChipDefaults
+import androidx.compose.ui.unit.sp
+import androidx.wear.compose.material.Icon
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
 import mx.utng.ecoguiawear.domain.model.RadarUiState
-import mx.utng.ecoguiawear.presentation.components.CircularStatus
 import mx.utng.ecoguiawear.presentation.components.EcoWearScaffold
-import mx.utng.ecoguiawear.presentation.components.ScreenHeader
 import mx.utng.ecoguiawear.presentation.theme.EcoGuiaColors
 
 @Composable
@@ -24,78 +43,106 @@ fun PairingScreen(
     onStartDemo: () -> Unit,
     onViewAlerts: () -> Unit = {}
 ) {
-    EcoWearScaffold {
-        item {
-            ScreenHeader(
-                title = "ECO-GUÍA",
-                subtitle = if (state.isLinkedToPhone) "Dispositivo vinculado" else "Buscando celular..."
-            )
+    EcoWearScaffold(
+        modifier = Modifier.clickable { 
+            if (state.isLinkedToPhone) onStartDemo() else onPairWithPhone() 
         }
-        
-        item {
-            CircularStatus(
-                progress = if (state.isLinkedToPhone) 1f else 0.3f,
-                text = if (state.isLinkedToPhone) "OK" else "...",
-                progressColor = if (state.isLinkedToPhone) EcoGuiaColors.Jade else EcoGuiaColors.Muted,
-                modifier = Modifier.size(100.dp)
-            )
-        }
-        
+    ) {
         item {
             Text(
-                text = if (state.isLinkedToPhone) "Sincronización lista" else "Abre la app en tu teléfono",
-                style = MaterialTheme.typography.caption3,
+                text = "CONECTADO",
+                style = MaterialTheme.typography.caption2,
                 color = EcoGuiaColors.Muted,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 8.dp)
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                textAlign = TextAlign.Start
             )
-        }
-        
-        if (!state.isLinkedToPhone) {
-            item {
-                Chip(
-                    label = { 
-                        Text(
-                            "VINCULAR AHORA", 
-                            modifier = Modifier.fillMaxWidth(),
-                            textAlign = TextAlign.Center,
-                            style = MaterialTheme.typography.button,
-                            color = EcoGuiaColors.Background
-                        ) 
-                    },
-                    onClick = onPairWithPhone,
-                    colors = ChipDefaults.primaryChipColors(),
-                    modifier = Modifier.fillMaxWidth().padding(top = 12.dp)
-                )
-            }
-        } else {
-            item {
-                Chip(
-                    label = { 
-                        Text(
-                            "INICIAR RADAR", 
-                            modifier = Modifier.fillMaxWidth(),
-                            textAlign = TextAlign.Center
-                        ) 
-                    },
-                    onClick = onStartDemo,
-                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
-                )
-            }
         }
 
         item {
-            Chip(
-                label = { 
-                    Text(
-                        "VER ALERTAS", 
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Center
-                    ) 
-                },
-                onClick = onViewAlerts,
-                modifier = Modifier.fillMaxWidth().padding(top = 4.dp)
+            StatusCard(
+                icon = Icons.Default.Smartphone,
+                text = "Eco-Guía móvil",
+                isActive = state.isLinkedToPhone
             )
         }
+
+        item {
+            StatusCard(
+                icon = Icons.Default.LocationOn,
+                text = "GPS preciso",
+                isActive = state.isGpsEnabled
+            )
+        }
+
+        item {
+            StatusCard(
+                icon = Icons.Default.CameraAlt,
+                text = "Cámara lista",
+                isActive = state.isCameraReady
+            )
+        }
+        
+        item {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Toca para continuar",
+                style = MaterialTheme.typography.caption3,
+                color = EcoGuiaColors.Jade,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
+
+@Composable
+fun StatusCard(icon: ImageVector, text: String, isActive: Boolean) {
+    val backgroundColor = if (isActive) {
+        EcoGuiaColors.Surface.copy(alpha = 0.6f)
+    } else {
+        EcoGuiaColors.Surface.copy(alpha = 0.2f)
+    }
+    
+    val iconGradient = if (isActive) {
+        Brush.linearGradient(
+            colors = listOf(Color(0xFFE0E5A5), Color(0xFF98D8B1))
+        )
+    } else {
+        Brush.linearGradient(
+            colors = listOf(EcoGuiaColors.Muted, EcoGuiaColors.Muted)
+        )
+    }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+            .background(backgroundColor, RoundedCornerShape(20.dp))
+            .padding(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(32.dp)
+                .background(iconGradient, CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = EcoGuiaColors.Background,
+                modifier = Modifier.size(18.dp)
+            )
+        }
+        Spacer(modifier = Modifier.width(12.dp))
+        Text(
+            text = text,
+            style = MaterialTheme.typography.caption1.copy(
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Medium
+            ),
+            color = if (isActive) EcoGuiaColors.Text else EcoGuiaColors.Muted
+        )
     }
 }

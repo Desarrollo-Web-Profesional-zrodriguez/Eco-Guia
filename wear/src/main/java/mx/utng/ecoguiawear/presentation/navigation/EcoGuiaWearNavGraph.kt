@@ -66,6 +66,9 @@ fun EcoGuiaWearNavGraph(viewModel: RadarViewModel) {
                                 navController.navigate(WearRoutes.PAIRING) {
                                     popUpTo(WearRoutes.PAIRING) { inclusive = true }
                                 }
+                            },
+                            onNavigateToAlerts = {
+                                navController.navigate(WearRoutes.ALERT)
                             }
                         )
                     }

@@ -38,6 +38,9 @@ class MainActivity : ComponentActivity() {
 fun ControlPanel(activity: ComponentActivity) {
     val scope = rememberCoroutineScope()
     var lastMessage by remember { mutableStateOf("Esperando interacción...") }
+    
+    // Estados locales sincronizados con UI
+    var isPhoneConnected by remember { mutableStateOf(false) }
     var gpsEnabled by remember { mutableStateOf(true) }
     var cameraReady by remember { mutableStateOf(true) }
 
@@ -46,121 +49,131 @@ fun ControlPanel(activity: ComponentActivity) {
     val alertsState = db.dao().getAllAlerts().collectAsState(initial = emptyList())
 
     Column(modifier = Modifier.padding(16.dp)) {
-        Text("Eco-Guía: Dashboard DB en Vivo", style = MaterialTheme.typography.headlineMedium)
+        Text("Eco-Guía: Panel de Control Móvil", style = MaterialTheme.typography.headlineMedium)
         
         Card(
             modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
         ) {
             Column(modifier = Modifier.padding(12.dp)) {
-                Text("Valores actuales en DB Local:", style = MaterialTheme.typography.titleSmall)
-                Text(
-                    "Stealth Mode: ${if (stealthModeState.value?.value == "1") "ON (1)" else "OFF (0)"}",
-                    color = if (stealthModeState.value?.value == "1") Color(0xFF2E7D32) else Color.Red
-                )
-                Text("Alertas registradas: ${alertsState.value.size}")
-                for (alert in alertsState.value.take(2)) {
-                    Text("- ${alert.message} (${alert.type})", style = MaterialTheme.typography.bodySmall)
+                Text("Estados en tiempo real:", style = MaterialTheme.typography.titleSmall)
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text("Conexión Reloj:", style = MaterialTheme.typography.bodySmall)
+                    Text(if (isPhoneConnected) "CONECTADO" else "DESCONECTADO", 
+                        color = if (isPhoneConnected) Color(0xFF2E7D32) else Color.Red,
+                        style = MaterialTheme.typography.bodySmall)
                 }
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text("GPS Preciso:", style = MaterialTheme.typography.bodySmall)
+                    Text(if (gpsEnabled) "ACTIVO" else "INACTIVO", 
+                        color = if (gpsEnabled) Color(0xFF2E7D32) else Color.Red,
+                        style = MaterialTheme.typography.bodySmall)
+                }
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text("Cámara Móvil:", style = MaterialTheme.typography.bodySmall)
+                    Text(if (cameraReady) "LISTA" else "ERROR/OFF", 
+                        color = if (cameraReady) Color(0xFF2E7D32) else Color.Red,
+                        style = MaterialTheme.typography.bodySmall)
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    "Stealth Mode (DB): ${if (stealthModeState.value?.value == "1") "ON" else "OFF"}",
+                    color = if (stealthModeState.value?.value == "1") Color(0xFFC5A059) else Color.Gray,
+                    style = MaterialTheme.typography.bodySmall
+                )
             }
         }
 
         Spacer(modifier = Modifier.height(8.dp))
-        Text("Estado Transmisión: $lastMessage", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+        Text("Log: $lastMessage", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
         Spacer(modifier = Modifier.height(16.dp))
 
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             item {
-                Text("Conectividad", style = MaterialTheme.typography.titleSmall)
-                Button(onClick = { 
-                    scope.launch { 
-                        lastMessage = "Enviando señal de vinculado..."
-                        sendMessage(activity, "/eco-guia/simulate/link", "true") 
-                    } 
-                }, modifier = Modifier.fillMaxWidth()) { Text("Simular Vinculación con Reloj") }
-            }
-
-            item {
-                Text("Simulación de Base de Datos (0/1)", style = MaterialTheme.typography.titleSmall)
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(onClick = { 
+                Text("Gestión de Conexión", style = MaterialTheme.typography.titleSmall)
+                Button(
+                    onClick = { 
+                        isPhoneConnected = !isPhoneConnected
                         scope.launch { 
-                            lastMessage = "DB Update: Stealth OFF (0)"
-                            db.dao().saveConfig(ConfigEntity("stealth_mode", "0"))
-                            sendMessage(activity, "/eco-guia/simulate/stealth", "0") 
+                            lastMessage = "Conexión: $isPhoneConnected"
+                            sendMessage(activity, "/eco-guia/simulate/link", isPhoneConnected.toString()) 
                         } 
-                    }, modifier = Modifier.weight(1f)) { Text("OFF (0)") }
-                    Button(onClick = { 
-                        scope.launch { 
-                            lastMessage = "DB Update: Stealth ON (1)"
-                            db.dao().saveConfig(ConfigEntity("stealth_mode", "1"))
-                            sendMessage(activity, "/eco-guia/simulate/stealth", "1") 
-                        } 
-                    }, modifier = Modifier.weight(1f)) { Text("ON (1)") }
+                    }, 
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (isPhoneConnected) Color.Red else Color(0xFF2E7D32)
+                    )
+                ) { 
+                    Text(if (isPhoneConnected) "Desconectar Reloj" else "Vincular con Reloj") 
                 }
             }
 
             item {
-                Text("Registros de Alertas (DB)", style = MaterialTheme.typography.titleSmall)
-                Button(onClick = { 
-                    scope.launch { 
-                        lastMessage = "Insertando alertas en DB..."
-                        val alert1 = AlertEntity("1", "Geo-Drop Detectado", "GEODROP", System.currentTimeMillis())
-                        val alert2 = AlertEntity("2", "Museo Nacional", "SITE", System.currentTimeMillis())
-                        db.dao().insertAlert(alert1)
-                        db.dao().insertAlert(alert2)
-                        
-                        val payload = "${alert1.id}|${alert1.message}|${alert1.type};${alert2.id}|${alert2.message}|${alert2.type}"
-                        sendMessage(activity, "/eco-guia/simulate/alerts", payload) 
-                    } 
-                }, modifier = Modifier.fillMaxWidth()) { Text("Sincronizar Alertas") }
-            }
-
-            item {
-                Text("Simulación de Avance (Brújula)", style = MaterialTheme.typography.titleSmall)
-                Button(onClick = { 
-                    scope.launch { 
-                        lastMessage = "Simulando avance..."
-                        sendMessage(activity, "/eco-guia/simulate/proximity", "step") 
-                    } 
-                }, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiary)) { 
-                    Text("Simular Paso (Brújula)") 
-                }
-            }
-
-            item {
-                Text("Estado de Sistema/Permisos", style = MaterialTheme.typography.titleSmall)
+                Text("Sensores y Permisos", style = MaterialTheme.typography.titleSmall)
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Button(onClick = { 
                         gpsEnabled = !gpsEnabled
                         scope.launch { 
-                            lastMessage = "GPS: $gpsEnabled"
+                            lastMessage = "GPS Toggle: $gpsEnabled"
                             sendMessage(activity, "/eco-guia/simulate/permissions", "$gpsEnabled/$cameraReady") 
                         } 
-                    }, modifier = Modifier.weight(1f)) { Text("Toggle GPS") }
+                    }, modifier = Modifier.weight(1f)) { 
+                        Text(if (gpsEnabled) "Apagar GPS" else "Activar GPS") 
+                    }
                     Button(onClick = { 
                         cameraReady = !cameraReady
                         scope.launch { 
-                            lastMessage = "Cámara: $cameraReady"
+                            lastMessage = "Cámara Toggle: $cameraReady"
                             sendMessage(activity, "/eco-guia/simulate/permissions", "$gpsEnabled/$cameraReady") 
                         } 
-                    }, modifier = Modifier.weight(1f)) { Text("Toggle Cámara") }
+                    }, modifier = Modifier.weight(1f)) { 
+                        Text(if (cameraReady) "Bloquear Cam" else "Habilitar Cam") 
+                    }
+                }
+            }
+
+            item {
+                Text("Controles de Simulación", style = MaterialTheme.typography.titleSmall)
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(onClick = { 
+                        scope.launch { 
+                            lastMessage = "Insertando alertas..."
+                            val alert1 = AlertEntity("1", "Geo-Drop Detectado", "GEODROP", System.currentTimeMillis())
+                            val alert2 = AlertEntity("2", "Museo Nacional", "SITE", System.currentTimeMillis())
+                            db.dao().insertAlert(alert1)
+                            db.dao().insertAlert(alert2)
+                            
+                            val payload = "${alert1.id}|${alert1.message}|${alert1.type};${alert2.id}|${alert2.message}|${alert2.type}"
+                            sendMessage(activity, "/eco-guia/simulate/alerts", payload) 
+                        } 
+                    }, modifier = Modifier.fillMaxWidth()) { Text("Sincronizar Alertas") }
+
+                    Button(onClick = { 
+                        scope.launch { 
+                            lastMessage = "Simulando paso..."
+                            sendMessage(activity, "/eco-guia/simulate/proximity", "step") 
+                        } 
+                    }, 
+                    modifier = Modifier.fillMaxWidth(), 
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiary)) { 
+                        Text("Simular Paso (Brújula)") 
+                    }
                 }
             }
 
             item {
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-                Text("Flujo de Prueba (3 Ubicaciones)", style = MaterialTheme.typography.titleSmall)
+                Text("Ruta Automática", style = MaterialTheme.typography.titleSmall)
                 Button(onClick = { 
                     scope.launch { 
-                        lastMessage = "Iniciando Flujo: Punto 1"
+                        lastMessage = "Ruta iniciada..."
                         sendMessage(activity, "/eco-guia/simulate/proximity", "15")
                         kotlinx.coroutines.delay(3000)
                         sendMessage(activity, "/eco-guia/simulate/proximity", "0")
                         kotlinx.coroutines.delay(2000)
                         sendMessage(activity, "/eco-guia/simulate/route", "1/3")
                         
-                        lastMessage = "Iniciando Flujo: Punto 2"
+                        lastMessage = "Punto 2..."
                         kotlinx.coroutines.delay(3000)
                         sendMessage(activity, "/eco-guia/simulate/proximity", "20")
                         kotlinx.coroutines.delay(3000)
@@ -168,17 +181,17 @@ fun ControlPanel(activity: ComponentActivity) {
                         kotlinx.coroutines.delay(2000)
                         sendMessage(activity, "/eco-guia/simulate/route", "2/3")
                         
-                        lastMessage = "Iniciando Flujo: Punto 3"
+                        lastMessage = "Finalizando..."
                         kotlinx.coroutines.delay(3000)
                         sendMessage(activity, "/eco-guia/simulate/proximity", "10")
                         kotlinx.coroutines.delay(3000)
                         sendMessage(activity, "/eco-guia/simulate/proximity", "0")
                         kotlinx.coroutines.delay(2000)
                         sendMessage(activity, "/eco-guia/simulate/route", "3/3")
-                        lastMessage = "Ruta Completada (3/3)"
+                        lastMessage = "Ruta Completada"
                     } 
                 }, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)) { 
-                    Text("Ejecutar Ruta Completa") 
+                    Text("Ejecutar Flujo Completo")
                 }
             }
         }
