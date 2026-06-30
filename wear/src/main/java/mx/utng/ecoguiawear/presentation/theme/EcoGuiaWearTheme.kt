@@ -25,7 +25,7 @@ fun EcoGuiaWearTheme(content: @Composable () -> Unit) {
         onSecondary = EcoGuiaColors.Background,
         background = EcoGuiaColors.Background,
         onBackground = EcoGuiaColors.Text,
-        surface = EcoGuiaColors.Surface,
+        surfaceContainer = EcoGuiaColors.Surface,
         onSurface = EcoGuiaColors.Text,
         error = EcoGuiaColors.Alert,
         onError = EcoGuiaColors.Background

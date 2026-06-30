@@ -10,9 +10,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.wear.compose.material.Chip
-import androidx.wear.compose.material.MaterialTheme
-import androidx.wear.compose.material.Text
+import androidx.wear.compose.material3.Button
+import androidx.wear.compose.material3.ButtonDefaults
+import androidx.wear.compose.material3.MaterialTheme
+import androidx.wear.compose.material3.Text
 import mx.utng.ecoguiawear.domain.model.RadarUiState
 import mx.utng.ecoguiawear.presentation.components.CircularStatus
 import mx.utng.ecoguiawear.presentation.components.EcoWearScaffold
@@ -53,13 +54,13 @@ fun RouteSummaryScreen(
             Text(
                 text = summary.title,
                 color = EcoGuiaColors.Text,
-                style = MaterialTheme.typography.title3,
+                style = MaterialTheme.typography.titleMedium,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
             )
         }
         item {
-            Chip(
+            Button(
                 label = { 
                     Text(
                         text = "Volver al radar",
@@ -68,6 +69,10 @@ fun RouteSummaryScreen(
                     ) 
                 },
                 onClick = onBackToRadar,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = EcoGuiaColors.Jade,
+                    contentColor = EcoGuiaColors.Background
+                ),
                 modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
             )
         }

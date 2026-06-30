@@ -12,10 +12,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.wear.compose.foundation.pager.HorizontalPager
+import androidx.wear.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Adjust
 import androidx.compose.material.icons.filled.ChevronRight
@@ -31,11 +31,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.wear.compose.material.HorizontalPageIndicator
-import androidx.wear.compose.material.Icon
-import androidx.wear.compose.material.MaterialTheme
-import androidx.wear.compose.material.PageIndicatorState
-import androidx.wear.compose.material.Text
+import androidx.wear.compose.material3.HorizontalPageIndicator
+import androidx.wear.compose.material3.Icon
+import androidx.wear.compose.material3.MaterialTheme
+import androidx.wear.compose.material3.Text
 import mx.utng.ecoguiawear.domain.model.RadarUiState
 import mx.utng.ecoguiawear.presentation.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.presentation.theme.EcoGuiaWearTheme
@@ -49,6 +48,7 @@ fun AlertsScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
+                .background(EcoGuiaColors.Background)
                 .pointerInput(Unit) {
                     detectDragGestures { change, dragAmount ->
                         if (dragAmount.y < -50) { // Swipe up
@@ -60,7 +60,7 @@ fun AlertsScreen(
         ) {
             Text(
                 text = "No hay alertas",
-                style = MaterialTheme.typography.caption3,
+                style = MaterialTheme.typography.bodySmall,
                 color = EcoGuiaColors.Muted
             )
         }
@@ -72,6 +72,7 @@ fun AlertsScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .background(EcoGuiaColors.Background)
             .pointerInput(Unit) {
                 detectDragGestures { change, dragAmount ->
                     if (dragAmount.y < -50) { // Swipe up
@@ -101,17 +102,16 @@ fun AlertsScreen(
             ) {
                 Text(
                     text = "ALERTA ${page + 1}/${state.alerts.size}",
-                    style = MaterialTheme.typography.caption2,
+                    style = MaterialTheme.typography.labelSmall,
                     color = EcoGuiaColors.Gold,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
 
-                Row(
+                Box(
                     modifier = Modifier
                         .size(48.dp)
                         .background(color, CircleShape),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
+                    contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = icon,
@@ -125,7 +125,7 @@ fun AlertsScreen(
                 
                 Text(
                     text = alert.message,
-                    style = MaterialTheme.typography.body2,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = EcoGuiaColors.Text,
                     textAlign = TextAlign.Center
                 )
@@ -142,11 +142,7 @@ fun AlertsScreen(
         }
 
         HorizontalPageIndicator(
-            pageIndicatorState = object : PageIndicatorState {
-                override val pageCount: Int = state.alerts.size
-                override val pageOffset: Float = pagerState.currentPageOffsetFraction
-                override val selectedPage: Int = pagerState.currentPage
-            },
+            pagerState = pagerState,
             modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 12.dp),
             selectedColor = EcoGuiaColors.Jade,
             unselectedColor = EcoGuiaColors.Muted
@@ -164,12 +160,11 @@ fun AlertItem(icon: ImageVector, text: String, iconBackground: androidx.compose.
             .padding(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
+        Box(
             modifier = Modifier
                 .size(24.dp)
                 .background(iconBackground, CircleShape),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
+            contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = icon,
@@ -181,7 +176,7 @@ fun AlertItem(icon: ImageVector, text: String, iconBackground: androidx.compose.
         Spacer(modifier = Modifier.width(12.dp))
         Text(
             text = text,
-            style = MaterialTheme.typography.caption2,
+            style = MaterialTheme.typography.labelSmall,
             color = EcoGuiaColors.Text
         )
     }

@@ -26,12 +26,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.tooling.preview.Devices
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.wear.compose.material3.Icon
 import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.Text
 import mx.utng.ecoguiawear.domain.model.RadarUiState
 import mx.utng.ecoguiawear.presentation.components.EcoWearScaffold
 import mx.utng.ecoguiawear.presentation.theme.EcoGuiaColors
+import mx.utng.ecoguiawear.presentation.theme.EcoGuiaWearTheme
 
 @Composable
 fun PairingScreen(
@@ -84,7 +87,7 @@ fun PairingScreen(
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = "Toca para continuar",
-                style = MaterialTheme.typography.bodyExtraSmall,
+                style = MaterialTheme.typography.bodySmall,
                 color = EcoGuiaColors.Jade,
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Center
@@ -135,11 +138,22 @@ fun StatusCard(icon: ImageVector, text: String, isActive: Boolean) {
         Spacer(modifier = Modifier.width(12.dp))
         Text(
             text = text,
-            style = MaterialTheme.typography.caption1.copy(
-                fontSize = 13.sp,
+            style = MaterialTheme.typography.labelSmall.copy(
                 fontWeight = FontWeight.Medium
             ),
             color = if (isActive) EcoGuiaColors.Text else EcoGuiaColors.Muted
+        )
+    }
+}
+
+@Preview(device = Devices.WEAR_OS_SMALL_ROUND, showSystemUi = true)
+@Composable
+fun PairingScreenPreview() {
+    EcoGuiaWearTheme {
+        PairingScreen(
+            state = RadarUiState(isLinkedToPhone = true, isGpsEnabled = true, isCameraReady = false),
+            onPairWithPhone = {},
+            onStartDemo = {}
         )
     }
 }

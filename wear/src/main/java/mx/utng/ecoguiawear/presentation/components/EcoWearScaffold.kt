@@ -33,10 +33,9 @@ fun EcoWearScaffold(
     ) {
         ScalingLazyColumn(
             state = listState,
-            columnState = ScalingLazyColumnDefaults.belowTimeText(),
+            flingBehavior = ScalingLazyColumnDefaults.snapFlingBehavior(state = listState),
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(horizontal = 10.dp),
-            autoCentering = null, // Dejar que belowTimeText maneje el centrado
+            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 28.dp),
             content = content
         )
     }
