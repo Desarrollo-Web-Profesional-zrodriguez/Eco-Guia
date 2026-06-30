@@ -19,15 +19,28 @@ import mx.utng.ecoguiawear.presentation.components.CircularStatus
 import mx.utng.ecoguiawear.presentation.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.presentation.theme.EcoGuiaWearTheme
 
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.ui.input.pointer.pointerInput
+
+import androidx.wear.compose.material.Chip
+import androidx.wear.compose.material.ChipDefaults
+
 @Composable
 fun StealthRadarScreen(
     state: RadarUiState,
-    onToggleStealth: () -> Unit
+    onToggleStealth: () -> Unit,
+    onNavigateNext: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .clickable { onToggleStealth() },
+            .pointerInput(Unit) {
+                detectHorizontalDragGestures { _, dragAmount ->
+                    if (dragAmount < -50) { // Swipe Left (<-)
+                        onNavigateNext()
+                    }
+                }
+            },
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -44,11 +57,18 @@ fun StealthRadarScreen(
         )
         
         Text(
-            text = if (state.isStealthMode) "Vibración baja - solo proximidad" else "Radar visible - vibración normal",
+            text = if (state.isStealthMode) "Vibración baja \n solo proximidad" else "Radar visible \n vibración normal",
             style = MaterialTheme.typography.caption3,
             color = EcoGuiaColors.Muted,
             textAlign = TextAlign.Center,
-            modifier = Modifier.padding(horizontal = 16.dp)
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+        )
+
+        Chip(
+            label = { Text(if (state.isStealthMode) "Desactivar" else "Activar") },
+            onClick = onToggleStealth,
+            colors = ChipDefaults.secondaryChipColors(),
+            modifier = Modifier.padding(top = 8.dp)
         )
     }
 }

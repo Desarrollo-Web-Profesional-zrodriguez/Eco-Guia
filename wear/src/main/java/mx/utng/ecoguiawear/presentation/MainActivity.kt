@@ -14,13 +14,14 @@ import mx.utng.ecoguiawear.presentation.theme.EcoGuiaWearTheme
 
 class MainActivity : ComponentActivity() {
 
-    private val repository = DemoRadarRepository()
     private lateinit var messageListener: WearMessageListener
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        val repository = DemoRadarRepository(applicationContext)
         messageListener = WearMessageListener(repository)
+
         Wearable.getMessageClient(this).addListener { event ->
             messageListener.onMessageReceived(event)
         }

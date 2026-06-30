@@ -23,6 +23,9 @@ import mx.utng.ecoguiawear.presentation.components.ScreenHeader
 import mx.utng.ecoguiawear.presentation.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.presentation.theme.EcoGuiaWearTheme
 
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.ui.input.pointer.pointerInput
+
 @Composable
 fun RadarScreen(
     state: RadarUiState,
@@ -31,7 +34,6 @@ fun RadarScreen(
     onOpenCompass: () -> Unit,
     onOpenAlert: () -> Unit,
     onOpenArrival: () -> Unit,
-    onOpenSite: () -> Unit,
     onOpenSummary: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenStealth: () -> Unit = {} // Added for demo
@@ -39,7 +41,15 @@ fun RadarScreen(
     val target = state.target
     val isPaused = state.mode == RadarMode.PAUSED
 
-    EcoWearScaffold {
+    EcoWearScaffold(
+        modifier = Modifier.pointerInput(Unit) {
+            detectHorizontalDragGestures { _, dragAmount ->
+                if (dragAmount < -50) { // Swipe Left (<-)
+                    onOpenCompass()
+                }
+            }
+        }
+    ) {
         item {
             ScreenHeader(
                 title = "Radar activo",
@@ -136,7 +146,6 @@ fun RadarScreenPreview() {
             onOpenCompass = {},
             onOpenAlert = {},
             onOpenArrival = {},
-            onOpenSite = {},
             onOpenSummary = {},
             onOpenSettings = {}
         )

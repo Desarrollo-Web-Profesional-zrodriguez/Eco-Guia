@@ -17,6 +17,10 @@ class WearMessageListener(
     fun onMessageReceived(event: MessageEvent) {
         val payload = String(event.data)
         when (event.path) {
+            "/eco-guia/simulate/link" -> {
+                val linked = payload.toBoolean()
+                repository.setLinkedToPhone(linked)
+            }
             "/eco-guia/simulate/proximity" -> {
                 val distance = payload.toIntOrNull() ?: return
                 repository.setDistance(distance)
@@ -30,8 +34,33 @@ class WearMessageListener(
                 }
             }
             "/eco-guia/simulate/stealth" -> {
-                val enabled = payload.toBoolean()
+                val enabled = when(payload) {
+                    "1" -> true
+                    "0" -> false
+                    else -> payload.toBoolean()
+                }
                 repository.setStealthMode(enabled)
+            }
+            "/eco-guia/simulate/alerts" -> {
+                // Payload: "id|msg|type;id|msg|type"
+                val alertList = payload.split(";").filter { it.isNotBlank() }.map {
+                    val parts = it.split("|")
+                    mx.utng.ecoguiawear.domain.model.AlertEntity(
+                        id = parts.getOrNull(0) ?: "0",
+                        message = parts.getOrNull(1) ?: "",
+                        type = parts.getOrNull(2) ?: "INFO",
+                        timestamp = System.currentTimeMillis()
+                    )
+                }
+                repository.setAlerts(alertList)
+            }
+            "/eco-guia/simulate/permissions" -> {
+                val parts = payload.split("/")
+                if (parts.size == 2) {
+                    val gps = parts[0].toBoolean()
+                    val camera = parts[1].toBoolean()
+                    repository.setPermissions(gps, camera)
+                }
             }
         }
     }

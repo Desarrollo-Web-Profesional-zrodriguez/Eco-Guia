@@ -41,6 +41,7 @@ android {
 }
 
 dependencies {
+    implementation(project(":shared"))
     implementation(libs.activity.compose)
     implementation(platform(libs.compose.bom))
     implementation(libs.ui)
@@ -51,6 +52,8 @@ dependencies {
     implementation(libs.kotlinx.coroutines.play.services)
     implementation(libs.lifecycle.runtime.ktx)
     implementation(libs.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
     
     debugImplementation(libs.ui.tooling)
 }

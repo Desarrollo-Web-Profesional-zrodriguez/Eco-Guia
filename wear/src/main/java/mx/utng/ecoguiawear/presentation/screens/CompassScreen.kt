@@ -18,6 +18,9 @@ import mx.utng.ecoguiawear.presentation.components.CompassArrow
 import mx.utng.ecoguiawear.presentation.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.presentation.theme.EcoGuiaWearTheme
 
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.ui.input.pointer.pointerInput
+
 @Composable
 fun CompassScreen(
     state: RadarUiState,
@@ -28,7 +31,13 @@ fun CompassScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .clickable { onNext() },
+            .pointerInput(Unit) {
+                detectHorizontalDragGestures { _, dragAmount ->
+                    if (dragAmount < -50) { // Swipe Left (<-)
+                        onNext()
+                    }
+                }
+            },
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {

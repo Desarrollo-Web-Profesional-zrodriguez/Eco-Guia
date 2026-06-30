@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.runtime.Composable
@@ -28,29 +29,53 @@ import mx.utng.ecoguiawear.presentation.components.EcoWearScaffold
 import mx.utng.ecoguiawear.presentation.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.presentation.theme.EcoGuiaWearTheme
 
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.ui.input.pointer.pointerInput
+
 @Composable
 fun PairingScreen(
     state: RadarUiState,
     onPairWithPhone: () -> Unit,
-    onStartDemo: () -> Unit
+    onStartDemo: () -> Unit,
+    onViewAlerts: () -> Unit = {}
 ) {
-    EcoWearScaffold {
+    EcoWearScaffold(
+        modifier = Modifier.pointerInput(Unit) {
+            detectHorizontalDragGestures { _, dragAmount ->
+                if (dragAmount < -50 && state.isLinkedToPhone) { // Swipe Left (<-)
+                    onStartDemo()
+                }
+            }
+        }
+    ) {
         item {
             Text(
-                text = "CONECTADO",
+                text = if (state.isLinkedToPhone) "CONECTADO" else "DESCONECTADO",
                 style = MaterialTheme.typography.caption2,
-                color = EcoGuiaColors.Gold,
+                color = if (state.isLinkedToPhone) EcoGuiaColors.Gold else EcoGuiaColors.Muted,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
         }
         item {
-            StatusItem(icon = Icons.Default.PhoneAndroid, text = "Eco-Guía móvil")
+            StatusItem(
+                icon = Icons.Default.PhoneAndroid,
+                text = "Eco-Guía móvil",
+                color = if (state.isLinkedToPhone) EcoGuiaColors.Jade else EcoGuiaColors.Muted
+            )
         }
         item {
-            StatusItem(icon = Icons.Default.LocationOn, text = "GPS preciso")
+            StatusItem(
+                icon = Icons.Default.LocationOn,
+                text = "GPS preciso",
+                color = if (state.isGpsEnabled) EcoGuiaColors.Jade else EcoGuiaColors.Muted
+            )
         }
         item {
-            StatusItem(icon = Icons.Default.Videocam, text = "Cámara lista")
+            StatusItem(
+                icon = Icons.Default.Videocam,
+                text = "Cámara lista",
+                color = if (state.isCameraReady) EcoGuiaColors.Jade else EcoGuiaColors.Muted
+            )
         }
         item {
             Spacer(modifier = Modifier.padding(top = 8.dp))
@@ -59,17 +84,35 @@ fun PairingScreen(
             Chip(
                 label = { Text("INICIAR RADAR") },
                 onClick = onStartDemo,
+                enabled = state.isLinkedToPhone,
                 colors = androidx.wear.compose.material.ChipDefaults.primaryChipColors(
                     backgroundColor = EcoGuiaColors.Jade
                 ),
                 modifier = Modifier.fillMaxWidth()
             )
         }
+        item {
+            Chip(
+                label = { Text("VER ALERTAS") },
+                onClick = onViewAlerts,
+                icon = {
+                    Icon(
+                        imageVector = Icons.Default.Notifications,
+                        contentDescription = null,
+                        modifier = Modifier.size(24.dp)
+                    )
+                },
+                colors = androidx.wear.compose.material.ChipDefaults.secondaryChipColors(
+                    backgroundColor = EcoGuiaColors.Surface
+                ),
+                modifier = Modifier.fillMaxWidth().padding(top = 4.dp)
+            )
+        }
     }
 }
 
 @Composable
-fun StatusItem(icon: ImageVector, text: String) {
+fun StatusItem(icon: ImageVector, text: String, color: androidx.compose.ui.graphics.Color = EcoGuiaColors.Jade) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -81,14 +124,14 @@ fun StatusItem(icon: ImageVector, text: String) {
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = EcoGuiaColors.Jade,
+            tint = color,
             modifier = Modifier.size(20.dp)
         )
         Spacer(modifier = Modifier.width(12.dp))
         Text(
             text = text,
             style = MaterialTheme.typography.caption2,
-            color = EcoGuiaColors.Text
+            color = if (color == EcoGuiaColors.Muted) EcoGuiaColors.Muted else EcoGuiaColors.Text
         )
     }
 }

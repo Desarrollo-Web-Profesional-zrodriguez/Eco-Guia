@@ -8,6 +8,7 @@ enum class TargetType {
 enum class RadarMode {
     PAUSED,
     SCANNING,
+    FOLLOWING_ARROW,
     ARRIVED
 }
 
@@ -39,10 +40,20 @@ data class HapticSettings(
     val strength: HapticStrength = HapticStrength.MEDIUM
 )
 
+data class AlertEntity(
+    val id: String,
+    val message: String,
+    val type: String, // "GEODROP", "SITE", "INFO"
+    val timestamp: Long
+)
+
 data class RadarUiState(
     val isLinkedToPhone: Boolean = false,
     val isStealthMode: Boolean = false,
     val mode: RadarMode = RadarMode.PAUSED,
+    val isGpsEnabled: Boolean = true,
+    val isCameraReady: Boolean = true,
+    val alerts: List<AlertEntity> = emptyList(),
     val target: RadarTarget = RadarTarget(
         id = "geo-drop-museo-01",
         title = "Geo-Drop Museo",
@@ -53,10 +64,10 @@ data class RadarUiState(
     ),
     val routeSummary: RouteSummary = RouteSummary(
         title = "Ruta Independencia",
-        visitedStops = 1,
-        totalStops = 5,
-        nextStop = "Museo de la Independencia Nacional",
-        estimatedMinutes = 18
+        visitedStops = 0,
+        totalStops = 3,
+        nextStop = "Punto 1",
+        estimatedMinutes = 15
     ),
     val hapticSettings: HapticSettings = HapticSettings(),
     val lastAlert: String = "Radar listo"

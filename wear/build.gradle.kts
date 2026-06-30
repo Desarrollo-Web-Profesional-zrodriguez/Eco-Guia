@@ -42,6 +42,7 @@ android {
 }
 
 dependencies {
+    implementation(project(":shared"))
     implementation(libs.activity.compose)
     implementation(libs.core.splashscreen)
     implementation(libs.kotlinx.coroutines.android)
@@ -51,6 +52,8 @@ dependencies {
     implementation(libs.lifecycle.viewmodel.ktx)
     implementation(libs.play.services.wearable)
 
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
     implementation(platform(libs.compose.bom))
     implementation(libs.ui)
     implementation(libs.ui.graphics)

@@ -27,3 +27,4 @@ dependencyResolutionManagement {
 rootProject.name = "EcoGuiaWear"
 include(":wear")
 include(":mobile")
+include(":shared")
