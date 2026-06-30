@@ -9,9 +9,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
-import androidx.wear.compose.material.CompactChip
-import androidx.wear.compose.material.MaterialTheme
-import androidx.wear.compose.material.Text
+import androidx.wear.compose.material3.Button
+import androidx.wear.compose.material3.ButtonDefaults
+import androidx.wear.compose.material3.MaterialTheme
+import androidx.wear.compose.material3.Text
 import mx.utng.ecoguiawear.domain.model.RadarUiState
 import mx.utng.ecoguiawear.presentation.components.CompassArrow
 import mx.utng.ecoguiawear.presentation.components.EcoWearScaffold
@@ -51,7 +52,7 @@ fun RadarScreen(
             Text(
                 text = target.title,
                 color = EcoGuiaColors.Text,
-                style = MaterialTheme.typography.title3,
+                style = MaterialTheme.typography.titleMedium,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -60,13 +61,13 @@ fun RadarScreen(
             Text(
                 text = "${target.distanceMeters} m",
                 color = EcoGuiaColors.Gold,
-                fontSize = 30.sp,
+                style = MaterialTheme.typography.displayMedium,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
             )
         }
         item {
-            CompactChip(
+            Button(
                 label = { 
                     Text(
                         text = "Ver Geo-Drop",
@@ -75,11 +76,15 @@ fun RadarScreen(
                     ) 
                 },
                 onClick = onOpenCompass,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = EcoGuiaColors.Jade,
+                    contentColor = EcoGuiaColors.Background
+                ),
                 modifier = Modifier.fillMaxWidth()
             )
         }
         item {
-            CompactChip(
+            Button(
                 label = { 
                     Text(
                         text = "Iniciar Ruta",
@@ -88,11 +93,15 @@ fun RadarScreen(
                     ) 
                 },
                 onClick = onOpenSummary,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = EcoGuiaColors.Jade,
+                    contentColor = EcoGuiaColors.Background
+                ),
                 modifier = Modifier.fillMaxWidth()
             )
         }
         item {
-            CompactChip(
+            Button(
                 label = { 
                     Text(
                         text = "Ver Alertas",
@@ -101,11 +110,15 @@ fun RadarScreen(
                     ) 
                 },
                 onClick = onOpenAlert,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = EcoGuiaColors.Surface.copy(alpha = 0.5f),
+                    contentColor = EcoGuiaColors.Text
+                ),
                 modifier = Modifier.fillMaxWidth()
             )
         }
         item {
-            CompactChip(
+            Button(
                 label = { 
                     Text(
                         text = "Ajustes",
@@ -114,6 +127,10 @@ fun RadarScreen(
                     ) 
                 },
                 onClick = onNavigateBack,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = EcoGuiaColors.Surface.copy(alpha = 0.5f),
+                    contentColor = EcoGuiaColors.Text
+                ),
                 modifier = Modifier.fillMaxWidth()
             )
         }

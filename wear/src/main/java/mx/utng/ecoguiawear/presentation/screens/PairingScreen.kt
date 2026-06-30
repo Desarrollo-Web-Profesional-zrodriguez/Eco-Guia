@@ -2,12 +2,9 @@ package mx.utng.ecoguiawear.presentation.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -29,9 +26,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.wear.compose.material.Icon
-import androidx.wear.compose.material.MaterialTheme
-import androidx.wear.compose.material.Text
+import androidx.wear.compose.material3.Icon
+import androidx.wear.compose.material3.MaterialTheme
+import androidx.wear.compose.material3.Text
 import mx.utng.ecoguiawear.domain.model.RadarUiState
 import mx.utng.ecoguiawear.presentation.components.EcoWearScaffold
 import mx.utng.ecoguiawear.presentation.theme.EcoGuiaColors
@@ -51,7 +48,7 @@ fun PairingScreen(
         item {
             Text(
                 text = "CONECTADO",
-                style = MaterialTheme.typography.caption2,
+                style = MaterialTheme.typography.labelSmall,
                 color = EcoGuiaColors.Muted,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
@@ -87,7 +84,7 @@ fun PairingScreen(
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = "Toca para continuar",
-                style = MaterialTheme.typography.caption3,
+                style = MaterialTheme.typography.bodyExtraSmall,
                 color = EcoGuiaColors.Jade,
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Center
