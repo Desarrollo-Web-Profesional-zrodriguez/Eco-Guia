@@ -1,6 +1,7 @@
 package mx.utng.ecoguiawear.presentation.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,12 +15,9 @@ import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumnDefaults
 import androidx.wear.compose.foundation.lazy.ScalingLazyListScope
 import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
-import androidx.wear.compose.material.MaterialTheme
-import androidx.wear.compose.material.PositionIndicator
-import androidx.wear.compose.material.Scaffold
-import androidx.wear.compose.material.Text
-import androidx.wear.compose.material.TimeText
-import androidx.wear.compose.material.scrollAway
+import androidx.wear.compose.material3.MaterialTheme
+import androidx.wear.compose.material3.ScreenScaffold
+import androidx.wear.compose.material3.Text
 import mx.utng.ecoguiawear.presentation.theme.EcoGuiaColors
 
 @Composable
@@ -29,20 +27,24 @@ fun EcoWearScaffold(
 ) {
     val listState = rememberScalingLazyListState()
 
-    ScalingLazyColumn(
-        state = listState,
-        flingBehavior = ScalingLazyColumnDefaults.snapFlingBehavior(state = listState),
-        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 28.dp),
-        modifier = modifier
-            .fillMaxSize()
-            .background(EcoGuiaColors.Background),
-        content = content
-    )
+    ScreenScaffold(
+        scrollState = listState,
+        modifier = modifier.fillMaxSize().background(EcoGuiaColors.Background)
+    ) {
+        ScalingLazyColumn(
+            state = listState,
+            columnState = ScalingLazyColumnDefaults.belowTimeText(),
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(horizontal = 10.dp),
+            autoCentering = null, // Dejar que belowTimeText maneje el centrado
+            content = content
+        )
+    }
 }
 
 @Composable
 fun ScreenHeader(title: String, subtitle: String? = null) {
-    androidx.compose.foundation.layout.Column(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(top = 16.dp, bottom = 8.dp),
@@ -51,14 +53,14 @@ fun ScreenHeader(title: String, subtitle: String? = null) {
         Text(
             text = title,
             color = EcoGuiaColors.Gold,
-            style = MaterialTheme.typography.title3,
+            style = MaterialTheme.typography.titleMedium,
             textAlign = TextAlign.Center
         )
         if (subtitle != null) {
             Text(
                 text = subtitle,
                 color = EcoGuiaColors.Muted,
-                style = MaterialTheme.typography.caption2,
+                style = MaterialTheme.typography.bodySmall,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(top = 4.dp)
             )
