@@ -1,11 +1,9 @@
 package mx.utng.ecoguiawear.presentation.screens
 
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
@@ -24,19 +22,12 @@ import mx.utng.ecoguiawear.presentation.theme.EcoGuiaWearTheme
 @Composable
 fun RouteSummaryScreen(
     state: RadarUiState,
-    onBackToRadar: () -> Unit
+    onBackToRadar: () -> Unit,
+    requestFocus: Boolean = true
 ) {
     val summary = state.routeSummary
 
-    EcoWearScaffold(
-        modifier = Modifier.pointerInput(Unit) {
-            detectHorizontalDragGestures { _, dragAmount ->
-                if (dragAmount > 50) { // Swipe Right (->)
-                    onBackToRadar()
-                }
-            }
-        }
-    ) {
+    EcoWearScaffold(requestFocus = requestFocus) {
         item {
             ScreenHeader(
                 title = "RUTA ACTIVA",
