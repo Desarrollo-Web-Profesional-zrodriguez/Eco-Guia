@@ -56,7 +56,6 @@ Desarrollar una solución tecnológica multiplataforma (Móvil y Wear OS) que fa
    ```bash
    git clone https://github.com/Desarrollo-Web-Profesional-zrodriguez/Eco-Guia.git
    cd Eco-Guia
-   git checkout Garay
    ```
 
 2. **Requisitos Previos:**
@@ -81,16 +80,16 @@ Desarrollar una solución tecnológica multiplataforma (Móvil y Wear OS) que fa
       <td align="center"><b>Radar Activo</b></td>
     </tr>
     <tr>
-      <td><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/old-amber.png" width="150" alt="Pairing Screen"></td>
-      <td><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/town-map.png" width="150" alt="Radar Screen"></td>
+      <td><img src="https://github.com/user-attachments/assets/68486006-8010-450b-a615-4cec8b443db9"  width="150" alt="Paring Screen"></td>
+      <td><img src="https://github.com/user-attachments/assets/ba7a7d11-ec9e-4855-83c0-cdbc6d2b8d23" width="150" alt="Radar Screen"></td>
     </tr>
     <tr>
       <td align="center"><b>Brújula de Navegación</b></td>
       <td align="center"><b>Modo Discreto</b></td>
     </tr>
     <tr>
-      <td><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/compass.png" width="150" alt="Compass Screen"></td>
-      <td><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/stealth-rock.png" width="150" alt="Stealth Mode"></td>
+      <td><img src="https://github.com/user-attachments/assets/739c963e-eafe-44ad-9f05-30597b694602" width="150" alt="Compass Screen"></td>
+      <td><img src="https://github.com/user-attachments/assets/e400a985-c91d-4c74-b149-0fc96f0a0e41" width="150" alt="Stealth Mode"></td>
     </tr>
   </table>
 </div>
