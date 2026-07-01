@@ -31,11 +31,12 @@ fun RadarScreen(
     onOpenSummary: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenStealth: () -> Unit = {},
-    onNavigateBack: () -> Unit = {}
+    onNavigateBack: () -> Unit = {},
+    requestFocus: Boolean = true
 ) {
     val target = state.target
 
-    EcoWearScaffold {
+    EcoWearScaffold(requestFocus = requestFocus) {
         item {
             ScreenHeader(
                 title = "Radar activo",
