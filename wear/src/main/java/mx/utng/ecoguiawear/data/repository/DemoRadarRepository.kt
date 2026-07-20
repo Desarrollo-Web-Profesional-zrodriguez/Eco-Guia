@@ -9,18 +9,16 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import mx.utng.ecoguia.shared.data.EcoGuiaDatabase
+import mx.utng.ecoguia.shared.data.repository.EcoGuiaRepositoryImpl
 import mx.utng.ecoguia.shared.domain.model.ConfigEntity
-import mx.utng.ecoguiawear.domain.model.HapticStrength
-import mx.utng.ecoguiawear.domain.model.RadarMode
-import mx.utng.ecoguiawear.domain.model.RadarTarget
-import mx.utng.ecoguiawear.domain.model.RadarUiState
-import mx.utng.ecoguiawear.domain.model.TargetType
+import mx.utng.ecoguiawear.domain.model.*
 import mx.utng.ecoguiawear.domain.repository.RadarRepository
 
 class DemoRadarRepository(context: Context) : RadarRepository {
 
     private val db = EcoGuiaDatabase.getDatabase(context)
     private val dao = db.dao()
+    private val remoteRepository = EcoGuiaRepositoryImpl()
     private val scope = CoroutineScope(Dispatchers.IO)
 
     private val initialState = RadarUiState()
@@ -179,6 +177,35 @@ class DemoRadarRepository(context: Context) : RadarRepository {
                 hapticSettings = it.hapticSettings.copy(enabled = enabled, strength = strength),
                 lastAlert = if (enabled) "Vibracion activa" else "Vibracion apagada"
             )
+        }
+    }
+
+    override fun refreshNearbyTargets() {
+        scope.launch {
+            try {
+                _radarState.update { it.copy(lastAlert = "Buscando en Neon...") }
+                // Dolores Hidalgo base location
+                val lat = 21.1561
+                val lng = -100.9350
+                
+                val remoteDrops = remoteRepository.getGeoDrops()
+                if (remoteDrops.isNotEmpty()) {
+                    val firstDrop = remoteDrops.first()
+                    val target = RadarTarget(
+                        id = firstDrop.id ?: "0",
+                        title = firstDrop.title,
+                        subtitle = firstDrop.description ?: "Cápsula en la nube",
+                        type = TargetType.GEO_DROP,
+                        distanceMeters = 45, // Distancia simulada por ahora
+                        bearingDegrees = 120f
+                    )
+                    _radarState.update { it.copy(target = target, lastAlert = "Cápsula encontrada") }
+                } else {
+                    _radarState.update { it.copy(lastAlert = "No hay cápsulas") }
+                }
+            } catch (e: Exception) {
+                _radarState.update { it.copy(lastAlert = "Error Neon: ${e.message}") }
+            }
         }
     }
 

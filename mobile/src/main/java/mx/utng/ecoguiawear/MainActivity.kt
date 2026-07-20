@@ -18,7 +18,12 @@ import mx.utng.ecoguia.shared.data.EcoGuiaDatabase
 import mx.utng.ecoguia.shared.domain.model.ConfigEntity
 import mx.utng.ecoguia.shared.domain.model.AlertEntity
 
+import mx.utng.ecoguia.shared.data.repository.EcoGuiaRepositoryImpl
+import mx.utng.ecoguia.shared.domain.model.RemoteGeoDrop
+
 class MainActivity : ComponentActivity() {
+    private val repository = EcoGuiaRepositoryImpl()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -27,7 +32,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    ControlPanel(this)
+                    ControlPanel(this, repository)
                 }
             }
         }
@@ -35,10 +40,36 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun ControlPanel(activity: ComponentActivity) {
+fun ControlPanel(activity: ComponentActivity, repository: EcoGuiaRepositoryImpl) {
     val scope = rememberCoroutineScope()
     var lastMessage by remember { mutableStateOf("Esperando interacción...") }
     
+    // CRUD Geo-Drops State
+    var geoDropTitle by remember { mutableStateOf("") }
+    var geoDropDesc by remember { mutableStateOf("") }
+    var geoDrops by remember { mutableStateOf(emptyList<RemoteGeoDrop>()) }
+    var isRefreshing by remember { mutableStateOf(false) }
+
+    // Función para recargar datos
+    val refreshGeoDrops = {
+        scope.launch {
+            isRefreshing = true
+            try {
+                geoDrops = repository.getGeoDrops()
+                lastMessage = "Cápsulas actualizadas: ${geoDrops.size}"
+            } catch (e: Exception) {
+                lastMessage = "Error al cargar: ${e.message}"
+            } finally {
+                isRefreshing = false
+            }
+        }
+    }
+
+    // Carga inicial
+    LaunchedEffect(Unit) {
+        refreshGeoDrops()
+    }
+
     // Estados locales sincronizados con UI
     var isPhoneConnected by remember { mutableStateOf(false) }
     var gpsEnabled by remember { mutableStateOf(true) }
@@ -86,9 +117,83 @@ fun ControlPanel(activity: ComponentActivity) {
 
         Spacer(modifier = Modifier.height(8.dp))
         Text("Log: $lastMessage", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
-        Spacer(modifier = Modifier.height(16.dp))
+        
+        HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
 
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.weight(1f)) {
+            item {
+                Text("Nuevo Registro (Neon PostgreSQL)", style = MaterialTheme.typography.titleMedium, color = Color(0xFF00E676))
+                OutlinedTextField(
+                    value = geoDropTitle,
+                    onValueChange = { geoDropTitle = it },
+                    label = { Text("Título de la Cápsula") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                OutlinedTextField(
+                    value = geoDropDesc,
+                    onValueChange = { geoDropDesc = it },
+                    label = { Text("Descripción") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Button(
+                    onClick = {
+                        if (geoDropTitle.isNotBlank()) {
+                            scope.launch {
+                                lastMessage = "Registrando en Neon..."
+                                val success = repository.createGeoDrop(
+                                    title = geoDropTitle,
+                                    description = geoDropDesc,
+                                    lat = 21.1561, // Dolores Hidalgo
+                                    lng = -100.9350
+                                )
+                                if (success) {
+                                    lastMessage = "¡Registrado con éxito!"
+                                    geoDropTitle = ""
+                                    geoDropDesc = ""
+                                    refreshGeoDrops()
+                                } else {
+                                    lastMessage = "Error al registrar."
+                                }
+                            }
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00C853))
+                ) {
+                    Text("Guardar en Nube")
+                }
+            }
+
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                ) {
+                    Text("Cápsulas en Nube:", style = MaterialTheme.typography.titleSmall)
+                    TextButton(onClick = { refreshGeoDrops() }) {
+                        Text(if (isRefreshing) "Cargando..." else "Refrescar")
+                    }
+                }
+            }
+
+            items(geoDrops.size) { index ->
+                val drop = geoDrops[index]
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                ) {
+                    Column(modifier = Modifier.padding(8.dp)) {
+                        Text(drop.title, style = MaterialTheme.typography.titleSmall)
+                        Text(drop.description ?: "", style = MaterialTheme.typography.bodySmall)
+                        Text("Fecha: ${drop.createdAt?.take(10) ?: "---"}", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    }
+                }
+            }
+
+            item { HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp)) }
+
             item {
                 Text("Gestión de Conexión", style = MaterialTheme.typography.titleSmall)
                 Button(
