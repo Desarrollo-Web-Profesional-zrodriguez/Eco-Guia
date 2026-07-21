@@ -1,46 +1,68 @@
-# Plan de Implementación: Conexión del Radar Wear OS a Datos Reales (Neon)
+# Plan de Implementación: Pantallas de Usuario e Inicio de Sesión (Mobile)
 
-Este plan describe cómo conectar el radar del reloj a la base de datos Neon para que muestre "cápsulas" (Geo-Drops) reales en lugar de datos de prueba.
+Este plan detalla la construcción de las interfaces de usuario para el inicio de sesión, registro, recuperación de contraseña y exploración en la aplicación móvil, siguiendo el diseño proporcionado en las imágenes.
 
-## Análisis Técnico
+## Análisis de Diseño
 
-Aprovecharemos el repositorio compartido (`EcoGuiaRepository`) que ya tiene la lógica para consultar Neon. El reloj actuará como un buscador de cápsulas en tiempo real.
-- **Acceso a Datos:** El reloj usará `EcoGuiaRepository` para obtener los Geo-Drops más cercanos o recientes.
-- **Mapeo:** Convertiremos los objetos `RemoteGeoDrop` de la base de datos al formato `RadarTarget` que entiende la interfaz del reloj.
-- **Sincronización:** Cuando se registre una nueva cápsula en el celular, el reloj podrá detectarla al refrescar sus datos.
+Basado en las imágenes, el sistema visual de la aplicación móvil se caracteriza por:
+- **Paleta de Colores:** Fondo azul marino profundo (`#050B10`), acentos en Jade (`#26A69A`) y Oro (`#C5A059`).
+- **Componentes:** Campos de texto con bordes muy redondeados y botones con degradados verdes.
+- **Iconografía:** Uso de un icono central de "casa" estilizado.
+- **Pantalla de Exploración:** Cabecera con un mapa estilizado y lista de sitios con tarjetas redondeadas.
 
 ## Cambios Propuestos
 
-### 1. Módulo Wear OS (Capa de Datos)
+### 1. Configuración de Dependencias
+Añadiremos la librería de navegación para Jetpack Compose en el módulo móvil.
 
-#### [MODIFY] [DemoRadarRepository.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/wear/src/main/java/mx/utng/ecoguiawear/data/repository/DemoRadarRepository.kt)
-- Inyectar `EcoGuiaRepository` (la implementación de Neon).
-- Añadir lógica para obtener cápsulas reales de la nube.
-- Implementar una función que busque cápsulas cercanas (por ahora simularemos la ubicación del reloj en Dolores Hidalgo).
+#### [MODIFY] [libs.versions.toml](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/gradle/libs.versions.toml)
+- Añadir `navigationCompose = "2.8.5"` y su librería correspondiente.
 
-#### [MODIFY] [RadarRepository.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/wear/src/main/java/mx/utng/ecoguiawear/domain/repository/RadarRepository.kt)
-- Añadir el método `refreshNearbyTargets()` a la interfaz.
+#### [MODIFY] [mobile/build.gradle.kts](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/build.gradle.kts)
+- Implementar la dependencia de navegación.
 
-### 2. Módulo Wear OS (Capa de Presentación)
+### 2. Sistema de Diseño (Mobile Theme)
 
-#### [MODIFY] [RadarViewModel.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/wear/src/main/java/mx/utng/ecoguiawear/presentation/RadarViewModel.kt)
-- Añadir una llamada para refrescar los datos al iniciar el radar o mediante un gesto.
+#### [NEW] [Theme.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/theme/Theme.kt)
+- Definición de `EcoGuiaMobileTheme` y esquema de colores.
 
-### 3. Configuración
+#### [NEW] [Color.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/theme/Color.kt)
+- Definición de los colores específicos detectados en las imágenes.
 
-#### [MODIFY] [wear/build.gradle.kts](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/wear/build.gradle.kts)
-- Asegurar que el módulo wear tenga las dependencias necesarias de Ktor (si se conecta directamente) o simplemente use el módulo compartido correctamente.
+### 3. Componentes Reutilizables
 
-## Verificación
+#### [NEW] [CommonComponents.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/components/CommonComponents.kt)
+- `EcoTextField`: Campo de texto personalizado con bordes redondeados.
+- `EcoButton`: Botón con degradado Jade.
+- `EcoBackground`: Contenedor con el degradado de fondo oficial.
 
-1. **Prueba de Flujo:** Registrar un Geo-Drop en el celular con un título específico (ej: "Cápsula Real").
-2. **Refresco en Reloj:** Iniciar el radar en el reloj y verificar que el objetivo (`RadarTarget`) ahora muestra el título de la cápsula registrada en Neon.
-3. **Distancia Simulada:** Verificar que el reloj calcula una distancia y dirección hacia esa nueva cápsula.
+### 4. Pantallas (Screens)
+
+#### [NEW] [LoginScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/LoginScreen.kt)
+- Pantalla principal de acceso con campos de correo y contraseña.
+
+#### [NEW] [SignUpScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/SignUpScreen.kt)
+- Formulario de registro con Nombre Completo, Correo y Contraseña.
+
+#### [NEW] [RecoveryScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/RecoveryScreen.kt)
+- Pantalla para restablecer acceso mediante correo electrónico.
+
+#### [NEW] [ExplorationScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/ExplorationScreen.kt)
+- Pantalla principal de la app con mapa y lista de sitios recomendados.
+
+### 5. Navegación y MainActivity
+
+#### [MODIFY] [MainActivity.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/MainActivity.kt)
+- Reemplazar el `ControlPanel` actual por un `NavHost` que gestione las nuevas pantallas.
+- Mantener la funcionalidad de `EcoGuiaRepositoryImpl` para uso futuro.
+
+## Plan de Verificación
+
+1. **Renders de Preview:** Generar previsualizaciones de Compose para cada pantalla para asegurar fidelidad visual.
+2. **Pruebas de Flujo:** Navegar entre las 4 pantallas (Login -> SignUp -> Recovery -> Exploration) para validar las transiciones.
+3. **Consistencia Visual:** Comparar los resultados con las imágenes de referencia enviadas por el usuario.
 
 ---
 
-> [!IMPORTANT]
-> El reloj necesita conexión a internet (vía WiFi o Bluetooth a través del teléfono) para consultar directamente a Neon.
-
-> [!TIP]
-> Usaremos una ubicación "base" en Dolores Hidalgo para el reloj, de modo que las cápsulas registradas en esa misma zona aparezcan como objetivos cercanos.
+> [!NOTE]
+> Por ahora, las pantallas serán puramente visuales y de navegación. Las funcionalidades de autenticación real se implementarán en una fase posterior.

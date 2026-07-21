@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.ui.Alignment
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.*
@@ -21,18 +22,54 @@ import mx.utng.ecoguia.shared.domain.model.AlertEntity
 import mx.utng.ecoguia.shared.data.repository.EcoGuiaRepositoryImpl
 import mx.utng.ecoguia.shared.domain.model.RemoteGeoDrop
 
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import mx.utng.ecoguiawear.ui.screens.*
+import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
+
 class MainActivity : ComponentActivity() {
     private val repository = EcoGuiaRepositoryImpl()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            MaterialTheme {
+            EcoGuiaMobileTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    ControlPanel(this, repository)
+                    val navController = rememberNavController()
+                    
+                    NavHost(navController = navController, startDestination = "login") {
+                        composable("login") {
+                            LoginScreen(
+                                onLoginClick = { navController.navigate("exploration") },
+                                onSignUpClick = { navController.navigate("signup") },
+                                onRecoverClick = { navController.navigate("recovery") }
+                            )
+                        }
+                        composable("signup") {
+                            SignUpScreen(
+                                onSignUpClick = { navController.navigate("exploration") },
+                                onBackToLogin = { navController.popBackStack() }
+                            )
+                        }
+                        composable("recovery") {
+                            RecoveryScreen(
+                                onSendClick = { navController.popBackStack() },
+                                onBackToLogin = { navController.popBackStack() }
+                            )
+                        }
+                        composable("exploration") {
+                            ExplorationScreen(
+                                onAdminClick = { navController.navigate("admin") }
+                            )
+                        }
+                        composable("admin") {
+                            ControlPanel(this@MainActivity, repository)
+                        }
+                    }
                 }
             }
         }
@@ -80,7 +117,9 @@ fun ControlPanel(activity: ComponentActivity, repository: EcoGuiaRepositoryImpl)
     val alertsState = db.dao().getAllAlerts().collectAsState(initial = emptyList())
 
     Column(modifier = Modifier.padding(16.dp)) {
-        Text("Eco-Guía: Panel de Control Móvil", style = MaterialTheme.typography.headlineMedium)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("Eco-Guía: Panel Admin", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.weight(1f))
+        }
         
         Card(
             modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
@@ -169,7 +208,7 @@ fun ControlPanel(activity: ComponentActivity, repository: EcoGuiaRepositoryImpl)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text("Cápsulas en Nube:", style = MaterialTheme.typography.titleSmall)
                     TextButton(onClick = { refreshGeoDrops() }) {

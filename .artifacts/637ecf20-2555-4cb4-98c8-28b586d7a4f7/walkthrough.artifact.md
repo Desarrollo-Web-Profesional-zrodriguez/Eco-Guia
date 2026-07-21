@@ -1,31 +1,40 @@
-# Walkthrough: CRUD de Geo-Drops (Cápsulas) en Neon
+# Walkthrough: Pantallas de Usuario y Exploración (Mobile)
 
-Se ha implementado un flujo completo de Registro y Lectura (CR) para las cápsulas de información (Geo-Drops) directamente conectadas a la base de datos Neon PostgreSQL.
+Se ha implementado el sistema visual y las pantallas principales de la aplicación móvil siguiendo fielmente el diseño proporcionado. Se ha normalizado la paleta de colores para asegurar consistencia en todos los módulos del proyecto.
 
 ## Cambios Realizados
 
-### Capa de Dominio y Datos
-- **[EcoGuiaRepository.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/shared/src/main/java/mx/utng/ecoguia/shared/domain/repository/EcoGuiaRepository.kt):** Se añadió el método `createGeoDrop` para permitir la inserción de nuevos registros.
-- **[EcoGuiaRepositoryImpl.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/shared/src/main/java/mx/utng/ecoguia/shared/data/repository/EcoGuiaRepositoryImpl.kt):** Implementación de la lógica SQL (`INSERT INTO`) utilizando funciones geográficas de PostGIS para guardar la ubicación exacta.
-- **[RemoteEntities.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/shared/src/main/java/mx/utng/ecoguia/shared/domain/model/RemoteEntities.kt):** Ajuste de modelos para manejar campos opcionales generados por la base de datos (ID y fechas).
+### Sistema de Diseño Unificado
+- **[Color.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/theme/Color.kt):** Se definió el objeto `EcoGuiaColors` con los colores oficiales:
+    - **Background:** `#050B10` (Azul Profundo)
+    - **Jade:** `#26A69A` (Verde Principal)
+    - **Gold:** `#C5A059` (Dorado de acento)
+    - **Surface:** `#0E2A3F` (Azul para tarjetas)
+- **[Theme.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/theme/Theme.kt):** Se implementó `EcoGuiaMobileTheme` para aplicar estos colores globalmente en la app móvil.
 
-### Interfaz de Usuario (Mobile)
-- **[MainActivity.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/MainActivity.kt):**
-    - Se integró un nuevo **Gestor de Cápsulas** en el panel de control.
-    - **Formulario:** Permite ingresar Título y Descripción.
-    - **Lista en Tiempo Real:** Muestra todas las cápsulas guardadas en Neon, ordenadas por fecha de creación (las más recientes primero).
-    - **Refresco Automático:** La lista se actualiza automáticamente después de cada registro exitoso.
+### Componentes Reutilizables
+- **`EcoTextField`**: Campos con bordes muy redondeados y colores integrados al tema.
+- **`EcoButton`**: Botones con degradado Jade/Oro.
+- **`EcoBackground`**: Contenedor con degradado vertical para todas las pantallas de acceso.
 
-## Cómo Probar el Registro
+### Pantallas Implementadas
+1.  **[LoginScreen](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/LoginScreen.kt):** Acceso principal con Logo y campos de credenciales.
+2.  **[SignUpScreen](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/SignUpScreen.kt):** Registro de nuevos usuarios.
+3.  **[RecoveryScreen](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/RecoveryScreen.kt):** Restablecimiento de contraseña.
+4.  **[ExplorationScreen](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/ExplorationScreen.kt):** Interfaz principal con cabecera oscura, placeholder de mapa y lista de sitios recomendados.
 
-1. Abre la aplicación móvil.
-2. Desliza hasta la sección **"Nuevo Registro (Neon PostgreSQL)"**.
-3. Escribe un título (ej: "Mural de Hidalgo") y una descripción.
-4. Presiona **"Guardar en Nube"**.
-5. Verás un mensaje de confirmación y el nuevo registro aparecerá instantáneamente en la lista inferior.
+### Navegación
+- Se configuró un `NavHost` en **[MainActivity.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/MainActivity.kt)** que conecta todas las pantallas.
+- El antiguo panel de control ahora es accesible como el **Panel Admin** desde la pantalla de exploración.
+
+## Verificación Visual
+
+Se han añadido funciones de `@Preview` en cada archivo de pantalla para validar el diseño sin necesidad de desplegar en un dispositivo físico.
+
+---
 
 > [!TIP]
-> Por ahora, el registro utiliza coordenadas fijas de Dolores Hidalgo para simplificar la prueba, pero la infraestructura ya está lista para recibir coordenadas dinámicas del GPS.
+> Los colores utilizados coinciden exactamente con los del módulo Wear OS para cumplir con el requisito de normalización visual.
 
-> [!IMPORTANT]
-> Los datos se guardan en la tabla `geo_drops` de tu base de datos Neon con el estado `approved` para que sean visibles inmediatamente en esta prueba.
+> [!NOTE]
+> Por ahora, las pantallas son visuales. La integración con el repositorio de Neon para el login real se realizará en el siguiente paso.
