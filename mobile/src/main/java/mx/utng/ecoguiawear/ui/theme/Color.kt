@@ -1,3 +1,10 @@
+/**
+ * Archivo: Color.kt
+ * Autor: ZahirMora
+ * Fecha de última actualización: 2026-07-20
+ * Descripción: Define la paleta de colores normalizada para toda la aplicación (Mobile, Wear, TV).
+ */
+
 package mx.utng.ecoguiawear.ui.theme
 
 import androidx.compose.ui.graphics.Brush
@@ -14,11 +21,16 @@ object EcoGuiaColors {
     val Muted = Color(0xFFB8C6D1)
     val Alert = Color(0xFFE4B84A)
     
-    // Degradados
+    /**
+     * Degradado principal para botones y acentos.
+     */
     val JadeGradient = Brush.horizontalGradient(
         colors = listOf(Gold, Jade)
     )
     
+    /**
+     * Degradado de fondo para pantallas principales.
+     */
     val BackgroundGradient = Brush.verticalGradient(
         colors = listOf(DeepBlue, Background)
     )

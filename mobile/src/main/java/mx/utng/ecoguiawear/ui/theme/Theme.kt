@@ -1,3 +1,10 @@
+/**
+ * Archivo: Theme.kt
+ * Autor: ZahirMora
+ * Fecha de última actualización: 2026-07-20
+ * Descripción: Configura el tema de Material Design 3 con la identidad visual de Eco-Guía.
+ */
+
 package mx.utng.ecoguiawear.ui.theme
 
 import androidx.compose.material3.MaterialTheme
@@ -16,6 +23,9 @@ private val DarkColorScheme = darkColorScheme(
     onSurface = EcoGuiaColors.Text,
 )
 
+/**
+ * Tema principal de la aplicación móvil.
+ */
 @Composable
 fun EcoGuiaMobileTheme(
     content: @Composable () -> Unit

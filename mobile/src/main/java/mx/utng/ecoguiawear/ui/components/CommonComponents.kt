@@ -1,3 +1,10 @@
+/**
+ * Archivo: CommonComponents.kt
+ * Autor: ZahirMora
+ * Fecha de última actualización: 2026-07-20
+ * Descripción: Biblioteca de componentes de UI reutilizables para mantener la consistencia visual en la aplicación.
+ */
+
 package mx.utng.ecoguiawear.ui.components
 
 import androidx.compose.foundation.background
@@ -15,6 +22,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 
+/**
+ * Fondo con degradado vertical oficial de la aplicación.
+ */
 @Composable
 fun EcoBackground(
     content: @Composable BoxScope.() -> Unit
@@ -28,6 +38,9 @@ fun EcoBackground(
     }
 }
 
+/**
+ * Campo de texto personalizado con bordes redondeados y estilo oscuro.
+ */
 @Composable
 fun EcoTextField(
     value: String,
@@ -55,6 +68,9 @@ fun EcoTextField(
     )
 }
 
+/**
+ * Botón con degradado Jade o fondo blanco.
+ */
 @Composable
 fun EcoButton(
     text: String,
@@ -83,7 +99,7 @@ fun EcoButton(
         ) {
             Text(
                 text = text,
-                color = if (useGradient) EcoGuiaColors.Background else EcoGuiaColors.Background,
+                color = EcoGuiaColors.Background,
                 fontWeight = FontWeight.Bold,
                 fontSize = 16.sp
             )
@@ -91,6 +107,9 @@ fun EcoButton(
     }
 }
 
+/**
+ * Logotipo central estilizado.
+ */
 @Composable
 fun EcoLogo() {
     Box(

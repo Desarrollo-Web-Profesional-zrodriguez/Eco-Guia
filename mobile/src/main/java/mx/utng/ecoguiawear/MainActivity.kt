@@ -1,14 +1,21 @@
+/**
+ * Archivo: MainActivity.kt
+ * Autor: ZahirMora
+ * Fecha de última actualización: 2026-07-20
+ * Descripción: Actividad principal de la aplicación móvil. Configura la navegación y los ViewModels globales.
+ */
+
 package mx.utng.ecoguiawear
 
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.ui.Alignment
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -27,6 +34,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import mx.utng.ecoguiawear.ui.screens.*
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
+import mx.utng.ecoguiawear.ui.viewmodel.AuthViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 class MainActivity : ComponentActivity() {
     private val repository = EcoGuiaRepositoryImpl()
@@ -40,18 +49,25 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     val navController = rememberNavController()
+                    val authViewModel: AuthViewModel = viewModel()
                     
                     NavHost(navController = navController, startDestination = "login") {
                         composable("login") {
                             LoginScreen(
-                                onLoginClick = { navController.navigate("exploration") },
+                                viewModel = authViewModel,
+                                onLoginSuccess = { 
+                                    navController.navigate("exploration") {
+                                        popUpTo("login") { inclusive = true }
+                                    }
+                                },
                                 onSignUpClick = { navController.navigate("signup") },
                                 onRecoverClick = { navController.navigate("recovery") }
                             )
                         }
                         composable("signup") {
                             SignUpScreen(
-                                onSignUpClick = { navController.navigate("exploration") },
+                                viewModel = authViewModel,
+                                onSignUpSuccess = { /* Podría navegar directamente */ },
                                 onBackToLogin = { navController.popBackStack() }
                             )
                         }
@@ -76,6 +92,9 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+/**
+ * Panel de control para simulación y pruebas de administración.
+ */
 @Composable
 fun ControlPanel(activity: ComponentActivity, repository: EcoGuiaRepositoryImpl) {
     val scope = rememberCoroutineScope()
@@ -342,6 +361,9 @@ fun ControlPanel(activity: ComponentActivity, repository: EcoGuiaRepositoryImpl)
     }
 }
 
+/**
+ * Envía un mensaje al dispositivo Wear OS.
+ */
 private suspend fun sendMessage(context: android.content.Context, path: String, payload: String) {
     try {
         val nodes = Wearable.getNodeClient(context).connectedNodes.await()

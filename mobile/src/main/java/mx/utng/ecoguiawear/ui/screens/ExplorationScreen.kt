@@ -1,3 +1,10 @@
+/**
+ * Archivo: ExplorationScreen.kt
+ * Autor: ZahirMora
+ * Fecha de última actualización: 2026-07-20
+ * Descripción: Pantalla principal de exploración. Muestra el mapa y sitios recomendados.
+ */
+
 package mx.utng.ecoguiawear.ui.screens
 
 import androidx.compose.foundation.background
@@ -17,10 +24,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
-
 import androidx.compose.ui.tooling.preview.Preview
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 
+/**
+ * Composable que representa la pantalla de exploración.
+ */
 @Composable
 fun ExplorationScreen(
     onAdminClick: () -> Unit
@@ -105,14 +114,9 @@ fun ExplorationScreen(
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun ExplorationScreenPreview() {
-    EcoGuiaMobileTheme {
-        ExplorationScreen({})
-    }
-}
-
+/**
+ * Elemento de lista para un sitio recomendado.
+ */
 @Composable
 fun RecommendedSiteItem(
     title: String,
@@ -159,6 +163,9 @@ fun RecommendedSiteItem(
     }
 }
 
+/**
+ * Barra de navegación inferior personalizada.
+ */
 @Composable
 fun EcoBottomBar() {
     NavigationBar(
@@ -186,5 +193,13 @@ fun EcoBottomBar() {
             onClick = {},
             icon = { Icon(Icons.Default.Menu, null, tint = EcoGuiaColors.Muted) }
         )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun ExplorationScreenPreview() {
+    EcoGuiaMobileTheme {
+        ExplorationScreen({})
     }
 }

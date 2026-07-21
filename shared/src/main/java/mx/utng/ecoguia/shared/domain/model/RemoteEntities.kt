@@ -1,8 +1,18 @@
+/**
+ * Archivo: RemoteEntities.kt
+ * Autor: ZahirMora
+ * Fecha de última actualización: 2026-07-20
+ * Descripción: Define los modelos de datos para la comunicación con la base de datos remota Neon (PostgreSQL).
+ */
+
 package mx.utng.ecoguia.shared.domain.model
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
+/**
+ * Representa un usuario en el sistema.
+ */
 @Serializable
 data class RemoteUser(
     val id: String,
@@ -10,9 +20,12 @@ data class RemoteUser(
     @SerialName("display_name") val displayName: String,
     val role: String,
     @SerialName("avatar_url") val avatarUrl: String? = null,
-    @SerialName("created_at") val createdAt: String
+    @SerialName("created_at") val createdAt: String? = null
 )
 
+/**
+ * Representa un sitio histórico o museo.
+ */
 @Serializable
 data class RemoteHistoricalSite(
     val id: String,
@@ -22,13 +35,14 @@ data class RemoteHistoricalSite(
     @SerialName("short_description") val shortDescription: String? = null,
     @SerialName("historical_description") val historicalDescription: String? = null,
     val address: String? = null,
-    // Note: location is GEOGRAPHY, might need special handling if not returned as String/JSON
-    // By default Neon /sql might return it as a Hex EWKB string.
     val location: String? = null,
     @SerialName("detection_radius_m") val detectionRadiusM: Int = 50,
     @SerialName("is_active") val isActive: Boolean = true
 )
 
+/**
+ * Representa una ruta turística.
+ */
 @Serializable
 data class RemoteRoute(
     val id: String,
@@ -40,6 +54,9 @@ data class RemoteRoute(
     @SerialName("is_active") val isActive: Boolean = true
 )
 
+/**
+ * Representa una cápsula de información (Geo-Drop) creada por un usuario.
+ */
 @Serializable
 data class RemoteGeoDrop(
     val id: String? = null,

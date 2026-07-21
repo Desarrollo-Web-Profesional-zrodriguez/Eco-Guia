@@ -1,3 +1,10 @@
+/**
+ * Archivo: RecoveryScreen.kt
+ * Autor: ZahirMora
+ * Fecha de última actualización: 2026-07-20
+ * Descripción: Interfaz de usuario para la recuperación de acceso. Permite al usuario solicitar un enlace de restablecimiento.
+ */
+
 package mx.utng.ecoguiawear.ui.screens
 
 import androidx.compose.foundation.layout.*
@@ -11,10 +18,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import mx.utng.ecoguiawear.ui.components.*
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
-
 import androidx.compose.ui.tooling.preview.Preview
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 
+/**
+ * Composable que representa la pantalla de recuperación de contraseña.
+ */
 @Composable
 fun RecoveryScreen(
     onSendClick: () -> Unit,

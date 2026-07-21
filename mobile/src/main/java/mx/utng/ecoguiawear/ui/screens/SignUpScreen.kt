@@ -1,28 +1,52 @@
+/**
+ * Archivo: SignUpScreen.kt
+ * Autor: ZahirMora
+ * Fecha de última actualización: 2026-07-20
+ * Descripción: Interfaz de usuario para el registro de nuevos usuarios. Permite crear una cuenta en el sistema.
+ */
+
 package mx.utng.ecoguiawear.ui.screens
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import mx.utng.ecoguiawear.ui.components.*
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
-
+import mx.utng.ecoguiawear.ui.viewmodel.AuthState
+import mx.utng.ecoguiawear.ui.viewmodel.AuthViewModel
 import androidx.compose.ui.tooling.preview.Preview
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 
+/**
+ * Composable que representa la pantalla de registro.
+ */
 @Composable
 fun SignUpScreen(
-    onSignUpClick: () -> Unit,
+    viewModel: AuthViewModel,
+    onSignUpSuccess: () -> Unit,
     onBackToLogin: () -> Unit
 ) {
-    var name by remember { mutableStateOf("César Martínez") }
-    var email by remember { mutableStateOf("cesar@email.com") }
-    var password by remember { mutableStateOf("Mínimo 8 caracteres") }
+    var name by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    val authState by viewModel.authState
+
+    // Manejo de éxito de registro
+    LaunchedEffect(authState) {
+        if (authState is AuthState.Registered) {
+            viewModel.resetState()
+            onBackToLogin()
+        }
+    }
 
     EcoBackground {
         Column(
@@ -76,19 +100,40 @@ fun SignUpScreen(
                     onValueChange = { password = it },
                     label = "CONTRASEÑA"
                 )
+
+                if (authState is AuthState.Error) {
+                    Text(
+                        text = (authState as AuthState.Error).message,
+                        color = Color.Red,
+                        fontSize = 12.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
                 
                 Spacer(modifier = Modifier.height(16.dp))
                 
-                EcoButton(
-                    text = "Crear cuenta",
-                    onClick = onSignUpClick
-                )
-                
-                EcoButton(
-                    text = "Ya tengo cuenta",
-                    onClick = onBackToLogin,
-                    useGradient = false
-                )
+                if (authState is AuthState.Loading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.align(Alignment.CenterHorizontally),
+                        color = EcoGuiaColors.Jade
+                    )
+                } else {
+                    EcoButton(
+                        text = "Crear cuenta",
+                        onClick = { 
+                            if (name.isNotBlank() && email.isNotBlank() && password.length >= 8) {
+                                viewModel.register(name, email, password)
+                            }
+                        }
+                    )
+                    
+                    EcoButton(
+                        text = "Ya tengo cuenta",
+                        onClick = onBackToLogin,
+                        useGradient = false
+                    )
+                }
             }
         }
     }
@@ -98,6 +143,6 @@ fun SignUpScreen(
 @Composable
 fun SignUpScreenPreview() {
     EcoGuiaMobileTheme {
-        SignUpScreen({}, {})
+        SignUpScreen(AuthViewModel(), {}, {})
     }
 }

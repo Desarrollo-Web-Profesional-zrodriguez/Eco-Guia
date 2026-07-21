@@ -1,12 +1,9 @@
-# Tareas: Implementación de UI de Usuario y Exploración (Mobile)
+# Tareas: Autenticación y Documentación
 
-- [x] Configurar navegación en `:mobile` (`libs.versions.toml` y `build.gradle.kts`)
-- [x] Definir sistema de colores unificado (`Color.kt`)
-- [x] Crear tema de la aplicación (`Theme.kt`)
-- [x] Implementar componentes comunes (Botones, Campos de Texto, Fondos)
-- [x] Crear pantalla de Inicio de Sesión (`LoginScreen.kt`)
-- [x] Crear pantalla de Registro (`SignUpScreen.kt`)
-- [x] Crear pantalla de Recuperación (`RecoveryScreen.kt`)
-- [x] Crear pantalla de Exploración (`ExplorationScreen.kt`)
-- [x] Configurar `NavHost` en `MainActivity.kt`
-- [x] Verificar navegación y diseño visual
+- [x] Documentar y actualizar `RemoteEntities.kt`
+- [x] Documentar y actualizar interfaz `EcoGuiaRepository.kt`
+- [x] Implementar y documentar lógica de Auth en `EcoGuiaRepositoryImpl.kt`
+- [x] Crear y documentar `AuthViewModel.kt` en el módulo móvil
+- [x] Integrar y documentar `LoginScreen.kt`
+- [x] Integrar y documentar `SignUpScreen.kt`
+- [x] Verificar registro y login con Neon

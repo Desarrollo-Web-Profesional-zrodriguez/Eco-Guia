@@ -1,68 +1,61 @@
-# Plan de Implementación: Pantallas de Usuario e Inicio de Sesión (Mobile)
+# Plan de Implementación: Autenticación y Documentación
 
-Este plan detalla la construcción de las interfaces de usuario para el inicio de sesión, registro, recuperación de contraseña y exploración en la aplicación móvil, siguiendo el diseño proporcionado en las imágenes.
+Este plan detalla la implementación de la lógica de inicio de sesión y registro de usuarios en la aplicación móvil, conectándolos con la base de datos Neon PostgreSQL, e incluyendo los estándares de documentación solicitados.
 
-## Análisis de Diseño
+## Análisis Técnico
 
-Basado en las imágenes, el sistema visual de la aplicación móvil se caracteriza por:
-- **Paleta de Colores:** Fondo azul marino profundo (`#050B10`), acentos en Jade (`#26A69A`) y Oro (`#C5A059`).
-- **Componentes:** Campos de texto con bordes muy redondeados y botones con degradados verdes.
-- **Iconografía:** Uso de un icono central de "casa" estilizado.
-- **Pantalla de Exploración:** Cabecera con un mapa estilizado y lista de sitios con tarjetas redondeadas.
+Utilizaremos el esquema de base de datos existente que incluye la tabla `users` con soporte para `pgcrypto` (para manejo seguro de contraseñas mediante hashing en el servidor).
+
+### Funcionalidades a implementar:
+- **Registro:** Inserción de un nuevo usuario en la tabla `users`. La contraseña se guardará usando `crypt()` de PostgreSQL.
+- **Inicio de Sesión:** Consulta que verifica las credenciales del usuario comparando el hash de la contraseña.
+- **Documentación:** Cada archivo y función principal incluirá un bloque de comentarios con:
+    - Autor: `ZahirMora`
+    - Última actualización: `2026-07-20`
+    - Descripción de la funcionalidad.
 
 ## Cambios Propuestos
 
-### 1. Configuración de Dependencias
-Añadiremos la librería de navegación para Jetpack Compose en el módulo móvil.
+### 1. Capa de Datos (shared)
 
-#### [MODIFY] [libs.versions.toml](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/gradle/libs.versions.toml)
-- Añadir `navigationCompose = "2.8.5"` y su librería correspondiente.
+#### [MODIFY] [RemoteEntities.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/shared/src/main/java/mx/utng/ecoguia/shared/domain/model/RemoteEntities.kt)
+- Añadir encabezado de documentación.
 
-#### [MODIFY] [mobile/build.gradle.kts](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/build.gradle.kts)
-- Implementar la dependencia de navegación.
+#### [MODIFY] [EcoGuiaRepository.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/shared/src/main/java/mx/utng/ecoguia/shared/domain/repository/EcoGuiaRepository.kt)
+- Añadir métodos `login(email, password)` y `register(name, email, password)`.
+- Añadir encabezado de documentación.
 
-### 2. Sistema de Diseño (Mobile Theme)
+#### [MODIFY] [EcoGuiaRepositoryImpl.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/shared/src/main/java/mx/utng/ecoguia/shared/data/repository/EcoGuiaRepositoryImpl.kt)
+- Implementar `login` usando `SELECT * FROM users WHERE email = ? AND password_hash = crypt(?, password_hash)`.
+- Implementar `register` usando `INSERT INTO users (display_name, email, password_hash) VALUES (?, ?, crypt(?, gen_salt('bf')))`.
+- Añadir encabezado de documentación y comentarios en funciones.
 
-#### [NEW] [Theme.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/theme/Theme.kt)
-- Definición de `EcoGuiaMobileTheme` y esquema de colores.
+### 2. Capa de Presentación (mobile)
 
-#### [NEW] [Color.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/theme/Color.kt)
-- Definición de los colores específicos detectados en las imágenes.
+#### [NEW] [AuthViewModel.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/presentation/AuthViewModel.kt)
+- Gestionar el estado de autenticación (Loading, Success, Error).
+- Llamar a los métodos del repositorio.
+- Incluir documentación completa.
 
-### 3. Componentes Reutilizables
+#### [MODIFY] [LoginScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/LoginScreen.kt)
+- Integrar con `AuthViewModel`.
+- Mostrar mensajes de error o indicadores de carga.
+- Añadir encabezado de documentación.
 
-#### [NEW] [CommonComponents.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/components/CommonComponents.kt)
-- `EcoTextField`: Campo de texto personalizado con bordes redondeados.
-- `EcoButton`: Botón con degradado Jade.
-- `EcoBackground`: Contenedor con el degradado de fondo oficial.
+#### [MODIFY] [SignUpScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/SignUpScreen.kt)
+- Integrar con `AuthViewModel`.
+- Añadir encabezado de documentación.
 
-### 4. Pantallas (Screens)
+## Verificación
 
-#### [NEW] [LoginScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/LoginScreen.kt)
-- Pantalla principal de acceso con campos de correo y contraseña.
-
-#### [NEW] [SignUpScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/SignUpScreen.kt)
-- Formulario de registro con Nombre Completo, Correo y Contraseña.
-
-#### [NEW] [RecoveryScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/RecoveryScreen.kt)
-- Pantalla para restablecer acceso mediante correo electrónico.
-
-#### [NEW] [ExplorationScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/ExplorationScreen.kt)
-- Pantalla principal de la app con mapa y lista de sitios recomendados.
-
-### 5. Navegación y MainActivity
-
-#### [MODIFY] [MainActivity.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/MainActivity.kt)
-- Reemplazar el `ControlPanel` actual por un `NavHost` que gestione las nuevas pantallas.
-- Mantener la funcionalidad de `EcoGuiaRepositoryImpl` para uso futuro.
-
-## Plan de Verificación
-
-1. **Renders de Preview:** Generar previsualizaciones de Compose para cada pantalla para asegurar fidelidad visual.
-2. **Pruebas de Flujo:** Navegar entre las 4 pantallas (Login -> SignUp -> Recovery -> Exploration) para validar las transiciones.
-3. **Consistencia Visual:** Comparar los resultados con las imágenes de referencia enviadas por el usuario.
+1. **Prueba de Registro:** Crear un usuario nuevo y verificar su existencia en la tabla `users` de Neon.
+2. **Prueba de Login:** Intentar acceder con las credenciales creadas.
+3. **Validación de Documentación:** Revisar que todos los archivos modificados tengan el formato de comentarios solicitado.
 
 ---
 
-> [!NOTE]
-> Por ahora, las pantallas serán puramente visuales y de navegación. Las funcionalidades de autenticación real se implementarán en una fase posterior.
+> [!IMPORTANT]
+> Estamos utilizando funciones nativas de PostgreSQL (`crypt` y `gen_salt`) para la seguridad. Esto asegura que las contraseñas nunca se guarden en texto plano, cumpliendo con las mejores prácticas de seguridad.
+
+> [!WARNING]
+> La extensión `pgcrypto` debe estar habilitada en tu base de datos Neon (el script de esquema inicial ya incluye la instrucción `CREATE EXTENSION IF NOT EXISTS pgcrypto;`).
