@@ -1,61 +1,52 @@
-# Plan de Implementación: Autenticación y Documentación
+# Plan de Implementación: Navegación por Sidebar y Pantalla de Opciones (Mobile)
 
-Este plan detalla la implementación de la lógica de inicio de sesión y registro de usuarios en la aplicación móvil, conectándolos con la base de datos Neon PostgreSQL, e incluyendo los estándares de documentación solicitados.
+Este plan detalla la corrección del sistema de navegación para incluir un menú lateral (Sidebar) reactivo y transformar el menú de opciones en una pantalla completa, siguiendo el flujo y diseño proporcionado en las imágenes.
 
-## Análisis Técnico
+## Análisis de Requerimientos
 
-Utilizaremos el esquema de base de datos existente que incluye la tabla `users` con soporte para `pgcrypto` (para manejo seguro de contraseñas mediante hashing en el servidor).
-
-### Funcionalidades a implementar:
-- **Registro:** Inserción de un nuevo usuario en la tabla `users`. La contraseña se guardará usando `crypt()` de PostgreSQL.
-- **Inicio de Sesión:** Consulta que verifica las credenciales del usuario comparando el hash de la contraseña.
-- **Documentación:** Cada archivo y función principal incluirá un bloque de comentarios con:
-    - Autor: `ZahirMora`
-    - Última actualización: `2026-07-20`
-    - Descripción de la funcionalidad.
+1.  **Menú Más Opciones:** Deja de ser un BottomSheet para convertirse en una **pantalla completa** (`MoreOptionsScreen`) con la cuadrícula de accesos.
+2.  **Menú Desplegable (Sidebar):** Se implementará un Sidebar lateral con el mismo color `DeepBlue` de la barra inferior. Este menú será **reactivo**: mostrará opciones relevantes según la pantalla actual (ej. en Edición de Perfil mostrará "Seguridad").
+3.  **Restricciones de Rol:** El usuario normal solo verá habilitado el acceso a "Mi colección", mientras que el administrador tendrá acceso total.
+4.  **Documentación ZahirMora:** Todos los archivos nuevos y modificados mantendrán el estándar de comentarios con autor y descripción.
 
 ## Cambios Propuestos
 
-### 1. Capa de Datos (shared)
+### 1. Componentes de Navegación
 
-#### [MODIFY] [RemoteEntities.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/shared/src/main/java/mx/utng/ecoguia/shared/domain/model/RemoteEntities.kt)
-- Añadir encabezado de documentación.
+#### [NEW] [SideBarMenu.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/components/SideBarMenu.kt)
+- Implementación del contenido del `ModalNavigationDrawer`.
+- Lógica reactiva para mostrar títulos dinámicos según el contexto de la aplicación.
+- Estilo visual unificado con `DeepBlue` y acentos `Jade`.
 
-#### [MODIFY] [EcoGuiaRepository.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/shared/src/main/java/mx/utng/ecoguia/shared/domain/repository/EcoGuiaRepository.kt)
-- Añadir métodos `login(email, password)` y `register(name, email, password)`.
-- Añadir encabezado de documentación.
+#### [MODIFY] [EcoNavigation.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/components/EcoNavigation.kt)
+- Eliminar `MoreOptionsSheet`.
+- Ajustar `EcoBottomBar` para que el cuarto icono dispare la apertura del Sidebar.
 
-#### [MODIFY] [EcoGuiaRepositoryImpl.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/shared/src/main/java/mx/utng/ecoguia/shared/data/repository/EcoGuiaRepositoryImpl.kt)
-- Implementar `login` usando `SELECT * FROM users WHERE email = ? AND password_hash = crypt(?, password_hash)`.
-- Implementar `register` usando `INSERT INTO users (display_name, email, password_hash) VALUES (?, ?, crypt(?, gen_salt('bf')))`.
-- Añadir encabezado de documentación y comentarios en funciones.
+### 2. Pantallas (Screens)
 
-### 2. Capa de Presentación (mobile)
+#### [NEW] [MoreOptionsScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/MoreOptionsScreen.kt)
+- Pantalla completa basada en la imagen 3.
+- Cuadrícula de tarjetas para: Mi colección, Miguel Hidalgo IA, Mi perfil, Modo offline, Ajustes y Panel.
 
-#### [NEW] [AuthViewModel.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/presentation/AuthViewModel.kt)
-- Gestionar el estado de autenticación (Loading, Success, Error).
-- Llamar a los métodos del repositorio.
-- Incluir documentación completa.
+### 3. Actividad Principal y Navegación
 
-#### [MODIFY] [LoginScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/LoginScreen.kt)
-- Integrar con `AuthViewModel`.
-- Mostrar mensajes de error o indicadores de carga.
-- Añadir encabezado de documentación.
+#### [MODIFY] [MainActivity.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/MainActivity.kt)
+- Integrar `ModalNavigationDrawer` como contenedor raíz de la aplicación principal.
+- Configurar el estado del Drawer (`DrawerState`) para que sea controlado por la barra inferior.
+- Añadir la ruta `more_options` al `NavHost`.
+- Pasar el estado del rol de usuario (Admin/Normal) a todos los componentes de navegación.
 
-#### [MODIFY] [SignUpScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/SignUpScreen.kt)
-- Integrar con `AuthViewModel`.
-- Añadir encabezado de documentación.
+## Plan de Verificación
 
-## Verificación
-
-1. **Prueba de Registro:** Crear un usuario nuevo y verificar su existencia en la tabla `users` de Neon.
-2. **Prueba de Login:** Intentar acceder con las credenciales creadas.
-3. **Validación de Documentación:** Revisar que todos los archivos modificados tengan el formato de comentarios solicitado.
+1.  **Sidebar Reactivo:** Verificar que en la pantalla de "Edición de Perfil" el Sidebar muestre la opción "Seguridad" (Imagen 6).
+2.  **Navegación de Pantalla:** Validar que se puede navegar a la pantalla de "Más Opciones" y desde allí a "Mi Colección".
+3.  **Fidelidad Visual:** Asegurar que el Sidebar use el color `DeepBlue` exacto de la barra inferior.
+4.  **Validación de Roles:** Confirmar que un usuario normal vea las opciones bloqueadas excepto "Mi Colección".
 
 ---
 
 > [!IMPORTANT]
-> Estamos utilizando funciones nativas de PostgreSQL (`crypt` y `gen_salt`) para la seguridad. Esto asegura que las contraseñas nunca se guarden en texto plano, cumpliendo con las mejores prácticas de seguridad.
+> El Sidebar debe sentirse como una extensión natural de la interfaz, manteniendo la normalización de colores en toda la aplicación.
 
-> [!WARNING]
-> La extensión `pgcrypto` debe estar habilitada en tu base de datos Neon (el script de esquema inicial ya incluye la instrucción `CREATE EXTENSION IF NOT EXISTS pgcrypto;`).
+> [!NOTE]
+> Autor: ZahirMora | Fecha: 2026-07-21

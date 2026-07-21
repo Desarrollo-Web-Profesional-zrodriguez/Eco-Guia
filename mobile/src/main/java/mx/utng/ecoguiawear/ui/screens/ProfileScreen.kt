@@ -1,15 +1,14 @@
 /**
- * Archivo: ExplorationScreen.kt
+ * Archivo: ProfileScreen.kt
  * Autor: ZahirMora
- * Fecha de última actualización: 2026-07-20
- * Descripción: Pantalla principal de exploración. Muestra el mapa y sitios recomendados.
+ * Fecha de última actualización: 2026-07-21
+ * Descripción: Pantalla de perfil de usuario. Muestra información pública, logros y estadísticas.
  */
 
 package mx.utng.ecoguiawear.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -21,99 +20,106 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
-import androidx.compose.ui.tooling.preview.Preview
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 
 /**
- * Composable que representa la pantalla de exploración.
+ * Composable que representa la pantalla de perfil.
  */
 @Composable
-fun ExplorationScreen(
-    onAdminClick: () -> Unit
+fun ProfileScreen(
+    onEditClick: () -> Unit
 ) {
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFF1F4F1))
     ) {
-        // Header Azul
+        // Header
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(140.dp)
                 .background(EcoGuiaColors.DeepBlue)
-                .padding(top = 32.dp, start = 16.dp, end = 16.dp, bottom = 16.dp)
+                .padding(top = 48.dp, start = 24.dp, end = 24.dp, bottom = 24.dp)
         ) {
             Column {
-                Text("Explorar", color = EcoGuiaColors.Text, fontSize = 18.sp)
-                Text("Cerca de ti", color = EcoGuiaColors.Text, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                Text("Mi Perfil", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text("Datos públicos", color = Color.White.copy(alpha = 0.7f), fontSize = 14.sp)
             }
             
             IconButton(
-                onClick = onAdminClick,
+                onClick = onEditClick,
                 modifier = Modifier.align(Alignment.TopEnd)
             ) {
-                Icon(
-                    imageVector = Icons.Default.AddCircle,
-                    contentDescription = "Admin",
-                    tint = EcoGuiaColors.Gold
-                )
+                Icon(Icons.Default.Edit, null, tint = Color.White)
             }
         }
-        
-        // Simulación de Mapa
-        Box(
+
+        // Profile Card
+        Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(180.dp)
-                .padding(horizontal = 16.dp)
-                .offset(y = (-20).dp)
-                .clip(RoundedCornerShape(24.dp))
-                .background(Color(0xFFE8F5E9)) // Color del mapa
+                .padding(16.dp),
+            colors = CardDefaults.cardColors(containerColor = EcoGuiaColors.Surface),
+            shape = RoundedCornerShape(24.dp)
         ) {
-            // Aquí iría el mapa real, por ahora un placeholder visual
-            Text("Mapa de Dolores Hidalgo", modifier = Modifier.align(Alignment.Center), color = Color.Gray)
-        }
-        
-        // Lista de Sitios
-        Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-            Text(
-                "Sitios recomendados",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 12.dp)
-            )
-            
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                item {
-                    RecommendedSiteItem(
-                        title = "Museo de la Independencia",
-                        subtitle = "Geo-Drops: 3 • A 20 m",
-                        icon = Icons.Default.Place,
-                        trailing = "Ir"
-                    )
+            Row(
+                modifier = Modifier.padding(24.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(80.dp)
+                        .background(EcoGuiaColors.JadeGradient, RoundedCornerShape(24.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("C", color = EcoGuiaColors.Background, fontSize = 32.sp, fontWeight = FontWeight.Bold)
                 }
-                item {
-                    RecommendedSiteItem(
-                        title = "Parroquia de Dolores",
-                        subtitle = "Ruta activa • A 350 m",
-                        icon = Icons.Default.Star,
-                        trailing = "1.2 km"
-                    )
+                
+                Column(modifier = Modifier.padding(start = 16.dp)) {
+                    Text("César M.", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    Text("@cesar_explora • Dolores Hidalgo", color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp)
                 }
             }
+        }
+
+        // Stats Section
+        Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+            Text("Ver perfil", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
+            
+            StatItem(
+                title = "Nivel de explorador",
+                subtitle = "Nivel 3 - Curador comunitario",
+                icon = Icons.Default.Star,
+                trailing = "Ver"
+            )
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            StatItem(
+                title = "Cápsulas publicadas",
+                subtitle = "24 aportes en la comunidad",
+                icon = Icons.Default.AddCircle,
+                trailing = "24"
+            )
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            StatItem(
+                title = "Colección guardada",
+                subtitle = "18 fotos y 4 rutas",
+                icon = Icons.Default.Favorite,
+                trailing = "18"
+            )
         }
     }
 }
 
-/**
- * Elemento de lista para un sitio recomendado.
- */
 @Composable
-fun RecommendedSiteItem(
+fun StatItem(
     title: String,
     subtitle: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
@@ -160,8 +166,8 @@ fun RecommendedSiteItem(
 
 @Preview(showBackground = true)
 @Composable
-fun ExplorationScreenPreview() {
+fun ProfileScreenPreview() {
     EcoGuiaMobileTheme {
-        ExplorationScreen({})
+        ProfileScreen({})
     }
 }

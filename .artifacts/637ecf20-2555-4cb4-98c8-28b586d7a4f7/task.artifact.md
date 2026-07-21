@@ -1,9 +1,9 @@
-# Tareas: Autenticación y Documentación
+# Tareas: Sidebar Reactivo y Pantalla de Opciones
 
-- [x] Documentar y actualizar `RemoteEntities.kt`
-- [x] Documentar y actualizar interfaz `EcoGuiaRepository.kt`
-- [x] Implementar y documentar lógica de Auth en `EcoGuiaRepositoryImpl.kt`
-- [x] Crear y documentar `AuthViewModel.kt` en el módulo móvil
-- [x] Integrar y documentar `LoginScreen.kt`
-- [x] Integrar y documentar `SignUpScreen.kt`
-- [x] Verificar registro y login con Neon
+- [x] Implementar contenido del Sidebar (`SideBarMenu.kt`)
+- [x] Crear pantalla completa "Menú Más Opciones" (`MoreOptionsScreen.kt`)
+- [x] Modificar `EcoNavigation.kt` para integrar Sidebar en la barra inferior
+- [x] Actualizar `MainActivity.kt` con `ModalNavigationDrawer` y rutas
+- [x] Aplicar lógica de roles y reactividad en el Sidebar
+- [x] Documentar según estándar ZahirMora
+- [x] Verificar flujo de navegación Sidebar -> Pantallas

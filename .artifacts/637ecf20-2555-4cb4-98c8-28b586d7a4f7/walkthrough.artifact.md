@@ -1,42 +1,31 @@
-# Walkthrough: Funcionalidad de Autenticación y Documentación Estándar
+# Walkthrough: Menú Desplegable de Abajo hacia Arriba
 
-Se ha implementado la lógica de negocio para el inicio de sesión y registro de usuarios, conectando las interfaces con la base de datos Neon. Además, se ha aplicado el estándar de documentación solicitado en todos los archivos y funciones principales.
+Se ha ajustado el sistema de navegación para que el menú de opciones emerja desde la parte inferior de la pantalla (Bottom Sheet), cumpliendo con el requerimiento de movimiento "abajo para arriba".
 
 ## Cambios Realizados
 
-### Capa de Datos (Módulo Shared)
-- **[EcoGuiaRepository.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/shared/src/main/java/mx/utng/ecoguia/shared/domain/repository/EcoGuiaRepository.kt):** Se añadieron los métodos `login` y `register` con su respectiva documentación.
-- **[EcoGuiaRepositoryImpl.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/shared/src/main/java/mx/utng/ecoguia/shared/data/repository/EcoGuiaRepositoryImpl.kt):**
-    - Implementación de seguridad usando `pgcrypto` de PostgreSQL.
-    - Las contraseñas se cifran en el servidor usando `crypt` y `gen_salt('bf')`.
-    - Se corrigieron las consultas para usar placeholders (`$1`, `$2`) evitando inyecciones SQL.
+### Navegación Estructural
+- **[BottomMenu.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/components/BottomMenu.kt):**
+    - Nuevo componente `BottomMenuSheet` que utiliza `ModalBottomSheet`.
+    - Mantiene la lógica reactiva: muestra opciones como "Seguridad" solo cuando es relevante (ej. en Edición de Perfil).
+    - Diseño unificado con el color `DeepBlue` y tirador (`DragHandle`) color `Jade`.
+- **[MainActivity.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/MainActivity.kt):**
+    - Se eliminó el Sidebar lateral (`ModalNavigationDrawer`).
+    - Se integró el nuevo flujo para disparar el menú inferior desde la barra de navegación.
 
-### Capa de Presentación (Módulo Mobile)
-- **[AuthViewModel.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/viewmodel/AuthViewModel.kt):** Gestiona el flujo de autenticación, manejando estados de carga, éxito y error.
-- **[LoginScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/LoginScreen.kt):** Integrada con el ViewModel para validar credenciales reales.
-- **[SignUpScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/SignUpScreen.kt):** Permite la creación de usuarios reales en la nube.
+## Estándar de Documentación ZahirMora
+Todos los archivos han sido actualizados con el encabezado de autoría, fecha y descripción de funciones principales.
 
-## Estándar de Documentación Aplicado
+## Cómo verificar el funcionamiento
 
-Todos los archivos modificados incluyen ahora un encabezado con el siguiente formato:
-```kotlin
-/**
- * Archivo: [Nombre]
- * Autor: ZahirMora
- * Fecha de última actualización: 2026-07-20
- * Descripción: [Detalle de funcionalidad]
- */
-```
-Además, las funciones principales cuentan con KDoc describiendo su propósito.
-
-## Verificación de Funcionalidad
-
-1.  **Registro:** Al llenar el formulario en "Crea tu cuenta" y presionar el botón, el usuario se guarda en la tabla `users` de Neon.
-2.  **Login:** El sistema valida el correo y la contraseña (hace el match del hash en el servidor) y permite el acceso a la pantalla de Exploración.
-3.  **Seguridad:** Las contraseñas nunca viajan ni se guardan en texto plano en la base de datos.
-
-> [!IMPORTANT]
-> El autor `ZahirMora` ha sido establecido como el responsable de estas actualizaciones siguiendo tus instrucciones.
+1.  **Menú Inferior:** Presiona el icono (≡) en la barra de navegación inferior. El menú emergerá desde abajo cubriendo parcialmente la pantalla.
+2.  **Pantalla de Opciones:** La pantalla "Menú Más Opciones" sigue siendo una pantalla completa independiente, accesible desde el icono dorado de Admin en Exploración.
+3.  **Reactividad Contextual:**
+    *   En **Exploración**: El menú muestra opciones generales (Mi Colección, IA, Perfil).
+    *   En **Editar Perfil**: El menú se adapta y muestra **"Seguridad"** como opción destacada.
 
 > [!TIP]
-> Puedes usar el correo `cesar@email.com` como prueba inicial después de registrarlo en la pantalla de SignUp.
+> El menú inferior usa `ModalBottomSheet` de Material 3, lo que permite cerrarlo deslizando hacia abajo o tocando fuera de él, brindando una experiencia nativa y fluida.
+
+> [!IMPORTANT]
+> Se eliminó el archivo anterior `SideBarMenu.kt` para mantener la limpieza del proyecto.
