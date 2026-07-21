@@ -1,31 +1,35 @@
-# Walkthrough: Menú Desplegable de Abajo hacia Arriba
+# Walkthrough: Datos de Perfil y Navegación de Seguridad Inteligente
 
-Se ha ajustado el sistema de navegación para que el menú de opciones emerja desde la parte inferior de la pantalla (Bottom Sheet), cumpliendo con el requerimiento de movimiento "abajo para arriba".
+Se han integrado los datos reales del usuario autenticado en las pantallas de perfil y se ha optimizado la navegación de seguridad, moviéndola exclusivamente al menú desplegable contextual.
 
 ## Cambios Realizados
 
-### Navegación Estructural
+### Integración de Datos Reales
+- **[AuthViewModel.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/viewmodel/AuthViewModel.kt):** Se añadió la propiedad `currentUser` para exponer la información del usuario tras un inicio de sesión exitoso.
+- **[ProfileScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/ProfileScreen.kt):** La pantalla ahora recibe el objeto `user` y muestra dinámicamente el Nombre, Correo e inicial del usuario.
+- **[EditProfileScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/EditProfileScreen.kt):** Los campos de edición se inicializan con los datos reales del usuario (Nombre, Apellido, Usuario generado).
+
+### Navegación Contextual (Seguridad)
 - **[BottomMenu.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/components/BottomMenu.kt):**
-    - Nuevo componente `BottomMenuSheet` que utiliza `ModalBottomSheet`.
-    - Mantiene la lógica reactiva: muestra opciones como "Seguridad" solo cuando es relevante (ej. en Edición de Perfil).
-    - Diseño unificado con el color `DeepBlue` y tirador (`DragHandle`) color `Jade`.
-- **[MainActivity.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/MainActivity.kt):**
-    - Se eliminó el Sidebar lateral (`ModalNavigationDrawer`).
-    - Se integró el nuevo flujo para disparar el menú inferior desde la barra de navegación.
+    - Se implementó lógica para detectar la pantalla actual.
+    - El acceso a **"Seguridad"** ahora aparece únicamente en el menú desplegable cuando el usuario está en las pantallas de Perfil o Edición.
+    - Se añadió también la opción de **"Cerrar Sesión"** en este menú contextual.
+- **[EditProfileScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/EditProfileScreen.kt):** Se eliminó el botón estático de "Seguridad" para limpiar la interfaz, delegando esa función al menú desplegable.
 
 ## Estándar de Documentación ZahirMora
-Todos los archivos han sido actualizados con el encabezado de autoría, fecha y descripción de funciones principales.
+Todos los archivos y funciones principales han sido documentados con el encabezado de autoría, fecha y descripción.
 
-## Cómo verificar el funcionamiento
+## Cómo verificar los cambios
 
-1.  **Menú Inferior:** Presiona el icono (≡) en la barra de navegación inferior. El menú emergerá desde abajo cubriendo parcialmente la pantalla.
-2.  **Pantalla de Opciones:** La pantalla "Menú Más Opciones" sigue siendo una pantalla completa independiente, accesible desde el icono dorado de Admin en Exploración.
-3.  **Reactividad Contextual:**
-    *   En **Exploración**: El menú muestra opciones generales (Mi Colección, IA, Perfil).
-    *   En **Editar Perfil**: El menú se adapta y muestra **"Seguridad"** como opción destacada.
+1.  **Login:** Inicia sesión con cualquier usuario registrado (o usa el registro).
+2.  **Perfil:** Ve a "Mi Perfil". Verás tu nombre y correo reales de la base de datos Neon.
+3.  **Seguridad Dinámica:**
+    *   Abre el menú inferior desde **Exploración**: Verás las opciones generales.
+    *   Navega a **Mi Perfil**: Abre el menú inferior; verás que ahora aparece la opción **"Seguridad"** y **"Editar Datos"**.
+4.  **Edición:** Entra a editar tu perfil. Nota que ya no hay un botón de seguridad estorbando, pero puedes acceder a él desde el menú inferior en cualquier momento mientras estés en esa sección.
 
 > [!TIP]
-> El menú inferior usa `ModalBottomSheet` de Material 3, lo que permite cerrarlo deslizando hacia abajo o tocando fuera de él, brindando una experiencia nativa y fluida.
+> La inicial del icono de perfil se genera automáticamente a partir de tu nombre registrado.
 
 > [!IMPORTANT]
-> Se eliminó el archivo anterior `SideBarMenu.kt` para mantener la limpieza del proyecto.
+> El botón "Cerrar Sesión" en el menú contextual te devolverá a la pantalla de Login y limpiará el estado de navegación.

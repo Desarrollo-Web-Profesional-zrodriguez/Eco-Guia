@@ -1,9 +1,9 @@
-# Tareas: Sidebar Reactivo y Pantalla de Opciones
+# Tareas: Perfil con Datos Reales y Navegación Dinámica
 
-- [x] Implementar contenido del Sidebar (`SideBarMenu.kt`)
-- [x] Crear pantalla completa "Menú Más Opciones" (`MoreOptionsScreen.kt`)
-- [x] Modificar `EcoNavigation.kt` para integrar Sidebar en la barra inferior
-- [x] Actualizar `MainActivity.kt` con `ModalNavigationDrawer` y rutas
-- [x] Aplicar lógica de roles y reactividad en el Sidebar
-- [x] Documentar según estándar ZahirMora
-- [x] Verificar flujo de navegación Sidebar -> Pantallas
+- [x] Exponer usuario actual en `AuthViewModel.kt`
+- [x] Implementar lógica dinámica en `BottomMenu.kt` (Opción Seguridad condicionada)
+- [x] Adaptar `ProfileScreen.kt` para mostrar datos del usuario
+- [x] Refactorizar `EditProfileScreen.kt` (Carga de datos y eliminación de botón)
+- [x] Actualizar `MainActivity.kt` con inyección de datos de perfil
+- [x] Documentar cambios bajo estándar ZahirMora
+- [x] Verificar consistencia de datos y navegación reactiva

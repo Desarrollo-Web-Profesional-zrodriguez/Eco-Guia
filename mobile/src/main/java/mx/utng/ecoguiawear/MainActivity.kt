@@ -128,11 +128,14 @@ fun MainAppContainer(repository: EcoGuiaRepositoryImpl) {
                     MyCollectionScreen()
                 }
                 composable("profile") {
-                    ProfileScreen(onEditClick = { navController.navigate("edit_profile") })
+                    ProfileScreen(
+                        user = authViewModel.currentUser,
+                        onEditClick = { navController.navigate("edit_profile") }
+                    )
                 }
                 composable("edit_profile") {
                     EditProfileScreen(
-                        onSecurityClick = { navController.navigate("security") },
+                        user = authViewModel.currentUser,
                         onSaveClick = { navController.popBackStack() }
                     )
                 }

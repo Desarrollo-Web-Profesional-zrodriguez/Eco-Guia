@@ -1,52 +1,69 @@
-# Plan de Implementación: Navegación por Sidebar y Pantalla de Opciones (Mobile)
+# Plan de Implementación: Perfil, Notificaciones y Modelado de Pantallas (Mobile)
 
-Este plan detalla la corrección del sistema de navegación para incluir un menú lateral (Sidebar) reactivo y transformar el menú de opciones en una pantalla completa, siguiendo el flujo y diseño proporcionado en las imágenes.
+Este plan detalla la implementación de la actualización de perfil, un sistema de notificaciones centralizado, ajustes en la navegación (cerrar sesión siempre visible) y el modelado de nuevas pantallas de proximidad y captura de Geo-Drops.
 
 ## Análisis de Requerimientos
 
-1.  **Menú Más Opciones:** Deja de ser un BottomSheet para convertirse en una **pantalla completa** (`MoreOptionsScreen`) con la cuadrícula de accesos.
-2.  **Menú Desplegable (Sidebar):** Se implementará un Sidebar lateral con el mismo color `DeepBlue` de la barra inferior. Este menú será **reactivo**: mostrará opciones relevantes según la pantalla actual (ej. en Edición de Perfil mostrará "Seguridad").
-3.  **Restricciones de Rol:** El usuario normal solo verá habilitado el acceso a "Mi colección", mientras que el administrador tendrá acceso total.
-4.  **Documentación ZahirMora:** Todos los archivos nuevos y modificados mantendrán el estándar de comentarios con autor y descripción.
+1.  **Actualización de Perfil:** Permitir que el usuario guarde cambios en su nombre desde la pantalla de edición, reflejándose inmediatamente en toda la app.
+2.  **Cerrar Sesión Global:** La opción de cerrar sesión debe estar siempre presente en el menú desplegable inferior y redirigir al Login.
+3.  **Notificaciones Centralizadas:** Crear un sistema de mensajes (Toasts/Snackbar) reactivo y normalizado para eventos clave (Login exitoso/fallido, perfil editado, sesión cerrada).
+4.  **Ajuste Visual:** Eliminar el encabezado con el nombre de la app ("Eco-Guía Control") de la parte superior.
+5.  **Modelado de Nuevas Pantallas:**
+    *   Alertas de Proximidad.
+    *   Cámara Geo-Drops (Captura).
+    *   Nueva Cápsula / Anclar Foto.
 
 ## Cambios Propuestos
 
-### 1. Componentes de Navegación
+### 1. Capa de Datos (shared)
 
-#### [NEW] [SideBarMenu.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/components/SideBarMenu.kt)
-- Implementación del contenido del `ModalNavigationDrawer`.
-- Lógica reactiva para mostrar títulos dinámicos según el contexto de la aplicación.
-- Estilo visual unificado con `DeepBlue` y acentos `Jade`.
+#### [MODIFY] [EcoGuiaRepository.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/shared/src/main/java/mx/utng/ecoguia/shared/domain/repository/EcoGuiaRepository.kt)
+- Añadir `suspend fun updateUser(id: String, displayName: String): Boolean`.
 
-#### [MODIFY] [EcoNavigation.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/components/EcoNavigation.kt)
-- Eliminar `MoreOptionsSheet`.
-- Ajustar `EcoBottomBar` para que el cuarto icono dispare la apertura del Sidebar.
+#### [MODIFY] [EcoGuiaRepositoryImpl.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/shared/src/main/java/mx/utng/ecoguia/shared/data/repository/EcoGuiaRepositoryImpl.kt)
+- Implementar `updateUser` con una consulta `UPDATE users SET display_name = $1 WHERE id = $2`.
 
-### 2. Pantallas (Screens)
+### 2. Sistema de Notificaciones (mobile)
 
-#### [NEW] [MoreOptionsScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/MoreOptionsScreen.kt)
-- Pantalla completa basada en la imagen 3.
-- Cuadrícula de tarjetas para: Mi colección, Miguel Hidalgo IA, Mi perfil, Modo offline, Ajustes y Panel.
+#### [NEW] [NotificationViewModel.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/viewmodel/NotificationViewModel.kt)
+- Clase central para gestionar una cola de mensajes o un estado de "último mensaje" que la UI mostrará automáticamente.
 
-### 3. Actividad Principal y Navegación
+### 3. Lógica de Usuario y Auth
+
+#### [MODIFY] [AuthViewModel.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/viewmodel/AuthViewModel.kt)
+- Implementar `updateProfile(newName)` que actualice la base de datos y el estado local `Success(user)`.
+- Implementar `logout()` que limpie el estado del usuario.
+- Integrar llamadas al `NotificationViewModel` para disparar alertas reactivas.
+
+### 4. Componentes y Navegación
+
+#### [MODIFY] [BottomMenu.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/components/BottomMenu.kt)
+- Asegurar que la opción **"Cerrar Sesión"** sea inyectada en la lista base de `getContextItems`, haciéndola siempre visible.
 
 #### [MODIFY] [MainActivity.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/MainActivity.kt)
-- Integrar `ModalNavigationDrawer` como contenedor raíz de la aplicación principal.
-- Configurar el estado del Drawer (`DrawerState`) para que sea controlado por la barra inferior.
-- Añadir la ruta `more_options` al `NavHost`.
-- Pasar el estado del rol de usuario (Admin/Normal) a todos los componentes de navegación.
+- Eliminar cualquier referencia a `TopAppBar` o títulos de sistema para limpiar el encabezado.
+- Integrar un `SnackbarHost` o componente personalizado de notificaciones en el `Scaffold` global vinculado al `NotificationViewModel`.
+
+### 5. Modelado de Pantallas (Screens)
+
+#### [NEW] [ProximityAlertsScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/ProximityAlertsScreen.kt)
+- Basado en Imagen 2: Título "Alertas Proximidad", card informativa "Geo-Drop oculto cerca" y lista de notificaciones.
+
+#### [NEW] [CameraGeoDropScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/CameraGeoDropScreen.kt)
+- Basado en Imagen 4: Interfaz de cámara con visor circular, título "Cámara Geo-Drops" y botón "Capturar".
+
+#### [NEW] [AnchorPhotoScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/AnchorPhotoScreen.kt)
+- Basado en Imagen 5: Formulario "Nueva cápsula", visor de foto capturada y botón "Anclar foto al sitio".
 
 ## Plan de Verificación
 
-1.  **Sidebar Reactivo:** Verificar que en la pantalla de "Edición de Perfil" el Sidebar muestre la opción "Seguridad" (Imagen 6).
-2.  **Navegación de Pantalla:** Validar que se puede navegar a la pantalla de "Más Opciones" y desde allí a "Mi Colección".
-3.  **Fidelidad Visual:** Asegurar que el Sidebar use el color `DeepBlue` exacto de la barra inferior.
-4.  **Validación de Roles:** Confirmar que un usuario normal vea las opciones bloqueadas excepto "Mi Colección".
+1.  **Edición:** Editar el nombre, guardar y verificar que el cambio se ve reflejado inmediatamente en la pantalla de Perfil y se muestra una notificación de éxito.
+2.  **Notificaciones:** Validar que aparezca un mensaje visual al hacer login (Éxito o Error) y al cerrar sesión.
+3.  **Cierre de Sesión:** Confirmar que al presionar "Cerrar Sesión" se redirige al Login y se muestra la notificación.
+4.  **Visual:** Comprobar que el área superior de la app está limpia de títulos automáticos.
+5.  **Mapeo:** Navegar a las nuevas pantallas para validar que el diseño estructural coincide con las capturas.
 
 ---
 
 > [!IMPORTANT]
-> El Sidebar debe sentirse como una extensión natural de la interfaz, manteniendo la normalización de colores en toda la aplicación.
-
-> [!NOTE]
-> Autor: ZahirMora | Fecha: 2026-07-21
+> Todas las implementaciones seguirán el estándar de documentación: **Autor: ZahirMora | Fecha: 2026-07-21**.

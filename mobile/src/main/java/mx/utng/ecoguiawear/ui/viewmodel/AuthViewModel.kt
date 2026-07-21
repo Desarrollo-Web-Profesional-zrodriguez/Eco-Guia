@@ -34,6 +34,12 @@ class AuthViewModel(
     val authState: State<AuthState> = _authState
 
     /**
+     * Obtiene el usuario actualmente autenticado si el estado es Success.
+     */
+    val currentUser: RemoteUser?
+        get() = (authState.value as? AuthState.Success)?.user
+
+    /**
      * Intenta iniciar sesión con el correo y contraseña proporcionados.
      */
     fun login(email: String, password_hash: String) {

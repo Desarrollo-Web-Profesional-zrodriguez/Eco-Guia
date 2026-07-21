@@ -22,6 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import mx.utng.ecoguia.shared.domain.model.RemoteUser
 import mx.utng.ecoguiawear.ui.components.*
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
@@ -31,12 +32,12 @@ import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
  */
 @Composable
 fun EditProfileScreen(
-    onSecurityClick: () -> Unit,
+    user: RemoteUser?,
     onSaveClick: () -> Unit
 ) {
-    var name by remember { mutableStateOf("César") }
-    var lastName by remember { mutableStateOf("Martínez") }
-    var publicUser by remember { mutableStateOf("@cesar_explora") }
+    var name by remember { mutableStateOf(user?.displayName?.split(" ")?.getOrNull(0) ?: "") }
+    var lastName by remember { mutableStateOf(user?.displayName?.split(" ")?.getOrNull(1) ?: "") }
+    var publicUser by remember { mutableStateOf("@${user?.displayName?.lowercase()?.replace(" ", "_") ?: "usuario"}") }
     var bio by remember { mutableStateOf("Me gusta descubrir detalles históricos y compartir cápsulas.") }
 
     Column(
@@ -104,19 +105,6 @@ fun EditProfileScreen(
             item { Spacer(modifier = Modifier.height(24.dp)) }
             
             item {
-                OutlinedButton(
-                    onClick = onSecurityClick,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(50.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Black)
-                ) {
-                    Text("Seguridad", fontWeight = FontWeight.Bold)
-                }
-            }
-            
-            item {
                 EcoButton(
                     text = "Guardar cambios",
                     onClick = onSaveClick
@@ -130,6 +118,6 @@ fun EditProfileScreen(
 @Composable
 fun EditProfileScreenPreview() {
     EcoGuiaMobileTheme {
-        EditProfileScreen({}, {})
+        EditProfileScreen(null, {})
     }
 }

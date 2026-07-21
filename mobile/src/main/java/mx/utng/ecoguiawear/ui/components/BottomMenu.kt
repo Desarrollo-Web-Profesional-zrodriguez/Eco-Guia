@@ -130,17 +130,22 @@ fun ContextMenuItemRow(
  * Obtiene las opciones del menú según la pantalla donde se encuentre el usuario.
  */
 private fun getContextItems(route: String, isAdmin: Boolean): List<ContextMenuItem> {
-    return when (route) {
-        "edit_profile" -> listOf(
+    val baseItems = mutableListOf(
+        ContextMenuItem("Mi Colección", Icons.Default.Favorite, "collection"),
+        ContextMenuItem("Miguel Hidalgo IA", Icons.Default.AutoAwesome, "chat_ia", enabled = isAdmin),
+        ContextMenuItem("Mi Perfil", Icons.Default.AccountCircle, "profile", enabled = isAdmin),
+        ContextMenuItem("Ajustes", Icons.Default.Settings, "settings", enabled = isAdmin)
+    )
+
+    // Si estamos en perfil o edición, añadimos Seguridad prioritariamente
+    if (route == "profile" || route == "edit_profile") {
+        return listOf(
             ContextMenuItem("Seguridad", Icons.Default.Security, "security"),
-            ContextMenuItem("Ver Perfil", Icons.Default.Person, "profile"),
+            ContextMenuItem("Editar Datos", Icons.Default.Edit, "edit_profile"),
+            ContextMenuItem("Cerrar Sesión", Icons.Default.ExitToApp, "login"),
             ContextMenuItem("Mi Colección", Icons.Default.Favorite, "collection")
         )
-        else -> listOf(
-            ContextMenuItem("Mi Colección", Icons.Default.Favorite, "collection"),
-            ContextMenuItem("Miguel Hidalgo IA", Icons.Default.AutoAwesome, "chat_ia", enabled = isAdmin),
-            ContextMenuItem("Mi Perfil", Icons.Default.AccountCircle, "profile", enabled = isAdmin),
-            ContextMenuItem("Ajustes", Icons.Default.Settings, "settings", enabled = isAdmin)
-        )
     }
+
+    return baseItems
 }

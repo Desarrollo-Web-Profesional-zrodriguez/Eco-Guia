@@ -23,6 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import mx.utng.ecoguia.shared.domain.model.RemoteUser
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 
@@ -31,6 +32,7 @@ import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
  */
 @Composable
 fun ProfileScreen(
+    user: RemoteUser?,
     onEditClick: () -> Unit
 ) {
     Column(
@@ -76,12 +78,26 @@ fun ProfileScreen(
                         .background(EcoGuiaColors.JadeGradient, RoundedCornerShape(24.dp)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("C", color = EcoGuiaColors.Background, fontSize = 32.sp, fontWeight = FontWeight.Bold)
+                    Text(
+                        text = user?.displayName?.take(1)?.uppercase() ?: "U", 
+                        color = EcoGuiaColors.Background, 
+                        fontSize = 32.sp, 
+                        fontWeight = FontWeight.Bold
+                    )
                 }
                 
                 Column(modifier = Modifier.padding(start = 16.dp)) {
-                    Text("César M.", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                    Text("@cesar_explora • Dolores Hidalgo", color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp)
+                    Text(
+                        text = user?.displayName ?: "Usuario Eco-Guía", 
+                        color = Color.White, 
+                        fontSize = 18.sp, 
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = user?.email ?: "sin_correo@ejemplo.com", 
+                        color = Color.White.copy(alpha = 0.7f), 
+                        fontSize = 12.sp
+                    )
                 }
             }
         }
@@ -168,6 +184,6 @@ fun StatItem(
 @Composable
 fun ProfileScreenPreview() {
     EcoGuiaMobileTheme {
-        ProfileScreen({})
+        ProfileScreen(null, {})
     }
 }
