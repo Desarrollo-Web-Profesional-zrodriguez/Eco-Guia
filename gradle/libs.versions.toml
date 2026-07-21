@@ -1,6 +1,6 @@
 [versions]
-agp = "9.2.1"
-kotlin = "2.1.0"
+agp = "9.3.0"
+kotlin = "2.2.10"
 activityCompose = "1.13.0"
 composeBom = "2024.09.00"
 coreSplashscreen = "1.2.0"
@@ -15,7 +15,11 @@ wearToolingPreview = "1.0.0"
 materialIconsExtended = "1.7.5"
 material3 = "1.3.1"
 room = "2.8.4"
-ksp = "2.1.0-1.0.29"
+ksp = "2.3.2"
+ktor = "3.0.3"
+kotlinxSerializationJson = "1.7.3"
+navigationCompose = "2.8.5"
+camerax = "1.4.0"
 
 [libraries]
 androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
@@ -45,10 +49,21 @@ wear-compose-navigation = { group = "androidx.wear.compose", name = "compose-nav
 horologist-compose-layout = { group = "com.google.android.horologist", name = "horologist-compose-layout", version = "0.6.22" }
 wear-tooling-preview = { group = "androidx.wear", name = "wear-tooling-preview", version.ref = "wearToolingPreview" }
 compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
+ktor-client-core = { group = "io.ktor", name = "ktor-client-core", version.ref = "ktor" }
+ktor-client-okhttp = { group = "io.ktor", name = "ktor-client-okhttp", version.ref = "ktor" }
+ktor-client-content-negotiation = { group = "io.ktor", name = "ktor-client-content-negotiation", version.ref = "ktor" }
+ktor-serialization-kotlinx-json = { group = "io.ktor", name = "ktor-serialization-kotlinx-json", version.ref = "ktor" }
+kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
+navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
+androidx-camera-core = { group = "androidx.camera", name = "camera-core", version.ref = "camerax" }
+androidx-camera-camera2 = { group = "androidx.camera", name = "camera-camera2", version.ref = "camerax" }
+androidx-camera-lifecycle = { group = "androidx.camera", name = "camera-lifecycle", version.ref = "camerax" }
+androidx-camera-view = { group = "androidx.camera", name = "camera-view", version.ref = "camerax" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 android-library = { id = "com.android.library", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }

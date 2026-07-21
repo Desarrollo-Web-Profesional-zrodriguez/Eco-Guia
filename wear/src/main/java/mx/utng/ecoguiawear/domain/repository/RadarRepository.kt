@@ -20,4 +20,5 @@ interface RadarRepository {
     fun resetDemo()
     fun completeArrival()
     fun updateHaptics(enabled: Boolean, strength: HapticStrength)
+    fun refreshNearbyTargets()
 }

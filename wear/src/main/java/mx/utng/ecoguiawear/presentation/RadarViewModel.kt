@@ -26,8 +26,13 @@ class RadarViewModel(
 
     fun startDemo() {
         repository.startRadar()
+        repository.refreshNearbyTargets() // Refresh from Neon
         pulse(HapticPulse.LINKED)
         sendPhoneEvent(PhoneMessageClient.PATH_RADAR_STATE, "demo-started")
+    }
+
+    fun refreshFromCloud() {
+        repository.refreshNearbyTargets()
     }
 
     fun toggleRadar() {

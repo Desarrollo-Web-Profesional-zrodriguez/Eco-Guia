@@ -30,6 +30,7 @@ fun RadarScreen(
     onOpenArrival: () -> Unit,
     onOpenSummary: () -> Unit,
     onOpenSettings: () -> Unit,
+    onRefresh: () -> Unit = {},
     onOpenStealth: () -> Unit = {},
     onNavigateBack: () -> Unit = {},
     requestFocus: Boolean = true
@@ -41,6 +42,23 @@ fun RadarScreen(
             ScreenHeader(
                 title = "Radar activo",
                 subtitle = state.lastAlert
+            )
+        }
+        item {
+            Button(
+                label = { 
+                    Text(
+                        text = "Refrescar Neon",
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center
+                    ) 
+                },
+                onClick = onRefresh,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = EcoGuiaColors.Gold,
+                    contentColor = EcoGuiaColors.Background
+                ),
+                modifier = Modifier.fillMaxWidth()
             )
         }
         item {

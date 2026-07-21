@@ -87,6 +87,7 @@ fun RadarPagerScreen(
                         scope.launch { pagerState.animateScrollToPage(3) }
                     },
                     onOpenSettings = { /* Page 0 handles settings back */ },
+                    onRefresh = viewModel::refreshFromCloud,
                     onNavigateBack = { 
                         scope.launch { pagerState.animateScrollToPage(0) }
                     },
