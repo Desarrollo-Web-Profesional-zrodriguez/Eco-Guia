@@ -1,9 +1,12 @@
-# Tareas: Perfil con Datos Reales y Navegación Dinámica
+# Tareas: Perfil, Notificaciones y Nuevas Pantallas
 
-- [x] Exponer usuario actual en `AuthViewModel.kt`
-- [x] Implementar lógica dinámica en `BottomMenu.kt` (Opción Seguridad condicionada)
-- [x] Adaptar `ProfileScreen.kt` para mostrar datos del usuario
-- [x] Refactorizar `EditProfileScreen.kt` (Carga de datos y eliminación de botón)
-- [x] Actualizar `MainActivity.kt` con inyección de datos de perfil
-- [x] Documentar cambios bajo estándar ZahirMora
-- [x] Verificar consistencia de datos y navegación reactiva
+- [x] Implementar `updateUser` en el Repositorio (`Shared`)
+- [x] Crear sistema de notificaciones centralizado (`NotificationViewModel.kt`)
+- [x] Actualizar `AuthViewModel.kt` (Update Profile, Logout y Alertas)
+- [x] Ajustar `BottomMenu.kt` (Cerrar Sesión global)
+- [x] Limpiar cabecera de la app en `MainActivity.kt` e integrar Notificaciones
+- [x] Implementar pantalla "Alertas Proximidad" (`ProximityAlertsScreen.kt`)
+- [x] Implementar pantalla "Cámara Geo-Drops" (`CameraGeoDropScreen.kt`)
+- [x] Implementar pantalla "Nueva Cápsula" (`AnchorPhotoScreen.kt`)
+- [x] Documentar todo bajo el estándar ZahirMora
+- [x] Verificar actualización de perfil y flujo de notificaciones

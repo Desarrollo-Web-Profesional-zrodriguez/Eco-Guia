@@ -48,6 +48,12 @@ interface EcoGuiaRepository {
     suspend fun register(displayName: String, email: String, password_hash: String): Boolean
 
     /**
+     * Actualiza el nombre a mostrar de un usuario existente.
+     * Retorna verdadero si la operación fue exitosa.
+     */
+    suspend fun updateUser(id: String, displayName: String): Boolean
+
+    /**
      * Prueba la conexión con el servidor de base de datos.
      */
     suspend fun testConnection(): String

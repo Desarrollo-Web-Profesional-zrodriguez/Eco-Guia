@@ -34,6 +34,18 @@ class AuthViewModel(
     val authState: State<AuthState> = _authState
 
     /**
+     * Referencia opcional al sistema de notificaciones para disparar alertas globales.
+     */
+    private var notificationViewModel: NotificationViewModel? = null
+
+    /**
+     * Configura el ViewModel de notificaciones para ser usado por este AuthViewModel.
+     */
+    fun initNotifications(nv: NotificationViewModel) {
+        notificationViewModel = nv
+    }
+
+    /**
      * Obtiene el usuario actualmente autenticado si el estado es Success.
      */
     val currentUser: RemoteUser?
@@ -48,8 +60,10 @@ class AuthViewModel(
             val user = repository.login(email, password_hash)
             if (user != null) {
                 _authState.value = AuthState.Success(user)
+                notificationViewModel?.showNotification("¡Bienvenido, ${user.displayName}!", NotificationType.SUCCESS)
             } else {
                 _authState.value = AuthState.Error("Credenciales incorrectas o usuario inactivo.")
+                notificationViewModel?.showNotification("Error de acceso: Credenciales no válidas.", NotificationType.ERROR)
             }
         }
     }
@@ -63,10 +77,38 @@ class AuthViewModel(
             val success = repository.register(name, email, password_hash)
             if (success) {
                 _authState.value = AuthState.Registered
+                notificationViewModel?.showNotification("Cuenta creada con éxito.", NotificationType.SUCCESS)
             } else {
                 _authState.value = AuthState.Error("Error al crear la cuenta. El correo podría ya estar registrado.")
+                notificationViewModel?.showNotification("No se pudo completar el registro.", NotificationType.ERROR)
             }
         }
+    }
+
+    /**
+     * Actualiza el nombre del perfil del usuario actual.
+     */
+    fun updateProfile(newName: String) {
+        val user = currentUser ?: return
+        viewModelScope.launch {
+            val success = repository.updateUser(user.id, newName)
+            if (success) {
+                // Actualizar estado local inmediatamente
+                val updatedUser = user.copy(displayName = newName)
+                _authState.value = AuthState.Success(updatedUser)
+                notificationViewModel?.showNotification("Perfil actualizado correctamente.", NotificationType.SUCCESS)
+            } else {
+                notificationViewModel?.showNotification("Error al actualizar el perfil.", NotificationType.ERROR)
+            }
+        }
+    }
+
+    /**
+     * Cierra la sesión del usuario actual y reinicia el estado.
+     */
+    fun logout() {
+        _authState.value = AuthState.Idle
+        notificationViewModel?.showNotification("Sesión cerrada.", NotificationType.INFO)
     }
 
     /**

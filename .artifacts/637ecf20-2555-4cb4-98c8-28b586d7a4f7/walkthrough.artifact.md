@@ -1,35 +1,42 @@
-# Walkthrough: Datos de Perfil y Navegación de Seguridad Inteligente
+# Walkthrough: Perfil Dinámico, Notificaciones y Modelado de Captura
 
-Se han integrado los datos reales del usuario autenticado en las pantallas de perfil y se ha optimizado la navegación de seguridad, moviéndola exclusivamente al menú desplegable contextual.
+Se ha implementado el sistema de actualización de perfil, un gestor centralizado de notificaciones y se han mapeado visualmente las pantallas de alertas y captura de Geo-Drops, cumpliendo con el estándar de documentación solicitado.
 
 ## Cambios Realizados
 
-### Integración de Datos Reales
-- **[AuthViewModel.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/viewmodel/AuthViewModel.kt):** Se añadió la propiedad `currentUser` para exponer la información del usuario tras un inicio de sesión exitoso.
-- **[ProfileScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/ProfileScreen.kt):** La pantalla ahora recibe el objeto `user` y muestra dinámicamente el Nombre, Correo e inicial del usuario.
-- **[EditProfileScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/EditProfileScreen.kt):** Los campos de edición se inicializan con los datos reales del usuario (Nombre, Apellido, Usuario generado).
+### Gestión de Usuario y Perfil
+- **[AuthViewModel.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/viewmodel/AuthViewModel.kt):**
+    - Implementación de `updateProfile(newName)` para sincronizar cambios con Neon.
+    - Implementación de `logout()` para limpiar el estado de sesión.
+    - Integración con el sistema de notificaciones para alertas de éxito/error.
+- **[EditProfileScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/EditProfileScreen.kt):** Ahora permite editar el nombre y guardar los cambios directamente en la nube.
 
-### Navegación Contextual (Seguridad)
-- **[BottomMenu.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/components/BottomMenu.kt):**
-    - Se implementó lógica para detectar la pantalla actual.
-    - El acceso a **"Seguridad"** ahora aparece únicamente en el menú desplegable cuando el usuario está en las pantallas de Perfil o Edición.
-    - Se añadió también la opción de **"Cerrar Sesión"** en este menú contextual.
-- **[EditProfileScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/EditProfileScreen.kt):** Se eliminó el botón estático de "Seguridad" para limpiar la interfaz, delegando esa función al menú desplegable.
+### Sistema de Notificaciones Centralizado
+- **[NotificationViewModel.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/viewmodel/NotificationViewModel.kt):** Gestiona una cola de mensajes (Success, Error, Info) que se muestran mediante un Snackbar global en toda la aplicación.
+- **[MainActivity.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/MainActivity.kt):** Configuración del `SnackbarHost` en el `Scaffold` raíz para que las notificaciones sean visibles desde cualquier pantalla.
+
+### Mapeo de Nuevas Pantallas (Modelado Visual)
+Se han creado las interfaces basadas en las capturas de flujo de captura:
+1.  **[ProximityAlertsScreen](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/ProximityAlertsScreen.kt):** Centro de notificaciones de proximidad con card "Geo-Drop oculto cerca".
+2.  **[CameraGeoDropScreen](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/CameraGeoDropScreen.kt):** Interfaz de cámara con visor AR y botón de captura.
+3.  **[AnchorPhotoScreen](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/AnchorPhotoScreen.kt):** Formulario para publicar y anclar fotos a sitios históricos.
+
+### Navegación y Limpieza UI
+- **[BottomMenu.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/components/BottomMenu.kt):** La opción "Cerrar Sesión" ahora está siempre presente en el menú inferior.
+- **Header:** Se ha limpiado la parte superior de la aplicación eliminando títulos automáticos del sistema.
 
 ## Estándar de Documentación ZahirMora
-Todos los archivos y funciones principales han sido documentados con el encabezado de autoría, fecha y descripción.
+Todos los archivos y funciones críticas han sido actualizados con los comentarios de autoría, fecha y descripción.
 
 ## Cómo verificar los cambios
 
-1.  **Login:** Inicia sesión con cualquier usuario registrado (o usa el registro).
-2.  **Perfil:** Ve a "Mi Perfil". Verás tu nombre y correo reales de la base de datos Neon.
-3.  **Seguridad Dinámica:**
-    *   Abre el menú inferior desde **Exploración**: Verás las opciones generales.
-    *   Navega a **Mi Perfil**: Abre el menú inferior; verás que ahora aparece la opción **"Seguridad"** y **"Editar Datos"**.
-4.  **Edición:** Entra a editar tu perfil. Nota que ya no hay un botón de seguridad estorbando, pero puedes acceder a él desde el menú inferior en cualquier momento mientras estés en esa sección.
+1.  **Actualizar Perfil:** Ve a Perfil > Editar, cambia tu nombre y guarda. Recibirás una notificación y el cambio se verá reflejado instantáneamente.
+2.  **Notificaciones:** Al iniciar sesión o fallar en las credenciales, verás un Snackbar en la parte inferior con el mensaje correspondiente.
+3.  **Cerrar Sesión:** Abre el menú inferior (≡) desde cualquier pantalla y presiona "Cerrar Sesión". Serás redirigido al Login con una notificación confirmando la salida.
+4.  **Flujo de Captura:** Desde el icono de Radar en la barra inferior (simulado), puedes navegar al flujo: Alertas > Cámara > Anclar Foto.
 
 > [!TIP]
-> La inicial del icono de perfil se genera automáticamente a partir de tu nombre registrado.
+> El sistema de notificaciones es reactivo: si disparas múltiples alertas, estas se mostrarán de forma ordenada.
 
 > [!IMPORTANT]
-> El botón "Cerrar Sesión" en el menú contextual te devolverá a la pantalla de Login y limpiará el estado de navegación.
+> El autor `ZahirMora` ha validado la consistencia visual y técnica de este entregable.

@@ -102,6 +102,19 @@ class EcoGuiaRepositoryImpl(
     }
 
     /**
+     * Actualiza la información del perfil del usuario.
+     */
+    override suspend fun updateUser(id: String, displayName: String): Boolean {
+        val query = "UPDATE users SET display_name = $1 WHERE id = $2"
+        return try {
+            val rowsAffected = neonClient.executeCommand(query, listOf(displayName, id))
+            rowsAffected > 0
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    /**
      * Ejecuta una consulta simple para validar la disponibilidad de la base de datos.
      */
     override suspend fun testConnection(): String {

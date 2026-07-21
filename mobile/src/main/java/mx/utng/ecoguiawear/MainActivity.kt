@@ -36,6 +36,8 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import mx.utng.ecoguiawear.ui.screens.*
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 import mx.utng.ecoguiawear.ui.viewmodel.AuthViewModel
+import mx.utng.ecoguiawear.ui.viewmodel.NotificationViewModel
+import mx.utng.ecoguiawear.ui.viewmodel.NotificationType
 import androidx.lifecycle.viewmodel.compose.viewModel
 import mx.utng.ecoguiawear.ui.components.EcoBottomBar
 import mx.utng.ecoguiawear.ui.components.BottomMenuSheet
@@ -54,16 +56,33 @@ class MainActivity : ComponentActivity() {
 }
 
 /**
- * Contenedor principal que gestiona el Scaffold global, la navegación y el menú inferior.
+ * Contenedor principal que gestiona el Drawer, el Scaffold, la navegación y las notificaciones.
  */
 @Composable
 fun MainAppContainer(repository: EcoGuiaRepositoryImpl) {
     val navController = rememberNavController()
     val authViewModel: AuthViewModel = viewModel()
+    val notificationViewModel: NotificationViewModel = viewModel()
+    
+    // Inicializar vinculación de ViewModels
+    LaunchedEffect(Unit) {
+        authViewModel.initNotifications(notificationViewModel)
+    }
+
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route ?: "login"
     
     val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+    
+    // Observar notificaciones
+    val notification by notificationViewModel.currentNotification
+    LaunchedEffect(notification) {
+        notification?.let {
+            snackbarHostState.showSnackbar(it.message)
+            // Not: Se podría personalizar el color del snackbar según el tipo
+        }
+    }
     
     // Estado de Usuario (Simulado Admin para ver todo)
     var isAdmin by remember { mutableStateOf(true) }
@@ -74,6 +93,7 @@ fun MainAppContainer(repository: EcoGuiaRepositoryImpl) {
     val showNav = currentRoute !in authRoutes
 
     Scaffold(
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         bottomBar = {
             if (showNav) {
                 EcoBottomBar(
@@ -136,11 +156,15 @@ fun MainAppContainer(repository: EcoGuiaRepositoryImpl) {
                 composable("edit_profile") {
                     EditProfileScreen(
                         user = authViewModel.currentUser,
-                        onSaveClick = { navController.popBackStack() }
+                        onSaveClick = { newName: String ->
+                            authViewModel.updateProfile(newName)
+                            navController.popBackStack()
+                        }
                     )
                 }
                 composable("security") {
                     SecurityScreen(onLogoutClick = {
+                        authViewModel.logout()
                         navController.navigate("login") {
                             popUpTo(0) { inclusive = true }
                         }
@@ -153,8 +177,15 @@ fun MainAppContainer(repository: EcoGuiaRepositoryImpl) {
                     MoreOptionsScreen(
                         isAdmin = isAdmin,
                         onOptionClick = { route ->
-                            navController.navigate(route) {
-                                launchSingleTop = true
+                            if (route == "logout") {
+                                authViewModel.logout()
+                                navController.navigate("login") {
+                                    popUpTo(0) { inclusive = true }
+                                }
+                            } else {
+                                navController.navigate(route) {
+                                    launchSingleTop = true
+                                }
                             }
                         }
                     )
@@ -162,9 +193,31 @@ fun MainAppContainer(repository: EcoGuiaRepositoryImpl) {
                 composable("admin") {
                     ControlPanel(MainActivity(), repository)
                 }
+
+                // New Mapped Screens
+                composable("proximity_alerts") {
+                    ProximityAlertsScreen()
+                }
+                composable("camera_capture") {
+                    CameraGeoDropScreen(
+                        onCapture = { navController.navigate("anchor_photo") }
+                    )
+                }
+                composable("anchor_photo") {
+                    AnchorPhotoScreen(
+                        onAnchorClick = { 
+                            notificationViewModel.showNotification("¡Foto anclada con éxito!", NotificationType.SUCCESS)
+                            navController.navigate("exploration") {
+                                popUpTo("exploration") { inclusive = true }
+                            }
+                        }
+                    )
+                }
                 
                 // Fallbacks para iconos de barra inferior
-                composable("radar") { ExplorationScreen({}) }
+                composable("radar") { 
+                    navController.navigate("proximity_alerts") { launchSingleTop = true }
+                }
                 composable("favorites") { MyCollectionScreen() }
             }
         }
@@ -175,8 +228,15 @@ fun MainAppContainer(repository: EcoGuiaRepositoryImpl) {
                 isAdmin = isAdmin,
                 onDismiss = { showBottomMenu = false },
                 onNavigate = { route ->
-                    navController.navigate(route) {
-                        launchSingleTop = true
+                    if (route == "logout") {
+                        authViewModel.logout()
+                        navController.navigate("login") {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    } else {
+                        navController.navigate(route) {
+                            launchSingleTop = true
+                        }
                     }
                 }
             )

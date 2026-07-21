@@ -33,10 +33,10 @@ import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 @Composable
 fun EditProfileScreen(
     user: RemoteUser?,
-    onSaveClick: () -> Unit
+    onSaveClick: (String) -> Unit
 ) {
-    var name by remember { mutableStateOf(user?.displayName?.split(" ")?.getOrNull(0) ?: "") }
-    var lastName by remember { mutableStateOf(user?.displayName?.split(" ")?.getOrNull(1) ?: "") }
+    var name by remember { mutableStateOf(user?.displayName ?: "") }
+    var lastName by remember { mutableStateOf("") }
     var publicUser by remember { mutableStateOf("@${user?.displayName?.lowercase()?.replace(" ", "_") ?: "usuario"}") }
     var bio by remember { mutableStateOf("Me gusta descubrir detalles históricos y compartir cápsulas.") }
 
@@ -107,7 +107,7 @@ fun EditProfileScreen(
             item {
                 EcoButton(
                     text = "Guardar cambios",
-                    onClick = onSaveClick
+                    onClick = { onSaveClick(name) }
                 )
             }
         }

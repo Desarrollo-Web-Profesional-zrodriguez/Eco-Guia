@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -130,22 +131,22 @@ fun ContextMenuItemRow(
  * Obtiene las opciones del menú según la pantalla donde se encuentre el usuario.
  */
 private fun getContextItems(route: String, isAdmin: Boolean): List<ContextMenuItem> {
-    val baseItems = mutableListOf(
-        ContextMenuItem("Mi Colección", Icons.Default.Favorite, "collection"),
-        ContextMenuItem("Miguel Hidalgo IA", Icons.Default.AutoAwesome, "chat_ia", enabled = isAdmin),
-        ContextMenuItem("Mi Perfil", Icons.Default.AccountCircle, "profile", enabled = isAdmin),
-        ContextMenuItem("Ajustes", Icons.Default.Settings, "settings", enabled = isAdmin)
-    )
+    val items = mutableListOf<ContextMenuItem>()
 
-    // Si estamos en perfil o edición, añadimos Seguridad prioritariamente
+    // Opciones contextuales de perfil
     if (route == "profile" || route == "edit_profile") {
-        return listOf(
-            ContextMenuItem("Seguridad", Icons.Default.Security, "security"),
-            ContextMenuItem("Editar Datos", Icons.Default.Edit, "edit_profile"),
-            ContextMenuItem("Cerrar Sesión", Icons.Default.ExitToApp, "login"),
-            ContextMenuItem("Mi Colección", Icons.Default.Favorite, "collection")
-        )
+        items.add(ContextMenuItem("Seguridad", Icons.Default.Security, "security"))
+        items.add(ContextMenuItem("Editar Datos", Icons.Default.Edit, "edit_profile"))
     }
 
-    return baseItems
+    // Opciones base
+    items.add(ContextMenuItem("Mi Colección", Icons.Default.Favorite, "collection"))
+    items.add(ContextMenuItem("Miguel Hidalgo IA", Icons.Default.AutoAwesome, "chat_ia", enabled = isAdmin))
+    items.add(ContextMenuItem("Mi Perfil", Icons.Default.AccountCircle, "profile", enabled = isAdmin))
+    items.add(ContextMenuItem("Ajustes", Icons.Default.Settings, "settings", enabled = isAdmin))
+
+    // Cerrar Sesión siempre presente
+    items.add(ContextMenuItem("Cerrar Sesión", Icons.AutoMirrored.Filled.ExitToApp, "logout"))
+
+    return items
 }
