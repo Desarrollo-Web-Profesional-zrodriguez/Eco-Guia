@@ -1,42 +1,42 @@
-# Walkthrough: Perfil Dinámico, Notificaciones y Modelado de Captura
+# Walkthrough: Perfil Flexible, Cámara Real y Notificaciones Centralizadas
 
-Se ha implementado el sistema de actualización de perfil, un gestor centralizado de notificaciones y se han mapeado visualmente las pantallas de alertas y captura de Geo-Drops, cumpliendo con el estándar de documentación solicitado.
+Se han implementado mejoras críticas en la gestión de usuario, se activó la funcionalidad de cámara real con CameraX y se centralizó el sistema de notificaciones reactivas, todo bajo el estándar de documentación solicitado.
 
 ## Cambios Realizados
 
-### Gestión de Usuario y Perfil
-- **[AuthViewModel.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/viewmodel/AuthViewModel.kt):**
-    - Implementación de `updateProfile(newName)` para sincronizar cambios con Neon.
-    - Implementación de `logout()` para limpiar el estado de sesión.
-    - Integración con el sistema de notificaciones para alertas de éxito/error.
-- **[EditProfileScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/EditProfileScreen.kt):** Ahora permite editar el nombre y guardar los cambios directamente en la nube.
+### Gestión de Usuario (Nombre Flexible)
+- **[EditProfileScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/EditProfileScreen.kt):** Se reemplazaron los campos separados por un único campo de **"Nombre Completo"**. Esto permite registrar cualquier número de nombres y apellidos sin restricciones técnicas, guardándolos directamente en la base de datos Neon.
+- **Reactividad Inmediata:** Al guardar los cambios, el `AuthViewModel` actualiza el estado local al instante, permitiendo que el nuevo nombre se vea reflejado en todas las pantallas sin necesidad de reiniciar la app.
+
+### Cámara y Captura (CameraX)
+- **[CameraGeoDropScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/CameraGeoDropScreen.kt):** Se implementó la lógica real de cámara utilizando la librería **CameraX**.
+    - Incluye gestión automática de permisos.
+    - Muestra un visor en vivo con la interfaz de Realidad Aumentada (AR) superpuesta.
+- **[AnchorPhotoScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/AnchorPhotoScreen.kt):** Se completó la lógica del formulario de publicación con notificaciones de éxito al anclar contenido.
 
 ### Sistema de Notificaciones Centralizado
-- **[NotificationViewModel.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/viewmodel/NotificationViewModel.kt):** Gestiona una cola de mensajes (Success, Error, Info) que se muestran mediante un Snackbar global en toda la aplicación.
-- **[MainActivity.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/MainActivity.kt):** Configuración del `SnackbarHost` en el `Scaffold` raíz para que las notificaciones sean visibles desde cualquier pantalla.
+- **[NotificationViewModel.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/viewmodel/NotificationViewModel.kt):** Centro de mensajes reactivo que dispara Snackbars globales.
+- **Eventos Notificados:**
+    *   **Login:** "¡Bienvenido, [Nombre]!" o "Credenciales no válidas".
+    *   **Perfil:** "Perfil actualizado con éxito".
+    *   **Sesión:** "Sesión cerrada".
 
-### Mapeo de Nuevas Pantallas (Modelado Visual)
-Se han creado las interfaces basadas en las capturas de flujo de captura:
-1.  **[ProximityAlertsScreen](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/ProximityAlertsScreen.kt):** Centro de notificaciones de proximidad con card "Geo-Drop oculto cerca".
-2.  **[CameraGeoDropScreen](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/CameraGeoDropScreen.kt):** Interfaz de cámara con visor AR y botón de captura.
-3.  **[AnchorPhotoScreen](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/AnchorPhotoScreen.kt):** Formulario para publicar y anclar fotos a sitios históricos.
-
-### Navegación y Limpieza UI
-- **[BottomMenu.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/components/BottomMenu.kt):** La opción "Cerrar Sesión" ahora está siempre presente en el menú inferior.
-- **Header:** Se ha limpiado la parte superior de la aplicación eliminando títulos automáticos del sistema.
+### Mejoras en Navegación y UI
+- **Cerrar Sesión Global:** Se añadió un icono de salida (ExitToApp) permanentemente visible en la barra inferior (color rojo suave) y en el menú desplegable. Al presionarlo, redirige inmediatamente a la pantalla de Login.
+- **Limpieza de Cabecera:** Se actualizó el tema del sistema para eliminar el nombre de la app ("Eco-Guía Control") de la barra superior, dejando una interfaz limpia y moderna.
 
 ## Estándar de Documentación ZahirMora
-Todos los archivos y funciones críticas han sido actualizados con los comentarios de autoría, fecha y descripción.
+Se ha verificado que todos los archivos (Repository, ViewModels, Components, Screens) cuentan con el encabezado de autoría: **Autor: ZahirMora | Fecha: 2026-07-21**.
 
 ## Cómo verificar los cambios
 
-1.  **Actualizar Perfil:** Ve a Perfil > Editar, cambia tu nombre y guarda. Recibirás una notificación y el cambio se verá reflejado instantáneamente.
-2.  **Notificaciones:** Al iniciar sesión o fallar en las credenciales, verás un Snackbar en la parte inferior con el mensaje correspondiente.
-3.  **Cerrar Sesión:** Abre el menú inferior (≡) desde cualquier pantalla y presiona "Cerrar Sesión". Serás redirigido al Login con una notificación confirmando la salida.
-4.  **Flujo de Captura:** Desde el icono de Radar en la barra inferior (simulado), puedes navegar al flujo: Alertas > Cámara > Anclar Foto.
+1.  **Header:** Al abrir la app, nota que ya no aparece el título gris en la parte superior.
+2.  **Nombre Completo:** Ve a Perfil > Editar y cambia tu nombre completo incluyendo apellidos. Guarda y verifica la notificación de éxito y el cambio en la tarjeta de perfil.
+3.  **Cerrar Sesión:** Presiona el nuevo icono rojo en la barra inferior o la opción en el menú inferior. Serás llevado al inicio de sesión con un mensaje informativo.
+4.  **Cámara:** Desde la barra inferior, presiona el icono de Radar. Acepta el permiso de cámara y verás el visor real de tu dispositivo.
 
 > [!TIP]
-> El sistema de notificaciones es reactivo: si disparas múltiples alertas, estas se mostrarán de forma ordenada.
+> El sistema de cámara ahora detecta si tienes permisos y te los solicita de forma elegante mediante Jetpack Compose.
 
 > [!IMPORTANT]
-> El autor `ZahirMora` ha validado la consistencia visual y técnica de este entregable.
+> Se han normalizado los colores de alerta: Verde para éxitos, Rojo para errores/salida y Azul para información.

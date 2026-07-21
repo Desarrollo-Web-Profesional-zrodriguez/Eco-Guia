@@ -2,38 +2,63 @@
  * Archivo: CameraGeoDropScreen.kt
  * Autor: ZahirMora
  * Fecha de última actualización: 2026-07-21
- * Descripción: Interfaz de cámara para la detección y captura de Geo-Drops mediante realidad aumentada.
+ * Descripción: Interfaz de cámara real para la detección y captura de Geo-Drops mediante CameraX.
  */
 
 package mx.utng.ecoguiawear.ui.screens
 
+import android.Manifest
+import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.camera.core.CameraSelector
+import androidx.camera.core.Preview
+import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.view.PreviewView
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircle
-import androidx.compose.material.icons.filled.Camera
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.content.ContextCompat
 import mx.utng.ecoguiawear.ui.components.EcoButton
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 
+/**
+ * Pantalla que integra CameraX para capturar cápsulas en el entorno.
+ */
 @Composable
 fun CameraGeoDropScreen(
     onCapture: () -> Unit
 ) {
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    var hasCameraPermission by remember { mutableStateOf(false) }
+
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+        onResult = { granted -> hasCameraPermission = granted }
+    )
+
+    LaunchedEffect(Unit) {
+        launcher.launch(Manifest.permission.CAMERA)
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -58,21 +83,46 @@ fun CameraGeoDropScreen(
             }
         }
 
-        // Camera Viewport Simulation
+        // Camera Viewport
         Box(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()
                 .padding(horizontal = 24.dp)
                 .clip(RoundedCornerShape(32.dp))
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(Color(0xFF423A2B), Color(0xFF2B251B))
-                    )
-                ),
+                .background(Color.Black),
             contentAlignment = Alignment.Center
         ) {
-            // AR Target circle
+            if (hasCameraPermission) {
+                AndroidView(
+                    factory = { ctx ->
+                        val previewView = PreviewView(ctx)
+                        val cameraProviderFuture = ProcessCameraProvider.getInstance(ctx)
+                        cameraProviderFuture.addListener({
+                            val cameraProvider = cameraProviderFuture.get()
+                            val preview = Preview.Builder().build().also {
+                                it.setSurfaceProvider(previewView.surfaceProvider)
+                            }
+                            try {
+                                cameraProvider.unbindAll()
+                                cameraProvider.bindToLifecycle(
+                                    lifecycleOwner,
+                                    CameraSelector.DEFAULT_BACK_CAMERA,
+                                    preview
+                                )
+                            } catch (e: Exception) {
+                                Log.e("EcoGuia", "Camera binding failed", e)
+                            }
+                        }, ContextCompat.getMainExecutor(ctx))
+                        previewView
+                    },
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else {
+                Text("Permiso de cámara requerido", color = Color.White)
+            }
+
+            // AR Target UI Overlay
             Box(
                 modifier = Modifier
                     .size(240.dp, 100.dp)
@@ -127,13 +177,5 @@ fun CameraGeoDropScreen(
             
             Spacer(modifier = Modifier.height(24.dp))
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun CameraGeoDropScreenPreview() {
-    EcoGuiaMobileTheme {
-        CameraGeoDropScreen({})
     }
 }

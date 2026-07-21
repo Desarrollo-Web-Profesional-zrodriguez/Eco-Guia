@@ -2,7 +2,7 @@
  * Archivo: EditProfileScreen.kt
  * Autor: ZahirMora
  * Fecha de última actualización: 2026-07-21
- * Descripción: Pantalla de edición de perfil. Permite al usuario modificar sus datos personales.
+ * Descripción: Pantalla de edición de perfil. Permite al usuario modificar su nombre completo de forma flexible.
  */
 
 package mx.utng.ecoguiawear.ui.screens
@@ -10,7 +10,6 @@ package mx.utng.ecoguiawear.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
@@ -35,8 +34,8 @@ fun EditProfileScreen(
     user: RemoteUser?,
     onSaveClick: (String) -> Unit
 ) {
-    var name by remember { mutableStateOf(user?.displayName ?: "") }
-    var lastName by remember { mutableStateOf("") }
+    // Usamos un solo campo de nombre completo para mayor flexibilidad
+    var fullName by remember { mutableStateOf(user?.displayName ?: "") }
     var publicUser by remember { mutableStateOf("@${user?.displayName?.lowercase()?.replace(" ", "_") ?: "usuario"}") }
     var bio by remember { mutableStateOf("Me gusta descubrir detalles históricos y compartir cápsulas.") }
 
@@ -82,11 +81,7 @@ fun EditProfileScreen(
             }
             
             item {
-                EcoTextField(value = name, onValueChange = { name = it }, label = "NOMBRE")
-            }
-            
-            item {
-                EcoTextField(value = lastName, onValueChange = { lastName = it }, label = "APELLIDO")
+                EcoTextField(value = fullName, onValueChange = { fullName = it }, label = "NOMBRE COMPLETO")
             }
             
             item {
@@ -98,16 +93,16 @@ fun EditProfileScreen(
                     value = bio, 
                     onValueChange = { bio = it }, 
                     label = "BIOGRAFÍA",
-                    modifier = Modifier.height(100.dp) // Simulación de textarea
+                    modifier = Modifier.height(100.dp)
                 )
             }
             
-            item { Spacer(modifier = Modifier.height(24.dp)) }
+            item { Spacer(modifier = Modifier.height(32.dp)) }
             
             item {
                 EcoButton(
                     text = "Guardar cambios",
-                    onClick = { onSaveClick(name) }
+                    onClick = { if (fullName.isNotBlank()) onSaveClick(fullName) }
                 )
             }
         }

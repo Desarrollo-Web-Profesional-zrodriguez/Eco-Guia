@@ -11,6 +11,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -66,6 +67,15 @@ fun EcoBottomBar(
             colors = NavigationBarItemDefaults.colors(
                 selectedIconColor = EcoGuiaColors.Jade,
                 unselectedIconColor = EcoGuiaColors.Muted,
+                indicatorColor = Color.Transparent
+            )
+        )
+        NavigationBarItem(
+            selected = false,
+            onClick = { onNavigate("logout") },
+            icon = { Icon(Icons.AutoMirrored.Filled.ExitToApp, null) },
+            colors = NavigationBarItemDefaults.colors(
+                unselectedIconColor = Color.Red.copy(alpha = 0.7f),
                 indicatorColor = Color.Transparent
             )
         )

@@ -49,22 +49,22 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             EcoGuiaMobileTheme {
-                MainAppContainer(repository)
+                MainAppContainer(this, repository)
             }
         }
     }
 }
 
 /**
- * Contenedor principal que gestiona el Drawer, el Scaffold, la navegación y las notificaciones.
+ * Contenedor principal que gestiona el Scaffold global, la navegación y las notificaciones.
  */
 @Composable
-fun MainAppContainer(repository: EcoGuiaRepositoryImpl) {
+fun MainAppContainer(activity: ComponentActivity, repository: EcoGuiaRepositoryImpl) {
     val navController = rememberNavController()
     val authViewModel: AuthViewModel = viewModel()
     val notificationViewModel: NotificationViewModel = viewModel()
     
-    // Inicializar vinculación de ViewModels
+    // Inicializar vinculación de ViewModels para notificaciones automáticas
     LaunchedEffect(Unit) {
         authViewModel.initNotifications(notificationViewModel)
     }
@@ -72,23 +72,21 @@ fun MainAppContainer(repository: EcoGuiaRepositoryImpl) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route ?: "login"
     
-    val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     
-    // Observar notificaciones
+    // Observar notificaciones reactivas
     val notification by notificationViewModel.currentNotification
     LaunchedEffect(notification) {
         notification?.let {
             snackbarHostState.showSnackbar(it.message)
-            // Not: Se podría personalizar el color del snackbar según el tipo
         }
     }
     
-    // Estado de Usuario (Simulado Admin para ver todo)
+    // Estado de Usuario (Simulado Admin)
     var isAdmin by remember { mutableStateOf(true) }
     var showBottomMenu by remember { mutableStateOf(false) }
 
-    // Pantallas que NO muestran elementos de navegación
+    // Pantallas de Auth que ocultan la navegación
     val authRoutes = listOf("login", "signup", "recovery")
     val showNav = currentRoute !in authRoutes
 
@@ -99,10 +97,17 @@ fun MainAppContainer(repository: EcoGuiaRepositoryImpl) {
                 EcoBottomBar(
                     currentRoute = currentRoute,
                     onNavigate = { route ->
-                        navController.navigate(route) {
-                            popUpTo("exploration") { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
+                        if (route == "logout") {
+                            authViewModel.logout()
+                            navController.navigate("login") {
+                                popUpTo(0) { inclusive = true }
+                            }
+                        } else {
+                            navController.navigate(route) {
+                                popUpTo("exploration") { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
                         }
                     },
                     onOpenSidebar = {
@@ -140,7 +145,7 @@ fun MainAppContainer(repository: EcoGuiaRepositoryImpl) {
                     )
                 }
                 
-                // Main App Routes
+                // Rutas de Aplicación Principal
                 composable("exploration") {
                     ExplorationScreen(onAdminClick = { navController.navigate("more_options") })
                 }
@@ -183,18 +188,16 @@ fun MainAppContainer(repository: EcoGuiaRepositoryImpl) {
                                     popUpTo(0) { inclusive = true }
                                 }
                             } else {
-                                navController.navigate(route) {
-                                    launchSingleTop = true
-                                }
+                                navController.navigate(route) { launchSingleTop = true }
                             }
                         }
                     )
                 }
                 composable("admin") {
-                    ControlPanel(MainActivity(), repository)
+                    ControlPanel(activity, repository)
                 }
 
-                // New Mapped Screens
+                // Nuevas Pantallas de Flujo
                 composable("proximity_alerts") {
                     ProximityAlertsScreen()
                 }
@@ -214,11 +217,13 @@ fun MainAppContainer(repository: EcoGuiaRepositoryImpl) {
                     )
                 }
                 
-                // Fallbacks para iconos de barra inferior
+                // Mapeo de botones de barra inferior
                 composable("radar") { 
-                    navController.navigate("proximity_alerts") { launchSingleTop = true }
+                    navController.navigate("camera_capture") { launchSingleTop = true }
                 }
-                composable("favorites") { MyCollectionScreen() }
+                composable("favorites") { 
+                    navController.navigate("collection") { launchSingleTop = true }
+                }
             }
         }
 
@@ -234,9 +239,7 @@ fun MainAppContainer(repository: EcoGuiaRepositoryImpl) {
                             popUpTo(0) { inclusive = true }
                         }
                     } else {
-                        navController.navigate(route) {
-                            launchSingleTop = true
-                        }
+                        navController.navigate(route) { launchSingleTop = true }
                     }
                 }
             )

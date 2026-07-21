@@ -1,7 +1,7 @@
 /**
  * Archivo: AuthViewModel.kt
  * Autor: ZahirMora
- * Fecha de última actualización: 2026-07-20
+ * Fecha de última actualización: 2026-07-21
  * Descripción: Gestiona el estado de la autenticación del usuario y la lógica de negocio para login y registro.
  */
 
@@ -77,7 +77,7 @@ class AuthViewModel(
             val success = repository.register(name, email, password_hash)
             if (success) {
                 _authState.value = AuthState.Registered
-                notificationViewModel?.showNotification("Cuenta creada con éxito.", NotificationType.SUCCESS)
+                notificationViewModel?.showNotification("Cuenta creada con éxito. Ya puedes iniciar sesión.", NotificationType.SUCCESS)
             } else {
                 _authState.value = AuthState.Error("Error al crear la cuenta. El correo podría ya estar registrado.")
                 notificationViewModel?.showNotification("No se pudo completar el registro.", NotificationType.ERROR)
@@ -93,10 +93,10 @@ class AuthViewModel(
         viewModelScope.launch {
             val success = repository.updateUser(user.id, newName)
             if (success) {
-                // Actualizar estado local inmediatamente
+                // Actualizar estado local inmediatamente para reactividad
                 val updatedUser = user.copy(displayName = newName)
                 _authState.value = AuthState.Success(updatedUser)
-                notificationViewModel?.showNotification("Perfil actualizado correctamente.", NotificationType.SUCCESS)
+                notificationViewModel?.showNotification("Perfil actualizado con éxito.", NotificationType.SUCCESS)
             } else {
                 notificationViewModel?.showNotification("Error al actualizar el perfil.", NotificationType.ERROR)
             }
