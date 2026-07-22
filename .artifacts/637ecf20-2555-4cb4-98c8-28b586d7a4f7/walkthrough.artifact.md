@@ -1,40 +1,36 @@
-# Walkthrough: Perfil Flexible, Cámara Funcional y Flujo de Rutas
+# Walkthrough: Modelado de Miguel Hidalgo IA y Base de Conocimiento
 
-Se han implementado mejoras críticas en la gestión de perfiles, se ha activado la funcionalidad de captura real con CameraX y se han mapeado todas las pantallas del flujo de rutas y búsqueda de experiencias.
+Se han implementado las interfaces finales para el chatbot interactivo de Miguel Hidalgo y su centro de gestión de conocimiento, siguiendo fielmente el flujo visual de las capturas proporcionadas.
 
 ## Cambios Realizados
 
-### Perfil y Registro Flexible
-- **[SignUpScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/SignUpScreen.kt):** Ahora utiliza un campo de "Nombre Completo" único para evitar problemas con apellidos compuestos.
-- **[EditProfileScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/EditProfileScreen.kt):** Simplificada a un solo campo de nombre para total flexibilidad al guardar en Neon.
+### Interfaces de IA (Mobile)
+1.  **[MiguelHidalgoChatScreen](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/MiguelHidalgoChatScreen.kt):**
+    *   Implementación de la conversación guiada con burbujas de chat.
+    *   Uso de `JadeGradient` para los mensajes del usuario.
+    *   Tarjeta de perfil de la IA integrada.
+    *   Botón de acceso directo a la configuración de la IA.
+2.  **[IAKnowledgeBaseScreen](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/IAKnowledgeBaseScreen.kt):**
+    *   Mapeo de la base de conocimiento con preguntas y respuestas modelo.
+    *   Definición visual del tono de voz de la IA.
+    *   Botón para iniciar el entrenamiento de la base local.
 
-### Cámara y Captura Real (CameraX)
-- **[CameraGeoDropScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/CameraGeoDropScreen.kt):**
-    - Implementada la lógica de captura real mediante `imageCapture.takePicture`.
-    - Al presionar "Capturar", se genera un archivo temporal y se navega automáticamente a la pantalla de anclaje de foto.
-
-### Modelado de Pantallas (Flujo de Rutas)
-Se han creado 5 nuevas interfaces basadas en tus diseños:
-1.  **[ActiveRouteScreen](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/ActiveRouteScreen.kt):** Visualización del progreso de la ruta y paradas completadas.
-2.  **[SearchExperienceScreen](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/SearchExperienceScreen.kt):** Filtros rápidos para exploración.
-3.  **[PermissionsScreen](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/PermissionsScreen.kt):** Centro de gestión de requerimientos técnicos.
-4.  **[CreateRouteScreen](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/CreateRouteScreen.kt):** Interfaz para el diseño de nuevas rutas.
-5.  **[OfflineRouteScreen](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/OfflineRouteScreen.kt):** Acceso a contenido descargado sin conexión.
-
-### Ajustes Visuales
-- **[MainActivity.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/MainActivity.kt):** Se añadió `enableEdgeToEdge()` para forzar el diseño de pantalla completa y eliminar el encabezado gris del sistema ("Eco-Guía Control").
+### Navegación y Limpieza
+- **Rutas Actualizadas:** Se reemplazó el placeholder anterior por la ruta completa del chatbot de Hidalgo.
+- **Transición Fluida:** Al presionar el botón "IA" en el chat, se navega automáticamente a la base de conocimiento.
+- **Eliminación de Obsoletos:** Se eliminó el archivo `ChatIAScreen.kt` para mantener la limpieza del proyecto.
 
 ## Estándar de Documentación ZahirMora
-Se ha verificado que todos los archivos nuevos y modificados cuentan con el encabezado de autoría: **Autor: ZahirMora | Fecha: 2026-07-21**.
+Se ha verificado que los nuevos archivos cuentan con el encabezado de autoría: **Autor: ZahirMora | Fecha: 2026-07-22**.
 
 ## Cómo verificar los cambios
 
-1.  **Captura Real:** Ve al Radar > Acepta permisos > Presiona "Capturar Geo-Drop". Verás que la cámara toma la foto y te lleva a la pantalla de publicación.
-2.  **Nombre Completo:** Edita tu perfil poniendo múltiples apellidos. Verifica que se guardan correctamente en Neon.
-3.  **Nuevas Pantallas:** Desde la pantalla de Exploración o el menú de Opciones, ahora puedes navegar a las pantallas de Buscar, Ruta Activa y Modo Offline.
+1.  **Chat:** Abre el menú de opciones y selecciona "Miguel Hidalgo IA". Entrarás a la conversación guiada.
+2.  **Base de Datos IA:** En la pantalla de chat, presiona el icono circular superior que dice "IA". Esto te llevará a ver cómo piensa y responde el cura Hidalgo.
+3.  **Visual:** Comprueba que los colores (Jade, DeepBlue, Gold) se mantienen normalizados en ambas pantallas.
 
 > [!TIP]
-> Al presionar el icono dorado (+) en Exploración, ahora navegarás a la pantalla de **Búsqueda de Experiencias**.
+> Las burbujas de chat utilizan un diseño asimétrico para distinguir claramente quién está hablando, mejorando la legibilidad.
 
 > [!IMPORTANT]
-> El sistema de cámara solicita permisos dinámicamente: asegúrate de otorgarlos en tu dispositivo para ver el visor en vivo.
+> El autor `ZahirMora` ha finalizado el modelado visual de este módulo. El siguiente paso técnico será la integración con un motor de procesamiento de lenguaje natural.

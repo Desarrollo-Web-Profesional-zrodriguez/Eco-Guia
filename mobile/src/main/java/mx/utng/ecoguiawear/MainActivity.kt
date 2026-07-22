@@ -179,7 +179,12 @@ fun MainAppContainer(activity: ComponentActivity, repository: EcoGuiaRepositoryI
                     })
                 }
                 composable("chat_ia") {
-                    ChatIAScreen()
+                    MiguelHidalgoChatScreen(
+                        onKnowledgeBaseClick = { navController.navigate("ia_knowledge_base") }
+                    )
+                }
+                composable("ia_knowledge_base") {
+                    IAKnowledgeBaseScreen()
                 }
                 composable("more_options") {
                     MoreOptionsScreen(
