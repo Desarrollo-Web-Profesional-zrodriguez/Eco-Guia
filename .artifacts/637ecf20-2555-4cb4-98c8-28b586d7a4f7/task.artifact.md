@@ -1,10 +1,10 @@
-# Tareas: Módulo de Gestión de Dispositivos (Control Wear)
+# Tareas: Módulo Extendido de Dispositivos (TV & Analítica)
 
-- [x] Añadir opción "Dispositivos" en `MoreOptionsScreen.kt`
-- [x] Añadir opción "Dispositivos" en `BottomMenu.kt`
-- [x] Implementar `LinkedDevicesScreen.kt` (Ecosistema activo)
-- [x] Implementar `ManageDevicesScreen.kt` (Desvincular)
-- [x] Implementar `DeviceStatusScreen.kt` (Diagnóstico inmersivo)
-- [x] Registrar rutas en `MainActivity.kt`
+- [x] Implementar `TVCampaignScreen.kt` (Campaña Salón de la Fama)
+- [x] Implementar `VisitorAnalyticsScreen.kt` (Mapa de calor y Métricas)
+- [x] Implementar `CampaignDevicesScreen.kt` (Dispositivos seleccionados)
+- [x] Implementar `MuseumPortal360Screen.kt` (Portal inmersivo)
+- [x] Vincular `LinkedDevicesScreen.kt` con el flujo de TV
+- [x] Actualizar navegación en `MainActivity.kt` con rutas de TV y Analítica
 - [x] Documentar todo bajo el estándar ZahirMora
-- [x] Verificar flujo de vinculación y monitoreo
+- [x] Verificar flujo completo del ecosistema de dispositivos

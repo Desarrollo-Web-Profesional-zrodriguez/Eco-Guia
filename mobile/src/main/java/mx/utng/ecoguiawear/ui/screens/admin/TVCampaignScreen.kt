@@ -1,22 +1,22 @@
 /**
- * Archivo: LinkedDevicesScreen.kt
+ * Archivo: TVCampaignScreen.kt
  * Autor: ZahirMora
  * Fecha de última actualización: 2026-07-22
- * Descripción: Pantalla principal de gestión de dispositivos vinculados (Ecosistema activo).
+ * Descripción: Gestión de campañas visuales para Smart TVs en hoteles y museos (Salón de la Fama).
  */
 
-package mx.utng.ecoguiawear.ui.screens
+package mx.utng.ecoguiawear.ui.screens.admin
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Tv
-import androidx.compose.material.icons.filled.Watch
 import androidx.compose.material.icons.filled.QrCode
+import androidx.compose.material.icons.filled.AccountTree
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -30,10 +30,9 @@ import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 
 @Composable
-fun LinkedDevicesScreen(
-    onTVCampaignClick: () -> Unit,
-    onManageClick: () -> Unit,
-    onStatusClick: () -> Unit
+fun TVCampaignScreen(
+    onAnalyticsClick: () -> Unit,
+    onManageDevicesClick: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -48,23 +47,23 @@ fun LinkedDevicesScreen(
                 .padding(top = 48.dp, start = 24.dp, end = 24.dp, bottom = 16.dp)
         ) {
             Column {
-                Text("Dispositivos", color = Color.White, fontSize = 14.sp)
-                Text("Vinculados", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text("Campañas", color = Color.White, fontSize = 14.sp)
+                Text("Hoteles y museos", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
             }
             
             IconButton(
-                onClick = onTVCampaignClick,
+                onClick = onAnalyticsClick,
                 modifier = Modifier.align(Alignment.TopEnd)
             ) {
                 Surface(color = Color.White.copy(alpha = 0.1f), shape = RoundedCornerShape(12.dp)) {
                     Box(modifier = Modifier.padding(8.dp)) {
-                        Text("TV", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                        Icon(Icons.Default.Star, null, tint = EcoGuiaColors.Gold, modifier = Modifier.size(20.dp))
                     }
                 }
             }
         }
 
-        // Active Ecosystem Card
+        // Status Card
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -73,54 +72,42 @@ fun LinkedDevicesScreen(
             shape = RoundedCornerShape(24.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text("Ecosistema activo", color = Color.White, fontWeight = FontWeight.Bold)
+                Text("Salón de la Fama", color = Color.White, fontWeight = FontWeight.Bold)
                 Text(
-                    "Administra Smart TVs de hoteles, relojes demo y pantallas de museos.", 
+                    "Programa qué cápsulas aparecerán en Smart TV durante el día.", 
                     color = Color.White.copy(alpha = 0.7f), 
                     fontSize = 12.sp
                 )
             }
         }
 
-        // Device List
+        // Programming List
         Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("Estado", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
-                TextButton(onClick = onManageClick) {
-                    Text("Gestionar", color = EcoGuiaColors.Jade)
-                }
-            }
+            Text("Programación", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
             
             LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 item {
-                    DeviceItem(
-                        title = "Lobby Hotel Hidalgo",
-                        subtitle = "Online - Salón de la fama",
+                    CampaignItem(
+                        title = "Galería lobby",
+                        subtitle = "Activo hasta 20:00",
                         icon = Icons.Default.Tv,
-                        statusColor = EcoGuiaColors.Jade,
-                        onClick = onStatusClick
+                        onClick = onManageDevicesClick
                     )
                 }
                 item {
-                    DeviceItem(
-                        title = "Wearables demo",
-                        subtitle = "4 vinculados",
-                        icon = Icons.Default.Watch,
-                        statusColor = EcoGuiaColors.Jade,
-                        onClick = onStatusClick
-                    )
-                }
-                item {
-                    DeviceItem(
-                        title = "Sesiones QR",
-                        subtitle = "2 activas hoy",
+                    CampaignItem(
+                        title = "Colección pública",
+                        subtitle = "Descargas habilitadas",
                         icon = Icons.Default.QrCode,
-                        statusColor = Color.White,
-                        onClick = onStatusClick
+                        onClick = onManageDevicesClick
+                    )
+                }
+                item {
+                    CampaignItem(
+                        title = "Ranking semanal",
+                        subtitle = "Fotos más visitadas",
+                        icon = Icons.Default.AccountTree,
+                        onClick = onManageDevicesClick
                     )
                 }
             }
@@ -129,21 +116,19 @@ fun LinkedDevicesScreen(
 }
 
 @Composable
-fun DeviceItem(
+fun CampaignItem(
     title: String,
     subtitle: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
-    statusColor: Color,
     onClick: () -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        onClick = onClick
+        colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Row(
-            modifier = Modifier.padding(12.dp),
+            modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
@@ -157,22 +142,18 @@ fun DeviceItem(
             
             Column(modifier = Modifier.padding(horizontal = 12.dp).weight(1f)) {
                 Text(title, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                Text(subtitle, color = Color.Gray, fontSize = 12.sp)
+                Text(subtitle, color = Color.Gray, fontSize = 11.sp)
             }
             
-            Box(
-                modifier = Modifier
-                    .size(12.dp)
-                    .background(statusColor, CircleShape)
-            )
+            RadioButton(selected = false, onClick = null)
         }
     }
 }
 
 @Preview(showBackground = true)
 @Composable
-fun LinkedDevicesScreenPreview() {
+fun TVCampaignScreenPreview() {
     EcoGuiaMobileTheme {
-        LinkedDevicesScreen({}, {}, {})
+        TVCampaignScreen({}, {})
     }
 }

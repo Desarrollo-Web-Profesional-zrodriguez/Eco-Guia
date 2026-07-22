@@ -1,49 +1,50 @@
-# Plan de Implementación: Módulo de Dispositivos y Control Wear (Mobile)
+# Plan de Implementación: Módulo Extendido de Dispositivos (TV & Analítica)
 
-Este plan detalla la construcción del módulo de gestión de dispositivos ("Dispositivos"), permitiendo vincular, desvincular y monitorear el estado de los periféricos (Relojes Wear OS y Smart TVs) desde el teléfono.
+Este plan detalla la construcción de las interfaces avanzadas para el control de Smart TVs, analítica de visitantes y el portal inmersivo 360, integrándolos en el flujo del módulo "Dispositivos".
 
-## Análisis de Diseño
+## Análisis de Flujo
 
-1.  **Pantalla "Dispositivos Vinculados":**
-    *   Título principal y cabecera "Ecosistema activo".
-    *   Lista de dispositivos detectados (TV, Wearables, Sesiones QR).
-    *   Iconografía circular para el estado de conexión.
-2.  **Pantalla "Gestión de Dispositivos" (Desvincular):**
-    *   Interfaz para remover dispositivos vinculados.
-    *   Botones de acción "Quitar" y pie de página "Confirmar cambios".
-3.  **Pantalla "Estado de Conexión":**
-    *   Vista detallada que muestra el estado "CONECTADO" de los servicios críticos: Eco-Guía móvil, GPS preciso y Cámara.
+Basado en las nuevas imágenes, el flujo de administración de dispositivos se expande:
+1.  **LinkedDevicesScreen:** Punto de entrada.
+2.  **TVCampaignScreen:** Gestión de campañas "Salón de la Fama" para Hoteles y Museos.
+3.  **VisitorAnalyticsScreen:** Visualización de métricas y mapa de calor de visitantes.
+4.  **CampaignDevicesScreen:** Selección y estado de dispositivos para una campaña específica.
+5.  **MuseumPortal360Screen:** Configuración del recorrido inmersivo 360 para lobby y casa.
 
 ## Cambios Propuestos
 
-### 1. Componentes de Navegación
+### 1. Pantallas de Administración (admin package)
 
-#### [MODIFY] [MoreOptionsScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/MoreOptionsScreen.kt)
-- Añadir la opción **"Dispositivos"** en la cuadrícula de usuario.
+#### [NEW] [TVCampaignScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/admin/TVCampaignScreen.kt)
+- Interfaz de programación para galerías en Smart TVs.
+- Secciones: Galería lobby, Colección pública, Ranking semanal.
 
-#### [MODIFY] [BottomMenu.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/components/BottomMenu.kt)
-- Incluir **"Dispositivos"** en el menú desplegable inferior.
+#### [NEW] [VisitorAnalyticsScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/admin/VisitorAnalyticsScreen.kt)
+- Dashboard de métricas: Visitantes hoy, Cápsulas vistas, Reportes.
+- Card de "Mapa de calor".
 
-### 2. Nuevas Pantallas (Mobile Screens)
+#### [NEW] [CampaignDevicesScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/admin/CampaignDevicesScreen.kt)
+- Lista de dispositivos seleccionados con interruptores de estado.
+- Botón inferior "Gestionar contenido".
 
-#### [NEW] [LinkedDevicesScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/LinkedDevicesScreen.kt)
-- Interfaz del listado principal de dispositivos vinculados.
+#### [NEW] [MuseumPortal360Screen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/admin/MuseumPortal360Screen.kt)
+- Vista inmersiva apaisada (simulada) con indicadores de puntos e IA.
 
-#### [NEW] [ManageDevicesScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/ManageDevicesScreen.kt)
-- Interfaz de edición y desvinculación.
-
-#### [NEW] [DeviceStatusScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/DeviceStatusScreen.kt)
-- Vista de diagnóstico de conexión inmersiva.
-
-### 3. Navegación y MainActivity
+### 2. Navegación y MainActivity
 
 #### [MODIFY] [MainActivity.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/MainActivity.kt)
-- Registrar las rutas: `linked_devices`, `manage_devices`, `device_status`.
+- Registrar las nuevas rutas: `tv_campaign`, `visitor_analytics`, `campaign_devices`, `portal_360`.
+
+#### [MODIFY] [LinkedDevicesScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/LinkedDevicesScreen.kt)
+- Vincular el botón "TV" (en la cabecera) para navegar a `tv_campaign`.
 
 ## Estándar de Documentación
 Cada archivo incluirá: **Autor: ZahirMora | Fecha: 2026-07-22**.
 
 ---
+
+> [!IMPORTANT]
+> El diseño del Portal 360 se maquetará respetando la jerarquía visual de la imagen 4, enfocándose en la presentación de métricas inmersivas.
 
 > [!NOTE]
 > Autor: ZahirMora | Fecha: 2026-07-22

@@ -245,6 +245,7 @@ fun MainAppContainer(activity: ComponentActivity, repository: EcoGuiaRepositoryI
                 // Device Management Module
                 composable("linked_devices") {
                     LinkedDevicesScreen(
+                        onTVCampaignClick = { navController.navigate("tv_campaign") },
                         onManageClick = { navController.navigate("manage_devices") },
                         onStatusClick = { navController.navigate("device_status") }
                     )
@@ -259,6 +260,25 @@ fun MainAppContainer(activity: ComponentActivity, repository: EcoGuiaRepositoryI
                 }
                 composable("device_status") {
                     DeviceStatusScreen(onBack = { navController.popBackStack() })
+                }
+                
+                // TV & Analytics Sub-module
+                composable("tv_campaign") {
+                    TVCampaignScreen(
+                        onAnalyticsClick = { navController.navigate("visitor_analytics") },
+                        onManageDevicesClick = { navController.navigate("campaign_devices") }
+                    )
+                }
+                composable("visitor_analytics") {
+                    VisitorAnalyticsScreen()
+                }
+                composable("campaign_devices") {
+                    CampaignDevicesScreen(
+                        onManageContentClick = { navController.navigate("portal_360") }
+                    )
+                }
+                composable("portal_360") {
+                    MuseumPortal360Screen()
                 }
 
                 composable("admin") {

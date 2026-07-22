@@ -1,35 +1,43 @@
-# Walkthrough: Módulo de Gestión de Dispositivos y Control Wear
+# Walkthrough: Módulo Extendido de Dispositivos (TV, Analítica y Portal 360)
 
-Se ha implementado el centro de control de dispositivos ("Dispositivos"), permitiendo al usuario gestionar la vinculación con el reloj (Wear OS) y otros periféricos como Smart TVs, además de monitorear el estado de los servicios críticos.
+Se ha completado la expansión del sistema de gestión de dispositivos, integrando las capacidades de control de campañas para Smart TV, el dashboard de analítica de visitantes y el portal inmersivo de museos, cumpliendo con el estándar de documentación ZahirMora.
 
 ## Cambios Realizados
 
-### Nuevas Pantallas de Control
-1.  **[LinkedDevicesScreen](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/LinkedDevicesScreen.kt):**
-    *   Muestra el "Ecosistema activo" con una lista de dispositivos (TVs, Wearables, Sesiones QR).
-    *   Incluye indicadores visuales de estado (Online/Offline).
-2.  **[ManageDevicesScreen](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/ManageDevicesScreen.kt):**
-    *   Permite desvincular dispositivos específicos con un botón de acción rápida "Quitar".
-    *   Incluye una advertencia sobre la desconexión en tiempo real.
-3.  **[DeviceStatusScreen](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/DeviceStatusScreen.kt):**
-    *   Interfaz de diagnóstico inmersiva que verifica el estado "CONECTADO" de la app móvil, el GPS preciso y la cámara.
+### Nuevas Pantallas de Gestión (Paquete Admin)
+1.  **[TVCampaignScreen](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/admin/TVCampaignScreen.kt):**
+    *   Centro de programación "Salón de la Fama" para hoteles y museos.
+    *   Gestión de galerías en lobby, colecciones públicas y rankings semanales.
+2.  **[VisitorAnalyticsScreen](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/admin/VisitorAnalyticsScreen.kt):**
+    *   Dashboard con mapa de calor de exploración.
+    *   Métricas en tiempo real: Visitantes hoy (+15%), Cápsulas vistas y Reportes.
+3.  **[CampaignDevicesScreen](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/admin/CampaignDevicesScreen.kt):**
+    *   Selector de dispositivos activos para una campaña específica.
+    *   Control visual del estado (ON/OFF) por dispositivo.
+4.  **[MuseumPortal360Screen](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/admin/MuseumPortal360Screen.kt):**
+    *   Interfaz inmersiva apaisada para el recorrido 360.
+    *   Visualización de puntos de interés y soporte de IA guía.
 
-### Integración de Navegación
-- **Accesos:** Se añadió la opción **"Dispositivos"** en el `BottomMenu` (menú inferior) y en la `MoreOptionsScreen` (cuadrícula de opciones).
-- **Rutas:** Se registraron las nuevas pantallas en el `NavHost` principal dentro de `MainActivity.kt`.
+### Integración de Flujo
+- **Acceso Directo:** Se vinculó el botón **"TV"** de la pantalla de Dispositivos Vinculados para entrar directamente al flujo de campañas.
+- **Navegación Secuencial:**
+    *   Campaña -> Icono Estrella -> Analítica.
+    *   Campaña -> Item de Lista -> Dispositivos Seleccionados.
+    *   Dispositivos Seleccionados -> Botón "Gestionar Contenido" -> Portal 360.
 
 ## Estándar de Documentación ZahirMora
-Todos los archivos y funciones han sido actualizados con el encabezado de autoría y descripción detallada: **Autor: ZahirMora | Fecha: 2026-07-22**.
+Todos los archivos han sido actualizados con el encabezado de autoría y descripción técnica: **Autor: ZahirMora | Fecha: 2026-07-22**.
 
-## Cómo verificar los cambios
+## Cómo verificar el ecosistema extendido
 
-1.  **Menú:** Abre el menú inferior o ve a la pantalla de más opciones. Verás el nuevo icono de reloj con el texto **"Dispositivos"**.
-2.  **Listado:** Entra a "Dispositivos" para ver los elementos vinculados actualmente (simulados).
-3.  **Gestión:** Presiona "Gestionar" para entrar al modo de edición donde puedes "Quitar" dispositivos.
-4.  **Diagnóstico:** Toca cualquier dispositivo de la lista principal para abrir la pantalla inmersiva de diagnóstico ("CONECTADO").
+1.  **Entrada:** Ve a Menú > Dispositivos.
+2.  **Campañas:** Presiona el botón circular **"TV"** en la parte superior derecha. Entrarás a la gestión de Smart TVs.
+3.  **Analítica:** Dentro de la pantalla de Campañas, toca el icono dorado de la estrella para ver las métricas y el mapa de calor.
+4.  **Selección:** Toca cualquier elemento de la programación (ej. Galería lobby) para ver qué dispositivos están proyectando ese contenido.
+5.  **Portal 360:** Desde la pantalla de dispositivos seleccionados, presiona el botón verde inferior para abrir el portal inmersivo del museo.
 
 > [!TIP]
-> El botón de "Dispositivos" es el punto de entrada principal para que el usuario controle su reloj Wear OS desde el teléfono.
+> La pantalla del Portal 360 está diseñada para visualizarse mejor en orientación horizontal o tablets, manteniendo la coherencia de datos del sistema.
 
 > [!IMPORTANT]
-> El autor `ZahirMora` ha finalizado el modelado y la lógica de navegación de este módulo de control.
+> Se han normalizado los iconos (Tv, Star, Group, Phonelink) y los colores para asegurar que el administrador tenga una experiencia de control fluida.
