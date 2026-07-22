@@ -44,12 +44,14 @@ import mx.utng.ecoguiawear.ui.components.BottomMenuSheet
 
 import androidx.activity.enableEdgeToEdge
 
+import mx.utng.ecoguiawear.ui.screens.admin.*
+
 class MainActivity : ComponentActivity() {
     private val repository = EcoGuiaRepositoryImpl()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge() // Fuerza el diseño pantalla completa
+        enableEdgeToEdge() // Fuerza el diseño pantalla completa e inmersivo
         setContent {
             EcoGuiaMobileTheme {
                 MainAppContainer(this, repository)
@@ -208,7 +210,10 @@ fun MainAppContainer(activity: ComponentActivity, repository: EcoGuiaRepositoryI
                 }
                 composable("camera_capture") {
                     CameraGeoDropScreen(
-                        onCapture = { navController.navigate("anchor_photo") }
+                        onCapture = { file -> 
+                            // Aquí se podría pasar la ruta del archivo a la siguiente pantalla
+                            navController.navigate("anchor_photo") 
+                        }
                     )
                 }
                 composable("anchor_photo") {
@@ -239,6 +244,38 @@ fun MainAppContainer(activity: ComponentActivity, repository: EcoGuiaRepositoryI
 
                 composable("admin") {
                     ControlPanel(activity, repository)
+                }
+
+                // Admin & Moderation Module
+                composable("site_registration") {
+                    SiteRegistrationScreen(onNext = { navController.navigate("site_content") })
+                }
+                composable("site_content") {
+                    SiteContentScreen(onNext = { navController.navigate("site_location") })
+                }
+                composable("site_location") {
+                    SiteLocationScreen(onNext = { navController.navigate("site_operation") })
+                }
+                composable("site_operation") {
+                    SiteOperationScreen(onFinish = { 
+                        notificationViewModel.showNotification("Sitio publicado con éxito.", NotificationType.SUCCESS)
+                        navController.navigate("exploration") { popUpTo("exploration") { inclusive = true } }
+                    })
+                }
+                composable("gallery_addition") {
+                    GalleryAdditionScreen(onAddClick = { navController.popBackStack() })
+                }
+                composable("moderation_list") {
+                    ModerationListScreen(onResolveClick = { navController.navigate("report_detail") })
+                }
+                composable("report_detail") {
+                    ReportDetailScreen(onResolve = { 
+                        notificationViewModel.showNotification("Reporte resuelto.", NotificationType.SUCCESS)
+                        navController.popBackStack() 
+                    })
+                }
+                composable("manual_geo_drop") {
+                    ManualGeoDropScreen(onAnchorClick = { navController.popBackStack() })
                 }
                 
                 // Mapeo de botones de barra inferior
