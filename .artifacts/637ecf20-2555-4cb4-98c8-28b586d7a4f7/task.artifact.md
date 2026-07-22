@@ -1,12 +1,12 @@
-# Tareas: Perfil, Notificaciones y Nuevas Pantallas
+# Tareas: Perfil Flexible, Cámara Real y Flujo de Rutas
 
-- [x] Implementar `updateUser` en el Repositorio (`Shared`)
-- [x] Crear sistema de notificaciones centralizado (`NotificationViewModel.kt`)
-- [x] Actualizar `AuthViewModel.kt` (Update Profile, Logout y Alertas)
-- [x] Ajustar `BottomMenu.kt` (Cerrar Sesión global)
-- [x] Limpiar cabecera de la app en `MainActivity.kt` e integrar Notificaciones
-- [x] Implementar pantalla "Alertas Proximidad" (`ProximityAlertsScreen.kt`)
-- [x] Implementar pantalla "Cámara Geo-Drops" (`CameraGeoDropScreen.kt`)
-- [x] Implementar pantalla "Nueva Cápsula" (`AnchorPhotoScreen.kt`)
-- [x] Documentar todo bajo el estándar ZahirMora
-- [x] Verificar actualización de perfil y flujo de notificaciones
+- [x] Corregir lógica de Nombre Completo en `EditProfileScreen.kt` y `SignUpScreen.kt`
+- [x] Eliminar encabezado de sistema "Eco-Guía Control" en `MainActivity.kt`
+- [x] Implementar captura de foto real en `CameraGeoDropScreen.kt`
+- [x] Implementar pantalla "Ruta Activa" (`ActiveRouteScreen.kt`)
+- [x] Implementar pantalla "Búsqueda de Experiencia" (`SearchExperienceScreen.kt`)
+- [x] Implementar pantalla "Permisos de Experiencia" (`PermissionsScreen.kt`)
+- [x] Implementar pantalla "Crear Ruta" (`CreateRouteScreen.kt`)
+- [x] Implementar pantalla "Modo Offline / Ruta Guardada" (`OfflineRouteScreen.kt`)
+- [x] Asegurar documentación ZahirMora en todos los archivos
+- [x] Verificar navegación y funcionalidad de captura

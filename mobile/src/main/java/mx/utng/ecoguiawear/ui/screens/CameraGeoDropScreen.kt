@@ -2,7 +2,7 @@
  * Archivo: CameraGeoDropScreen.kt
  * Autor: ZahirMora
  * Fecha de última actualización: 2026-07-21
- * Descripción: Interfaz de cámara real para la detección y captura de Geo-Drops mediante CameraX.
+ * Descripción: Interfaz de cámara real con funcionalidad de captura para Geo-Drops.
  */
 
 package mx.utng.ecoguiawear.ui.screens
@@ -12,6 +12,8 @@ import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.CameraSelector
+import androidx.camera.core.ImageCapture
+import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
@@ -37,18 +39,23 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import mx.utng.ecoguiawear.ui.components.EcoButton
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
-import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
+import java.io.File
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 
 /**
- * Pantalla que integra CameraX para capturar cápsulas en el entorno.
+ * Pantalla que permite ver el entorno y capturar una imagen para un Geo-Drop.
  */
 @Composable
 fun CameraGeoDropScreen(
-    onCapture: () -> Unit
+    onCapture: (File) -> Unit
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     var hasCameraPermission by remember { mutableStateOf(false) }
+
+    val imageCapture = remember { ImageCapture.Builder().build() }
+    val cameraExecutor: ExecutorService = remember { Executors.newSingleThreadExecutor() }
 
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
@@ -57,6 +64,10 @@ fun CameraGeoDropScreen(
 
     LaunchedEffect(Unit) {
         launcher.launch(Manifest.permission.CAMERA)
+    }
+
+    DisposableEffect(Unit) {
+        onDispose { cameraExecutor.shutdown() }
     }
 
     Column(
@@ -108,7 +119,8 @@ fun CameraGeoDropScreen(
                                 cameraProvider.bindToLifecycle(
                                     lifecycleOwner,
                                     CameraSelector.DEFAULT_BACK_CAMERA,
-                                    preview
+                                    preview,
+                                    imageCapture
                                 )
                             } catch (e: Exception) {
                                 Log.e("EcoGuia", "Camera binding failed", e)
@@ -172,7 +184,23 @@ fun CameraGeoDropScreen(
             
             EcoButton(
                 text = "Capturar Geo-Drop",
-                onClick = onCapture
+                onClick = {
+                    val photoFile = File(context.cacheDir, "temp_geodrop_${System.currentTimeMillis()}.jpg")
+                    val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
+                    
+                    imageCapture.takePicture(
+                        outputOptions,
+                        ContextCompat.getMainExecutor(context),
+                        object : ImageCapture.OnImageSavedCallback {
+                            override fun onImageSaved(output: ImageCapture.OutputFileResults) {
+                                onCapture(photoFile)
+                            }
+                            override fun onError(exc: ImageCaptureException) {
+                                Log.e("EcoGuia", "Photo capture failed: ${exc.message}", exc)
+                            }
+                        }
+                    )
+                }
             )
             
             Spacer(modifier = Modifier.height(24.dp))

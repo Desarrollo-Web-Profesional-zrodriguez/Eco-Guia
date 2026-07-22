@@ -42,11 +42,14 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import mx.utng.ecoguiawear.ui.components.EcoBottomBar
 import mx.utng.ecoguiawear.ui.components.BottomMenuSheet
 
+import androidx.activity.enableEdgeToEdge
+
 class MainActivity : ComponentActivity() {
     private val repository = EcoGuiaRepositoryImpl()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge() // Fuerza el diseño pantalla completa
         setContent {
             EcoGuiaMobileTheme {
                 MainAppContainer(this, repository)
@@ -193,10 +196,7 @@ fun MainAppContainer(activity: ComponentActivity, repository: EcoGuiaRepositoryI
                         }
                     )
                 }
-                composable("admin") {
-                    ControlPanel(activity, repository)
-                }
-
+                
                 // Nuevas Pantallas de Flujo
                 composable("proximity_alerts") {
                     ProximityAlertsScreen()
@@ -215,6 +215,25 @@ fun MainAppContainer(activity: ComponentActivity, repository: EcoGuiaRepositoryI
                             }
                         }
                     )
+                }
+                composable("active_route") {
+                    ActiveRouteScreen()
+                }
+                composable("search_experience") {
+                    SearchExperienceScreen()
+                }
+                composable("permissions") {
+                    PermissionsScreen()
+                }
+                composable("create_route") {
+                    CreateRouteScreen()
+                }
+                composable("offline") {
+                    OfflineRouteScreen()
+                }
+
+                composable("admin") {
+                    ControlPanel(activity, repository)
                 }
                 
                 // Mapeo de botones de barra inferior

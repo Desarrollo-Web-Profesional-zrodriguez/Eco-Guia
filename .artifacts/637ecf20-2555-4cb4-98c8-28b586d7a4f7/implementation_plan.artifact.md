@@ -1,58 +1,65 @@
-# Plan de Implementación: Integración de Firebase Storage para Imágenes
+# Plan de Implementación: Nuevas Pantallas de Ruta y Ajustes de Perfil
 
-Este plan detalla los pasos para integrar Firebase en el proyecto Eco-Guía, comenzando con el almacenamiento de imágenes (Geo-Drops) y preparando el terreno para futuras funcionalidades como 2FA y envío de correos.
+Este plan detalla la construcción de las pantallas de Ruta Activa, Búsqueda de Experiencia, Permisos, Creación de Ruta y Modo Offline. Además, se incluyen correcciones críticas en la gestión del nombre del perfil y ajustes visuales de cabecera.
 
-## Pasos Previos (Acción del Usuario)
+## Análisis de Requerimientos
 
-Antes de modificar el código, es necesario configurar el proyecto en la consola de Firebase:
+1.  **Perfil Flexible:** Consolidar el nombre del usuario en un solo campo de "Nombre Completo" para soportar múltiples nombres y apellidos sin errores de guardado.
+2.  **Limpieza Visual:** Eliminar el encabezado del sistema ("Eco-Guía Control") para lograr una interfaz de pantalla completa inmersiva.
+3.  **Funcionalidad de Cámara:** Refinar la captura de Geo-Drops con CameraX para que el botón de captura sea funcional.
+4.  **Mapeo de Pantallas (Flujo de Ruta):**
+    *   **ActiveRouteScreen:** Seguimiento de la ruta actual y paradas.
+    *   **SearchExperienceScreen:** Filtros rápidos de exploración.
+    *   **PermissionsScreen:** Gestión de requerimientos técnicos (GPS, Cámara).
+    *   **CreateRouteScreen:** Interfaz de diseño de rutas personalizadas.
+    *   **OfflineRouteScreen:** Acceso a contenido local descargado.
+5.  **Documentación ZahirMora:** Mantener el estándar de comentarios en todos los componentes.
 
-1.  **Crear Proyecto:** Ve a [Firebase Console](https://console.firebase.google.com/) y crea un nuevo proyecto llamado `EcoGuiaWear`.
-2.  **Registrar App:** Añade una aplicación Android con el package name: `mx.utng.ecoguiawear`.
-3.  **Descargar Configuración:** Descarga el archivo `google-services.json`.
-4.  **Colocar Archivo:** Mueve el archivo `google-services.json` a la carpeta `mobile/` de tu proyecto.
-5.  **Habilitar Storage:** En la consola de Firebase, ve a "Build" > "Storage" y presiona "Get Started" (usa las reglas por defecto en modo prueba por ahora).
+## Cambios Propuestos
 
-## Cambios Propuestos en el SDK
+### 1. Ajustes Estructurales y de Perfil (mobile)
 
-### 1. Configuración de Dependencias
+#### [MODIFY] [EditProfileScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/EditProfileScreen.kt)
+- Asegurar que solo exista un campo `fullName`.
+- Validar que al guardar se pase la cadena completa al ViewModel.
 
-#### [MODIFY] [libs.versions.toml](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/gradle/libs.versions.toml)
-- Añadir versión para el plugin de Google Services (`4.4.2` o superior).
-- Añadir Firebase BoM (Bill of Materials) para gestionar versiones automáticamente.
-- Añadir librerías de Firebase Storage y Firebase Auth.
+#### [MODIFY] [MainActivity.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/MainActivity.kt)
+- Forzar el diseño "Edge-to-Edge" si es necesario para ocultar barras persistentes.
+- Registrar las nuevas rutas de navegación.
 
-#### [MODIFY] [build.gradle.kts (Root)](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/build.gradle.kts)
-- Añadir el plugin de `google-services` en el bloque de `plugins`.
+### 2. Modelado de Nuevas Pantallas (mobile)
 
-#### [MODIFY] [mobile/build.gradle.kts](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/build.gradle.kts)
-- Aplicar el plugin de Google Services.
-- Añadir las dependencias de Firebase usando el BoM.
+#### [NEW] [ActiveRouteScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/ActiveRouteScreen.kt)
+- Basado en Imagen 1: Lista de paradas numeradas con check de completado.
 
-### 2. Capa de Datos (Networking & Storage)
+#### [NEW] [SearchExperienceScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/SearchExperienceScreen.kt)
+- Basado en Imagen 2: Tarjetas de filtros rápidos (Museos, Geo-Drops, etc.).
 
-#### [NEW] [FirebaseStorageClient.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/data/FirebaseStorageClient.kt)
-- Implementación de un cliente ligero para subir imágenes.
-- Función `uploadGeoDropImage(uri): String` que retorne la URL pública de Firebase.
+#### [NEW] [PermissionsScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/PermissionsScreen.kt)
+- Basado en Imagen 3: Interruptores visuales para Ubicación, Cámara y Notificaciones.
 
-#### [MODIFY] [AuthViewModel.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/viewmodel/AuthViewModel.kt)
-- Preparar la integración con Firebase Auth para el futuro 2FA.
+#### [NEW] [CreateRouteScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/CreateRouteScreen.kt)
+- Basado en Imagen 4: Visor de mapa con formulario de 3 pasos (Sitios, Orden, Recompensa).
 
-### 3. Integración en el Flujo de Captura
+#### [NEW] [OfflineRouteScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/OfflineRouteScreen.kt)
+- Basado en Imagen 5: Lista de contenido local disponible sin conexión.
 
-#### [MODIFY] [AnchorPhotoScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/AnchorPhotoScreen.kt)
-- Al presionar "Anclar foto", se disparará la subida a Firebase.
-- La URL obtenida se guardará en el registro de Neon PostgreSQL.
+### 3. Funcionalidad de Cámara (mobile)
+
+#### [MODIFY] [CameraGeoDropScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/CameraGeoDropScreen.kt)
+- Implementar la función de disparo (`ImageCapture`) para guardar temporalmente la imagen y proceder al anclaje.
 
 ## Plan de Verificación
 
-1.  **Sincronización:** Ejecutar `gradle sync` para validar que el SDK se integró correctamente.
-2.  **Prueba de Subida:** Capturar una foto, intentar guardarla y verificar que el archivo aparece en el bucket de Firebase Console.
-3.  **Link Neon:** Confirmar que la URL de Firebase se guarda correctamente en la columna `media_url` de la tabla `geo_drops` en Neon.
+1.  **Prueba de Nombre:** Registrar un usuario con 4 nombres/apellidos, editarlo y verificar que se guarda íntegro en Neon.
+2.  **Validación Visual:** Comprobar que no existe ninguna barra de título con "Eco-Guía Control".
+3.  **Flujo de Ruta:** Navegar desde Exploración -> Buscar -> Permisos -> Crear Ruta para validar la continuidad visual.
+4.  **Cámara:** Verificar que al presionar "Capturar" se toma la foto y se navega correctamente a la pantalla de anclaje.
 
 ---
 
 > [!IMPORTANT]
-> El archivo `google-services.json` es **obligatorio** para que la app inicie. Sin él, la aplicación se cerrará al arrancar.
+> Se priorizará la flexibilidad del campo de nombre para evitar problemas con apellidos compuestos.
 
 > [!NOTE]
 > Autor: ZahirMora | Fecha: 2026-07-21

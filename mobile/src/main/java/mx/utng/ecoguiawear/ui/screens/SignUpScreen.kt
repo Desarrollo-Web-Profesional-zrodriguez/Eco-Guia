@@ -1,8 +1,9 @@
 /**
  * Archivo: SignUpScreen.kt
  * Autor: ZahirMora
- * Fecha de última actualización: 2026-07-20
- * Descripción: Interfaz de usuario para el registro de nuevos usuarios. Permite crear una cuenta en el sistema.
+ * Fecha de última actualización: 2026-07-21
+ * Descripción: Interfaz de usuario para el registro de nuevos usuarios. 
+ * Soporta nombres completos de forma flexible para evitar errores con apellidos.
  */
 
 package mx.utng.ecoguiawear.ui.screens
@@ -27,7 +28,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 
 /**
- * Composable que representa la pantalla de registro.
+ * Composable que representa la pantalla de registro con soporte para nombre completo.
  */
 @Composable
 fun SignUpScreen(
@@ -35,7 +36,7 @@ fun SignUpScreen(
     onSignUpSuccess: () -> Unit,
     onBackToLogin: () -> Unit
 ) {
-    var name by remember { mutableStateOf("") }
+    var fullName by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     val authState by viewModel.authState
@@ -84,8 +85,8 @@ fun SignUpScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 EcoTextField(
-                    value = name,
-                    onValueChange = { name = it },
+                    value = fullName,
+                    onValueChange = { fullName = it },
                     label = "NOMBRE COMPLETO"
                 )
                 
@@ -122,8 +123,8 @@ fun SignUpScreen(
                     EcoButton(
                         text = "Crear cuenta",
                         onClick = { 
-                            if (name.isNotBlank() && email.isNotBlank() && password.length >= 8) {
-                                viewModel.register(name, email, password)
+                            if (fullName.isNotBlank() && email.isNotBlank() && password.length >= 8) {
+                                viewModel.register(fullName, email, password)
                             }
                         }
                     )
