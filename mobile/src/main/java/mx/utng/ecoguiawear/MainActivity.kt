@@ -241,6 +241,25 @@ fun MainAppContainer(activity: ComponentActivity, repository: EcoGuiaRepositoryI
                 composable("offline") {
                     OfflineRouteScreen()
                 }
+                
+                // Device Management Module
+                composable("linked_devices") {
+                    LinkedDevicesScreen(
+                        onManageClick = { navController.navigate("manage_devices") },
+                        onStatusClick = { navController.navigate("device_status") }
+                    )
+                }
+                composable("manage_devices") {
+                    ManageDevicesScreen(
+                        onConfirmChanges = { 
+                            notificationViewModel.showNotification("Cambios guardados.", NotificationType.SUCCESS)
+                            navController.popBackStack() 
+                        }
+                    )
+                }
+                composable("device_status") {
+                    DeviceStatusScreen(onBack = { navController.popBackStack() })
+                }
 
                 composable("admin") {
                     ControlPanel(activity, repository)

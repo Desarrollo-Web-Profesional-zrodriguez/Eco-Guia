@@ -128,6 +128,15 @@ fun MoreOptionsScreen(
                     onClick = { onOptionClick("settings") }
                 )
             }
+
+            item {
+                MenuOptionItem(
+                    title = "Dispositivos",
+                    subtitle = "Control de reloj y TV",
+                    icon = Icons.Default.Watch,
+                    onClick = { onOptionClick("linked_devices") }
+                )
+            }
             
             if (isAdmin) {
                 item {

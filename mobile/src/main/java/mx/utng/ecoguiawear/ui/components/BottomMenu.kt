@@ -142,6 +142,7 @@ private fun getContextItems(route: String, isAdmin: Boolean): List<ContextMenuIt
     // Opciones base
     items.add(ContextMenuItem("Mi Colección", Icons.Default.Favorite, "collection"))
     items.add(ContextMenuItem("Miguel Hidalgo IA", Icons.Default.AutoAwesome, "chat_ia", enabled = isAdmin))
+    items.add(ContextMenuItem("Dispositivos", Icons.Default.Watch, "linked_devices"))
     items.add(ContextMenuItem("Mi Perfil", Icons.Default.AccountCircle, "profile", enabled = isAdmin))
     items.add(ContextMenuItem("Ajustes", Icons.Default.Settings, "settings", enabled = isAdmin))
 

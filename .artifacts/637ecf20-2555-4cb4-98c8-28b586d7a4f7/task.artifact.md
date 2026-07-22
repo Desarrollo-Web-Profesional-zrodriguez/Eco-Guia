@@ -1,13 +1,10 @@
-# Tareas: Módulo de Administración y Moderación
+# Tareas: Módulo de Gestión de Dispositivos (Control Wear)
 
-- [x] Implementar `SiteRegistrationScreen.kt` (Alta - Paso 1)
-- [x] Implementar `SiteContentScreen.kt` (Contenido - Paso 2)
-- [x] Implementar `SiteLocationScreen.kt` (Localización - Paso 3)
-- [x] Implementar `SiteOperationScreen.kt` (Operación - Paso 4)
-- [x] Implementar `GalleryAdditionScreen.kt`
-- [x] Implementar `ModerationListScreen.kt` (Listado de Reportes)
-- [x] Implementar `ReportDetailScreen.kt` (Resolución)
-- [x] Implementar `ManualGeoDropScreen.kt`
-- [x] Actualizar navegación en `MainActivity.kt` con nuevas rutas admin
+- [x] Añadir opción "Dispositivos" en `MoreOptionsScreen.kt`
+- [x] Añadir opción "Dispositivos" en `BottomMenu.kt`
+- [x] Implementar `LinkedDevicesScreen.kt` (Ecosistema activo)
+- [x] Implementar `ManageDevicesScreen.kt` (Desvincular)
+- [x] Implementar `DeviceStatusScreen.kt` (Diagnóstico inmersivo)
+- [x] Registrar rutas en `MainActivity.kt`
 - [x] Documentar todo bajo el estándar ZahirMora
-- [x] Verificar flujos de alta de sitio y moderación
+- [x] Verificar flujo de vinculación y monitoreo
