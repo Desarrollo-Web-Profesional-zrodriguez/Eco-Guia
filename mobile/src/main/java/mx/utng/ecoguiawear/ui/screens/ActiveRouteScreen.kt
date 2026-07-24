@@ -1,8 +1,8 @@
-/**
+﻿/**
  * Archivo: ActiveRouteScreen.kt
  * Autor: ZahirMora
- * Fecha de última actualización: 2026-07-21
- * Descripción: Pantalla que muestra el progreso de la ruta turística activa y las próximas paradas.
+ * Fecha de Ãºltima actualizaciÃ³n: 2026-07-21
+ * DescripciÃ³n: Pantalla que muestra el progreso de la ruta turÃ­stica activa y las prÃ³ximas paradas.
  */
 
 package mx.utng.ecoguiawear.ui.screens
@@ -34,7 +34,7 @@ fun ActiveRouteScreen() {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF1F4F1))
+            .background(MaterialTheme.colorScheme.background)
     ) {
         // Header
         Box(
@@ -66,7 +66,7 @@ fun ActiveRouteScreen() {
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text("Progreso de ruta", color = Color.White, fontWeight = FontWeight.Bold)
-                Text("2 de 3 sitios visitados • 15 minutos restantes", color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp)
+                Text("2 de 3 sitios visitados â€¢ 15 minutos restantes", color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp)
                 
                 Spacer(modifier = Modifier.height(12.dp))
                 
@@ -84,7 +84,7 @@ fun ActiveRouteScreen() {
 
         // Stop List
         Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-            Text("Próximas paradas", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
+            Text("PrÃ³ximas paradas", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
             
             LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 item {
@@ -126,7 +126,7 @@ fun RouteStopItem(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row(
             modifier = Modifier.padding(12.dp),
@@ -150,8 +150,8 @@ fun RouteStopItem(
             }
             
             Column(modifier = Modifier.padding(horizontal = 12.dp).weight(1f)) {
-                Text(title, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                Text(subtitle, color = Color.Gray, fontSize = 12.sp)
+                Text(title, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
+                Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
             }
             
             if (isCompleted) {
@@ -174,3 +174,8 @@ fun ActiveRouteScreenPreview() {
         ActiveRouteScreen()
     }
 }
+
+
+
+
+

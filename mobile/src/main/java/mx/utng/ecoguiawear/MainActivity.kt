@@ -23,8 +23,6 @@ import com.google.android.gms.wearable.Wearable
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import mx.utng.ecoguia.shared.data.EcoGuiaDatabase
-import mx.utng.ecoguia.shared.domain.model.ConfigEntity
-import mx.utng.ecoguia.shared.domain.model.AlertEntity
 
 import mx.utng.ecoguia.shared.data.repository.EcoGuiaRepositoryImpl
 import mx.utng.ecoguia.shared.domain.model.RemoteGeoDrop
@@ -302,7 +300,10 @@ fun MainAppContainer(activity: ComponentActivity, repository: EcoGuiaRepositoryI
                     })
                 }
                 composable("gallery_addition") {
-                    GalleryAdditionScreen(onAddClick = { navController.popBackStack() })
+                    GalleryAdditionScreen(
+                        onAddClick = { navController.popBackStack() },
+                        onNavigate = { route -> navController.navigate(route) { launchSingleTop = true } }
+                    )
                 }
                 composable("moderation_list") {
                     ModerationListScreen(onResolveClick = { navController.navigate("report_detail") })

@@ -26,6 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import mx.utng.ecoguiawear.ui.components.EcoTopBar
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 
@@ -38,31 +39,14 @@ fun LinkedDevicesScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF1F4F1))
+            .background(MaterialTheme.colorScheme.background)
     ) {
-        // Header
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(EcoGuiaColors.DeepBlue)
-                .padding(top = 48.dp, start = 24.dp, end = 24.dp, bottom = 16.dp)
-        ) {
-            Column {
-                Text("Dispositivos", color = Color.White, fontSize = 14.sp)
-                Text("Vinculados", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-            }
-            
-            IconButton(
-                onClick = onTVCampaignClick,
-                modifier = Modifier.align(Alignment.TopEnd)
-            ) {
-                Surface(color = Color.White.copy(alpha = 0.1f), shape = RoundedCornerShape(12.dp)) {
-                    Box(modifier = Modifier.padding(8.dp)) {
-                        Text("TV", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                    }
-                }
-            }
-        }
+        EcoTopBar(
+            title = "Vinculados",
+            subtitle = "Dispositivos",
+            actionIcon = Icons.Default.Tv,
+            onActionClick = onTVCampaignClick
+        )
 
         // Active Ecosystem Card
         Card(
@@ -139,7 +123,7 @@ fun DeviceItem(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         onClick = onClick
     ) {
         Row(
@@ -149,17 +133,29 @@ fun DeviceItem(
             Box(
                 modifier = Modifier
                     .size(40.dp)
-                    .background(Color(0xFFE0F2F1), RoundedCornerShape(12.dp)),
+                    .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(imageVector = icon, contentDescription = null, tint = EcoGuiaColors.Jade, modifier = Modifier.size(20.dp))
             }
-            
-            Column(modifier = Modifier.padding(horizontal = 12.dp).weight(1f)) {
-                Text(title, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                Text(subtitle, color = Color.Gray, fontSize = 12.sp)
+
+            Column(modifier = Modifier
+                .padding(horizontal = 12.dp)
+                .weight(1f)
+            ) {
+                Text(
+                    text = title,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = subtitle,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 12.sp
+                )
             }
-            
+
             Box(
                 modifier = Modifier
                     .size(12.dp)

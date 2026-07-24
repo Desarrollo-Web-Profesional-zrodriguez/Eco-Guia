@@ -1,8 +1,8 @@
-/**
+﻿/**
  * Archivo: ProximityAlertsScreen.kt
  * Autor: ZahirMora
- * Fecha de última actualización: 2026-07-21
- * Descripción: Pantalla de alertas de proximidad que notifica al usuario sobre Geo-Drops cercanos.
+ * Fecha de Ãºltima actualizaciÃ³n: 2026-07-21
+ * DescripciÃ³n: Pantalla de alertas de proximidad que notifica al usuario sobre Geo-Drops cercanos.
  */
 
 package mx.utng.ecoguiawear.ui.screens
@@ -34,7 +34,7 @@ fun ProximityAlertsScreen() {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF1F4F1))
+            .background(MaterialTheme.colorScheme.background)
     ) {
         // Header
         Box(
@@ -68,7 +68,7 @@ fun ProximityAlertsScreen() {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text("Geo-Drop oculto cerca", color = Color.White, fontWeight = FontWeight.Bold)
                 Text(
-                    "Estás a menos de 20 m. Activa la cámara cuando llegues al punto.", 
+                    "EstÃ¡s a menos de 20 m. Activa la cÃ¡mara cuando llegues al punto.", 
                     color = Color.White.copy(alpha = 0.7f), 
                     fontSize = 12.sp
                 )
@@ -83,14 +83,14 @@ fun ProximityAlertsScreen() {
                 item {
                     NotificationItem(
                         title = "Has llegado al museo",
-                        subtitle = "Información turística disponible",
+                        subtitle = "InformaciÃ³n turÃ­stica disponible",
                         icon = Icons.Default.Place,
                         tag = "Nuevo"
                     )
                 }
                 item {
                     NotificationItem(
-                        title = "Cápsula de Ana P.",
+                        title = "CÃ¡psula de Ana P.",
                         subtitle = "Foto anclada en la entrada",
                         icon = Icons.Default.Info,
                         tag = "AR"
@@ -111,7 +111,7 @@ fun NotificationItem(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row(
             modifier = Modifier.padding(12.dp),
@@ -120,15 +120,15 @@ fun NotificationItem(
             Box(
                 modifier = Modifier
                     .size(40.dp)
-                    .background(Color(0xFFE0F2F1), CircleShape),
+                    .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(imageVector = icon, contentDescription = null, tint = EcoGuiaColors.Jade, modifier = Modifier.size(20.dp))
             }
             
             Column(modifier = Modifier.padding(horizontal = 12.dp).weight(1f)) {
-                Text(title, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                Text(subtitle, color = Color.Gray, fontSize = 12.sp)
+                Text(title, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
+                Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
             }
             
             Surface(
@@ -154,3 +154,8 @@ fun ProximityAlertsScreenPreview() {
         ProximityAlertsScreen()
     }
 }
+
+
+
+
+

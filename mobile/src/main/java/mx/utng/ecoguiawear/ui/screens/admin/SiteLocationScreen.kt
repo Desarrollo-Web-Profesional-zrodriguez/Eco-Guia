@@ -1,8 +1,8 @@
-/**
+﻿/**
  * Archivo: SiteLocationScreen.kt
  * Autor: ZahirMora
- * Fecha de última actualización: 2026-07-22
- * Descripción: Configuración de geolocalización y radio de detección para un sitio (Paso 3).
+ * Fecha de Ãºltima actualizaciÃ³n: 2026-07-22
+ * DescripciÃ³n: ConfiguraciÃ³n de geolocalizaciÃ³n y radio de detecciÃ³n para un sitio (Paso 3).
  */
 
 package mx.utng.ecoguiawear.ui.screens.admin
@@ -33,12 +33,12 @@ fun SiteLocationScreen(
 ) {
     var coordinates by remember { mutableStateOf("21.1561, -100.9350") }
     var radius by remember { mutableStateOf("20 metros") }
-    var visibility by remember { mutableStateOf("Si, con moderación") }
+    var visibility by remember { mutableStateOf("Si, con moderaciÃ³n") }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF1F4F1))
+            .background(MaterialTheme.colorScheme.background)
     ) {
         // Header
         Box(
@@ -48,7 +48,7 @@ fun SiteLocationScreen(
                 .padding(top = 48.dp, start = 24.dp, end = 24.dp, bottom = 16.dp)
         ) {
             Column {
-                Text("Geolocalización", color = Color.White, fontSize = 14.sp)
+                Text("GeolocalizaciÃ³n", color = Color.White, fontSize = 14.sp)
                 Text("Radio de llegada", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
             }
             
@@ -69,7 +69,7 @@ fun SiteLocationScreen(
                 .clip(RoundedCornerShape(24.dp))
                 .background(Color(0xFFE8F5E9))
         ) {
-            Text("Visor de Mapa Satelital", modifier = Modifier.align(Alignment.Center), color = Color.Gray)
+            Text("Visor de Mapa Satelital", modifier = Modifier.align(Alignment.Center), color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
 
         // Location Form
@@ -78,7 +78,7 @@ fun SiteLocationScreen(
                 .weight(1f)
                 .padding(horizontal = 16.dp)
         ) {
-            Text("Ubicación y radio", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
+            Text("UbicaciÃ³n y radio", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
             
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 EcoTextField(value = coordinates, onValueChange = { coordinates = it }, label = "COORDENADAS")
@@ -90,7 +90,7 @@ fun SiteLocationScreen(
         // Action Button
         Box(modifier = Modifier.padding(24.dp)) {
             EcoButton(
-                text = "Guardar ubicación",
+                text = "Guardar ubicaciÃ³n",
                 onClick = onNext
             )
         }
@@ -104,3 +104,5 @@ fun SiteLocationScreenPreview() {
         SiteLocationScreen({})
     }
 }
+
+

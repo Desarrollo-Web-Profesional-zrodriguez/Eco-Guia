@@ -1,8 +1,8 @@
-/**
+﻿/**
  * Archivo: VisitorAnalyticsScreen.kt
  * Autor: ZahirMora
- * Fecha de última actualización: 2026-07-22
- * Descripción: Dashboard de analítica que muestra el mapa de calor y métricas de visitantes.
+ * Fecha de Ãºltima actualizaciÃ³n: 2026-07-22
+ * DescripciÃ³n: Dashboard de analÃ­tica que muestra el mapa de calor y mÃ©tricas de visitantes.
  */
 
 package mx.utng.ecoguiawear.ui.screens.admin
@@ -31,7 +31,7 @@ fun VisitorAnalyticsScreen() {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF1F4F1))
+            .background(MaterialTheme.colorScheme.background)
     ) {
         // Header
         Box(
@@ -41,7 +41,7 @@ fun VisitorAnalyticsScreen() {
                 .padding(top = 48.dp, start = 24.dp, end = 24.dp, bottom = 16.dp)
         ) {
             Column {
-                Text("Analítica", color = Color.White, fontSize = 14.sp)
+                Text("AnalÃ­tica", color = Color.White, fontSize = 14.sp)
                 Text("Visitantes", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
             }
             
@@ -63,13 +63,13 @@ fun VisitorAnalyticsScreen() {
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text("Mapa de calor", color = Color.White, fontWeight = FontWeight.Bold)
-                Text("Pico de exploración entre 12:00 y 17:00 en centro histórico.", color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp)
+                Text("Pico de exploraciÃ³n entre 12:00 y 17:00 en centro histÃ³rico.", color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp)
             }
         }
 
         // Metrics Section
         Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-            Text("Métricas", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
+            Text("MÃ©tricas", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
             
             LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 item {
@@ -82,7 +82,7 @@ fun VisitorAnalyticsScreen() {
                 item {
                     MetricItem(
                         value = "42",
-                        label = "Cápsulas vistas",
+                        label = "CÃ¡psulas vistas",
                         subLabel = "Top: Museos"
                     )
                 }
@@ -107,7 +107,7 @@ fun MetricItem(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -116,15 +116,15 @@ fun MetricItem(
             Box(
                 modifier = Modifier
                     .size(48.dp)
-                    .background(Color(0xFFE0F2F1), CircleShape),
+                    .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 Text(text = value, color = EcoGuiaColors.Jade, fontWeight = FontWeight.Bold, fontSize = 18.sp)
             }
             
             Column(modifier = Modifier.padding(horizontal = 16.dp).weight(1f)) {
-                Text(label, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                Text(subLabel, color = Color.Gray, fontSize = 11.sp)
+                Text(label, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
+                Text(subLabel, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
             }
             
             RadioButton(selected = false, onClick = null)
@@ -139,3 +139,7 @@ fun VisitorAnalyticsScreenPreview() {
         VisitorAnalyticsScreen()
     }
 }
+
+
+
+

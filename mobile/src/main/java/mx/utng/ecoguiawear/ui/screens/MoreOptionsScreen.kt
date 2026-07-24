@@ -24,6 +24,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import mx.utng.ecoguiawear.ui.components.MenuOptionItem
+import mx.utng.ecoguiawear.ui.components.EcoTopBar
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 
@@ -38,17 +39,14 @@ fun MoreOptionsScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF1F4F1))
-            .padding(24.dp)
+            .background(MaterialTheme.colorScheme.background)
     ) {
-        Text(
-            text = "Menú\nMás opciones",
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold,
-            color = EcoGuiaColors.DeepBlue
+        EcoTopBar(
+            title = "Más opciones",
+            subtitle = "Menú"
         )
-        
-        Spacer(modifier = Modifier.height(24.dp))
+
+        Column(modifier = Modifier.padding(24.dp)) {
         
         // Card de bienvenida al menú
         Box(
@@ -71,7 +69,7 @@ fun MoreOptionsScreen(
         
         Spacer(modifier = Modifier.height(32.dp))
         
-        Text("Usuario", color = EcoGuiaColors.DeepBlue, fontWeight = FontWeight.Bold)
+        Text("Usuario", color = MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.Bold)
         
         Spacer(modifier = Modifier.height(12.dp))
         
@@ -150,6 +148,7 @@ fun MoreOptionsScreen(
             }
         }
     }
+}
 }
 
 @Preview(showBackground = true)

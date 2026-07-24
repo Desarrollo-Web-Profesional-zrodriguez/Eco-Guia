@@ -1,8 +1,8 @@
-/**
+﻿/**
  * Archivo: GalleryAdditionScreen.kt
  * Autor: ZahirMora
  * Fecha de última actualización: 2026-07-22
- * Descripción: Pantalla para agregar nuevas fotografías a la galería de un sitio histórico.
+ * Descripción: Pantalla para agregar nuevas fotografías a la galería oficial del sitio.
  */
 
 package mx.utng.ecoguiawear.ui.screens.admin
@@ -12,17 +12,18 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.AddPhotoAlternate
+import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import mx.utng.ecoguiawear.ui.components.AdminBottomBar
 import mx.utng.ecoguiawear.ui.components.EcoButton
 import mx.utng.ecoguiawear.ui.components.EcoTextField
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
@@ -30,73 +31,112 @@ import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 
 @Composable
 fun GalleryAdditionScreen(
-    onAddClick: () -> Unit
+    onAddClick: () -> Unit,
+    onNavigate: (String) -> Unit
 ) {
-    var altText by remember { mutableStateOf("Fachada del Museo de la Independencia") }
-    var tags by remember { mutableStateOf("Hero de fichas y Smart TV") }
+    var altText by remember { mutableStateOf("") }
+    var tags by remember { mutableStateOf("") }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFFF1F4F1))
-    ) {
-        // Header
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(EcoGuiaColors.DeepBlue)
-                .padding(top = 48.dp, start = 24.dp, end = 24.dp, bottom = 16.dp)
-        ) {
-            Column {
-                Text("Alta de sitio", color = Color.White, fontSize = 14.sp)
-                Text("Carga de medios", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-            }
-            
-            IconButton(
-                onClick = { },
-                modifier = Modifier.align(Alignment.TopEnd)
-            ) {
-                Icon(Icons.Default.AddCircle, null, tint = EcoGuiaColors.Gold)
-            }
-        }
-
-        // Image Placeholder
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(200.dp)
-                .padding(16.dp)
-                .clip(RoundedCornerShape(24.dp))
-                .background(Color.Gray.copy(alpha = 0.3f)),
-            contentAlignment = Alignment.Center
-        ) {
-            Text("Cargar Fotografía", color = Color.DarkGray)
-        }
-
-        // Form Section
+    Scaffold(
+        bottomBar = {
+            AdminBottomBar(currentRoute = "capsule_gallery", onNavigate = onNavigate)
+        },
+        containerColor = MaterialTheme.colorScheme.background
+    ) { paddingValues ->
         Column(
             modifier = Modifier
-                .weight(1f)
-                .padding(horizontal = 16.dp)
+                .fillMaxSize()
+                .padding(paddingValues)
         ) {
-            Text("Detalles del archivo", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
-            
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                item {
-                    EcoTextField(value = altText, onValueChange = { altText = it }, label = "TEXTO ALTERNATIVO")
+            // Header
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(EcoGuiaColors.DeepBlue)
+                    .padding(top = 48.dp, start = 24.dp, end = 24.dp, bottom = 24.dp)
+            ) {
+                Column {
+                    Text("Galería Oficial", color = EcoGuiaColors.Gold, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                    Text("Carga de Medios", color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Bold)
                 }
+                
+                Icon(
+                    Icons.Default.AddPhotoAlternate,
+                    null,
+                    tint = Color.White.copy(alpha = 0.2f),
+                    modifier = Modifier.size(48.dp).align(Alignment.CenterEnd)
+                )
+            }
+
+            LazyColumn(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(24.dp),
+                contentPadding = PaddingValues(vertical = 24.dp)
+            ) {
+                // Image Picker Placeholder
                 item {
-                    EcoTextField(value = tags, onValueChange = { tags = it }, label = "TAGS")
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(220.dp),
+                        shape = RoundedCornerShape(24.dp),
+                        colors = CardDefaults.cardColors(containerColor = EcoGuiaColors.Surface),
+                        onClick = { /* Pick image */ }
+                    ) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Icon(
+                                    Icons.Default.CloudUpload,
+                                    null,
+                                    tint = EcoGuiaColors.Jade,
+                                    modifier = Modifier.size(48.dp)
+                                )
+                                Spacer(modifier = Modifier.height(12.dp))
+                                Text("Toca para seleccionar imagen", color = Color.White, fontWeight = FontWeight.Medium)
+                                Text("JPG, PNG hasta 10MB", color = Color.White.copy(alpha = 0.5f), fontSize = 12.sp)
+                            }
+                        }
+                    }
+                }
+
+                item {
+                    Text(
+                        text = "Detalles del archivo",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                }
+
+                item {
+                    EcoTextField(
+                        value = altText,
+                        onValueChange = { altText = it },
+                        label = "TEXTO ALTERNATIVO"
+                    )
+                }
+
+                item {
+                    EcoTextField(
+                        value = tags,
+                        onValueChange = { tags = it },
+                        label = "ETIQUETAS (SEPARADAS POR COMAS)"
+                    )
+                }
+                
+                item {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    EcoButton(
+                        text = "Publicar en Galería",
+                        onClick = onAddClick
+                    )
                 }
             }
-        }
-
-        // Action Button
-        Box(modifier = Modifier.padding(24.dp)) {
-            EcoButton(
-                text = "Agregar a galería",
-                onClick = onAddClick
-            )
         }
     }
 }
@@ -105,6 +145,6 @@ fun GalleryAdditionScreen(
 @Composable
 fun GalleryAdditionScreenPreview() {
     EcoGuiaMobileTheme {
-        GalleryAdditionScreen({})
+        GalleryAdditionScreen(onAddClick = {}, onNavigate = {})
     }
 }

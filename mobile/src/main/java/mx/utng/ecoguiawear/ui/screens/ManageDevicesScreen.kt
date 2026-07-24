@@ -1,8 +1,8 @@
-/**
+﻿/**
  * Archivo: ManageDevicesScreen.kt
  * Autor: ZahirMora
- * Fecha de última actualización: 2026-07-22
- * Descripción: Pantalla para gestionar y desvincular dispositivos del ecosistema.
+ * Fecha de Ãºltima actualizaciÃ³n: 2026-07-22
+ * DescripciÃ³n: Pantalla para gestionar y desvincular dispositivos del ecosistema.
  */
 
 package mx.utng.ecoguiawear.ui.screens
@@ -36,7 +36,7 @@ fun ManageDevicesScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF1F4F1))
+            .background(MaterialTheme.colorScheme.background)
     ) {
         // Header
         Box(
@@ -67,9 +67,9 @@ fun ManageDevicesScreen(
             shape = RoundedCornerShape(24.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text("Gestión de dispositivos", color = Color.White, fontWeight = FontWeight.Bold)
+                Text("GestiÃ³n de dispositivos", color = Color.White, fontWeight = FontWeight.Bold)
                 Text(
-                    "Esta acción cortará la conexión en tiempo real con el dispositivo seleccionado del proyecto.", 
+                    "Esta acciÃ³n cortarÃ¡ la conexiÃ³n en tiempo real con el dispositivo seleccionado del proyecto.", 
                     color = Color.White.copy(alpha = 0.7f), 
                     fontSize = 12.sp
                 )
@@ -113,7 +113,7 @@ fun ManageDeviceItem(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row(
             modifier = Modifier.padding(12.dp),
@@ -122,15 +122,15 @@ fun ManageDeviceItem(
             Box(
                 modifier = Modifier
                     .size(32.dp)
-                    .background(Color(0xFFF1F4F1), RoundedCornerShape(8.dp)),
+                    .background(MaterialTheme.colorScheme.background, RoundedCornerShape(8.dp)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(imageVector = icon, contentDescription = null, tint = EcoGuiaColors.Jade, modifier = Modifier.size(16.dp))
             }
             
             Column(modifier = Modifier.padding(horizontal = 12.dp).weight(1f)) {
-                Text(title, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                Text("Cerca de Dolores Hidalgo", color = Color.Gray, fontSize = 10.sp)
+                Text(title, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
+                Text("Cerca de Dolores Hidalgo", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
             }
             
             Surface(
@@ -157,3 +157,7 @@ fun ManageDevicesScreenPreview() {
         ManageDevicesScreen({})
     }
 }
+
+
+
+

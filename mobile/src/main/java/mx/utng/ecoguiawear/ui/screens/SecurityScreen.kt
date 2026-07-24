@@ -1,7 +1,7 @@
 /**
  * Archivo: SecurityScreen.kt
  * Autor: ZahirMora
- * Fecha de última actualización: 2026-07-21
+ * Fecha de última actualización: 2026-07-22
  * Descripción: Pantalla de gestión de cuenta y seguridad.
  */
 
@@ -22,6 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import mx.utng.ecoguiawear.ui.components.EcoTopBar
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 
@@ -35,30 +36,21 @@ fun SecurityScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF1F4F1))
+            .background(MaterialTheme.colorScheme.background)
     ) {
-        // Header
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(EcoGuiaColors.DeepBlue)
-                .padding(top = 48.dp, start = 24.dp, end = 24.dp, bottom = 24.dp)
-        ) {
-            Column {
-                Text("Cuenta", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                Text("Seguridad", color = Color.White.copy(alpha = 0.7f), fontSize = 14.sp)
-            }
-            
-            IconButton(
-                onClick = { },
-                modifier = Modifier.align(Alignment.TopEnd)
-            ) {
-                Icon(Icons.Default.Settings, null, tint = Color.White)
-            }
-        }
+        EcoTopBar(
+            title = "Cuenta",
+            subtitle = "Seguridad",
+            actionIcon = Icons.Default.Settings,
+            onActionClick = { }
+        )
 
         Column(modifier = Modifier.padding(24.dp)) {
-            Text("Cuenta y seguridad", fontWeight = FontWeight.Bold, color = EcoGuiaColors.DeepBlue)
+            Text(
+                "Cuenta y seguridad",
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground
+            )
             
             Spacer(modifier = Modifier.height(16.dp))
             
@@ -113,7 +105,7 @@ fun SecurityItem(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         onClick = onClick
     ) {
         Row(
@@ -123,25 +115,41 @@ fun SecurityItem(
             Box(
                 modifier = Modifier
                     .size(40.dp)
-                    .background(if (isLogout) Color(0xFFFFEBEE) else Color(0xFFE0F2F1), CircleShape),
+                    .background(
+                        if (isLogout) Color(0xFFFFEBEE)
+                        else MaterialTheme.colorScheme.surfaceVariant,
+                        CircleShape
+                    ),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = icon, 
-                    contentDescription = null, 
-                    tint = if (isLogout) Color.Red else EcoGuiaColors.Jade, 
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = if (isLogout) Color.Red else EcoGuiaColors.Jade,
                     modifier = Modifier.size(20.dp)
                 )
             }
-            
-            Column(modifier = Modifier.padding(horizontal = 12.dp).weight(1f)) {
-                Text(title, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                Text(subtitle, color = Color.Gray, fontSize = 12.sp)
+
+            Column(modifier = Modifier
+                .padding(horizontal = 12.dp)
+                .weight(1f)
+            ) {
+                Text(
+                    text = title,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = subtitle,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 12.sp
+                )
             }
-            
+
             if (trailing.isNotEmpty()) {
                 Surface(
-                    color = Color(0xFFE0F2F1),
+                    color = EcoGuiaColors.Jade.copy(alpha = 0.12f),
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Text(

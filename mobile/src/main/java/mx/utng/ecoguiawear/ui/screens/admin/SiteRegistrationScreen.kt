@@ -1,8 +1,8 @@
-/**
+﻿/**
  * Archivo: SiteRegistrationScreen.kt
  * Autor: ZahirMora
- * Fecha de última actualización: 2026-07-22
- * Descripción: Pantalla inicial para dar de alta un sitio histórico (Paso 1).
+ * Fecha de Ãºltima actualizaciÃ³n: 2026-07-22
+ * DescripciÃ³n: Pantalla inicial para dar de alta un sitio histÃ³rico (Paso 1).
  */
 
 package mx.utng.ecoguiawear.ui.screens.admin
@@ -32,13 +32,13 @@ fun SiteRegistrationScreen(
     onNext: () -> Unit
 ) {
     var siteName by remember { mutableStateOf("Museo de la Independencia Nacional") }
-    var category by remember { mutableStateOf("Museo histórico") }
+    var category by remember { mutableStateOf("Museo histÃ³rico") }
     var address by remember { mutableStateOf("Zacatecas 6, Centro, Dolores Hidalgo") }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF1F4F1))
+            .background(MaterialTheme.colorScheme.background)
     ) {
         // Header
         Box(
@@ -49,7 +49,7 @@ fun SiteRegistrationScreen(
         ) {
             Column {
                 Text("Alta de sitio", color = Color.White, fontSize = 14.sp)
-                Text("Datos básicos", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text("Datos bÃ¡sicos", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
             }
             
             IconButton(
@@ -91,10 +91,10 @@ fun SiteRegistrationScreen(
                     EcoTextField(value = siteName, onValueChange = { siteName = it }, label = "NOMBRE DEL SITIO")
                 }
                 item {
-                    EcoTextField(value = category, onValueChange = { category = it }, label = "CATEGORÍA")
+                    EcoTextField(value = category, onValueChange = { category = it }, label = "CATEGORÃA")
                 }
                 item {
-                    EcoTextField(value = address, onValueChange = { address = it }, label = "DIRECCIÓN")
+                    EcoTextField(value = address, onValueChange = { address = it }, label = "DIRECCIÃ“N")
                 }
             }
         }
@@ -116,3 +116,4 @@ fun SiteRegistrationScreenPreview() {
         SiteRegistrationScreen({})
     }
 }
+

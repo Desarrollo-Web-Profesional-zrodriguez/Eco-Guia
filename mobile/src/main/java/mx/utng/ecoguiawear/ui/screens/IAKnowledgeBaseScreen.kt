@@ -1,8 +1,8 @@
-/**
+﻿/**
  * Archivo: IAKnowledgeBaseScreen.kt
  * Autor: ZahirMora
- * Fecha de última actualización: 2026-07-22
- * Descripción: Pantalla informativa que muestra la base de conocimiento cargada en la IA de Miguel Hidalgo.
+ * Fecha de Ãºltima actualizaciÃ³n: 2026-07-22
+ * DescripciÃ³n: Pantalla informativa que muestra la base de conocimiento cargada en la IA de Miguel Hidalgo.
  * Detalla preguntas frecuentes, respuestas guiadas y el tono de respuesta configurado.
  */
 
@@ -36,7 +36,7 @@ fun IAKnowledgeBaseScreen() {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF1F4F1))
+            .background(MaterialTheme.colorScheme.background)
     ) {
         // Header
         Box(
@@ -69,7 +69,7 @@ fun IAKnowledgeBaseScreen() {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text("Pregunta y respuesta", color = Color.White, fontWeight = FontWeight.Bold)
                 Text(
-                    "Consulta la base para una IA asertiva y eficaz. Estos datos guían el comportamiento del chatbot.", 
+                    "Consulta la base para una IA asertiva y eficaz. Estos datos guÃ­an el comportamiento del chatbot.", 
                     color = Color.White.copy(alpha = 0.7f), 
                     fontSize = 12.sp
                 )
@@ -88,20 +88,20 @@ fun IAKnowledgeBaseScreen() {
                 item {
                     KnowledgeEntryItem(
                         label = "PREGUNTA FRECUENTE",
-                        content = "¿Por qué este museo es importante?"
+                        content = "Â¿Por quÃ© este museo es importante?"
                     )
                 }
                 item {
                     KnowledgeEntryItem(
                         label = "RESPUESTA GUIADA",
                         content = "Porque conserva relatos y piezas vinculadas al inicio del movimiento insurgente liderado por Don Miguel Hidalgo y Costilla.",
-                        description = "Fuente: Archivo Histórico de Dolores"
+                        description = "Fuente: Archivo HistÃ³rico de Dolores"
                     )
                 }
                 item {
                     KnowledgeEntryItem(
                         label = "TONO",
-                        content = "Histórico, cercano y respetuoso"
+                        content = "HistÃ³rico, cercano y respetuoso"
                     )
                 }
             }
@@ -126,16 +126,16 @@ fun KnowledgeEntryItem(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(label, color = Color.Gray, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+            Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(4.dp))
             Text(content, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = Color.Black)
             
             if (description != null) {
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(description, color = Color.Gray, fontSize = 11.sp)
+                Text(description, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
             }
         }
     }
@@ -148,3 +148,6 @@ fun IAKnowledgeBaseScreenPreview() {
         IAKnowledgeBaseScreen()
     }
 }
+
+
+

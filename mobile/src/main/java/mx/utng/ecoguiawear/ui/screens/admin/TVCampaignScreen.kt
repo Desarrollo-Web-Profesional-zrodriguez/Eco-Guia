@@ -1,8 +1,8 @@
-/**
+﻿/**
  * Archivo: TVCampaignScreen.kt
  * Autor: ZahirMora
- * Fecha de última actualización: 2026-07-22
- * Descripción: Gestión de campañas visuales para Smart TVs en hoteles y museos (Salón de la Fama).
+ * Fecha de Ãºltima actualizaciÃ³n: 2026-07-22
+ * DescripciÃ³n: GestiÃ³n de campaÃ±as visuales para Smart TVs en hoteles y museos (SalÃ³n de la Fama).
  */
 
 package mx.utng.ecoguiawear.ui.screens.admin
@@ -37,7 +37,7 @@ fun TVCampaignScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF1F4F1))
+            .background(MaterialTheme.colorScheme.background)
     ) {
         // Header
         Box(
@@ -47,7 +47,7 @@ fun TVCampaignScreen(
                 .padding(top = 48.dp, start = 24.dp, end = 24.dp, bottom = 16.dp)
         ) {
             Column {
-                Text("Campañas", color = Color.White, fontSize = 14.sp)
+                Text("CampaÃ±as", color = Color.White, fontSize = 14.sp)
                 Text("Hoteles y museos", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
             }
             
@@ -72,9 +72,9 @@ fun TVCampaignScreen(
             shape = RoundedCornerShape(24.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text("Salón de la Fama", color = Color.White, fontWeight = FontWeight.Bold)
+                Text("SalÃ³n de la Fama", color = Color.White, fontWeight = FontWeight.Bold)
                 Text(
-                    "Programa qué cápsulas aparecerán en Smart TV durante el día.", 
+                    "Programa quÃ© cÃ¡psulas aparecerÃ¡n en Smart TV durante el dÃ­a.", 
                     color = Color.White.copy(alpha = 0.7f), 
                     fontSize = 12.sp
                 )
@@ -83,12 +83,12 @@ fun TVCampaignScreen(
 
         // Programming List
         Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-            Text("Programación", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
+            Text("ProgramaciÃ³n", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
             
             LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 item {
                     CampaignItem(
-                        title = "Galería lobby",
+                        title = "GalerÃ­a lobby",
                         subtitle = "Activo hasta 20:00",
                         icon = Icons.Default.Tv,
                         onClick = onManageDevicesClick
@@ -96,7 +96,7 @@ fun TVCampaignScreen(
                 }
                 item {
                     CampaignItem(
-                        title = "Colección pública",
+                        title = "ColecciÃ³n pÃºblica",
                         subtitle = "Descargas habilitadas",
                         icon = Icons.Default.QrCode,
                         onClick = onManageDevicesClick
@@ -105,7 +105,7 @@ fun TVCampaignScreen(
                 item {
                     CampaignItem(
                         title = "Ranking semanal",
-                        subtitle = "Fotos más visitadas",
+                        subtitle = "Fotos mÃ¡s visitadas",
                         icon = Icons.Default.AccountTree,
                         onClick = onManageDevicesClick
                     )
@@ -125,7 +125,7 @@ fun CampaignItem(
     Card(
         modifier = Modifier.fillMaxWidth().clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -134,15 +134,15 @@ fun CampaignItem(
             Box(
                 modifier = Modifier
                     .size(40.dp)
-                    .background(Color(0xFFE0F2F1), RoundedCornerShape(12.dp)),
+                    .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(imageVector = icon, contentDescription = null, tint = EcoGuiaColors.Jade, modifier = Modifier.size(20.dp))
             }
             
             Column(modifier = Modifier.padding(horizontal = 12.dp).weight(1f)) {
-                Text(title, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                Text(subtitle, color = Color.Gray, fontSize = 11.sp)
+                Text(title, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
+                Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
             }
             
             RadioButton(selected = false, onClick = null)
@@ -157,3 +157,7 @@ fun TVCampaignScreenPreview() {
         TVCampaignScreen({}, {})
     }
 }
+
+
+
+

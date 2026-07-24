@@ -1,8 +1,8 @@
-/**
+﻿/**
  * Archivo: CameraGeoDropScreen.kt
  * Autor: ZahirMora
- * Fecha de última actualización: 2026-07-21
- * Descripción: Interfaz de cámara real con funcionalidad de captura para Geo-Drops.
+ * Fecha de Ãºltima actualizaciÃ³n: 2026-07-21
+ * DescripciÃ³n: Interfaz de cÃ¡mara real con funcionalidad de captura para Geo-Drops.
  */
 
 package mx.utng.ecoguiawear.ui.screens
@@ -82,7 +82,7 @@ fun CameraGeoDropScreen(
                 .padding(top = 32.dp, start = 24.dp, end = 24.dp, bottom = 16.dp)
         ) {
             Column {
-                Text("Cámara", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text("CÃ¡mara", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                 Text("Geo-Drops", color = Color.White.copy(alpha = 0.7f), fontSize = 14.sp)
             }
             
@@ -131,7 +131,7 @@ fun CameraGeoDropScreen(
                     modifier = Modifier.fillMaxSize()
                 )
             } else {
-                Text("Permiso de cámara requerido", color = Color.White)
+                Text("Permiso de cÃ¡mara requerido", color = Color.White)
             }
 
             // AR Target UI Overlay
@@ -161,20 +161,20 @@ fun CameraGeoDropScreen(
                 .fillMaxWidth()
                 .padding(24.dp)
         ) {
-            Text("Cápsula detectada", color = Color.White, fontWeight = FontWeight.Bold)
+            Text("CÃ¡psula detectada", color = Color.White, fontWeight = FontWeight.Bold)
             
             Spacer(modifier = Modifier.height(12.dp))
             
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 shape = RoundedCornerShape(20.dp)
             ) {
                 Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.Info, null, tint = EcoGuiaColors.Jade)
                     Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
-                        Text("Alinea el encuadre", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                        Text("Sigue la flecha hasta el punto exacto", color = Color.Gray, fontSize = 12.sp)
+                        Text("Alinea el encuadre", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
+                        Text("Sigue la flecha hasta el punto exacto", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                     }
                     Text("8 m", color = EcoGuiaColors.Jade, fontWeight = FontWeight.Bold)
                 }
@@ -207,3 +207,6 @@ fun CameraGeoDropScreen(
         }
     }
 }
+
+
+

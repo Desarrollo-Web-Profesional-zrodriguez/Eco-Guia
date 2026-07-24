@@ -1,8 +1,8 @@
-/**
+﻿/**
  * Archivo: AnchorPhotoScreen.kt
  * Autor: ZahirMora
- * Fecha de última actualización: 2026-07-21
- * Descripción: Pantalla para anclar una fotografía capturada a un sitio histórico.
+ * Fecha de Ãºltima actualizaciÃ³n: 2026-07-21
+ * DescripciÃ³n: Pantalla para anclar una fotografÃ­a capturada a un sitio histÃ³rico.
  */
 
 package mx.utng.ecoguiawear.ui.screens
@@ -43,7 +43,7 @@ fun AnchorPhotoScreen(
                 .padding(top = 32.dp, start = 24.dp, end = 24.dp, bottom = 16.dp)
         ) {
             Column {
-                Text("Nueva cápsula", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text("Nueva cÃ¡psula", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                 Text("Anclar foto", color = Color.White.copy(alpha = 0.7f), fontSize = 14.sp)
             }
             
@@ -81,23 +81,23 @@ fun AnchorPhotoScreen(
             
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 shape = RoundedCornerShape(20.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.Edit, null, tint = EcoGuiaColors.Jade)
                         Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
-                            Text("Título", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color.Gray)
-                            Text("Detalle del arco principal", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                            Text("TÃ­tulo", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("Detalle del arco principal", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
                         }
                     }
                     
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.Place, null, tint = EcoGuiaColors.Jade)
                         Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
-                            Text("Ubicación", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color.Gray)
-                            Text("Museo - Entrada norte", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                            Text("UbicaciÃ³n", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("Museo - Entrada norte", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
                         }
                         Text("OK", color = EcoGuiaColors.Jade, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                     }
@@ -121,3 +121,6 @@ fun AnchorPhotoScreenPreview() {
         AnchorPhotoScreen({})
     }
 }
+
+
+

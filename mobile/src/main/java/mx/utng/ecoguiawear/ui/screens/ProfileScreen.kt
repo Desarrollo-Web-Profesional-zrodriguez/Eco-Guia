@@ -24,6 +24,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import mx.utng.ecoguia.shared.domain.model.RemoteUser
+import mx.utng.ecoguiawear.ui.components.EcoTopBar
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 
@@ -38,27 +39,14 @@ fun ProfileScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF1F4F1))
+            .background(MaterialTheme.colorScheme.background)
     ) {
-        // Header
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(EcoGuiaColors.DeepBlue)
-                .padding(top = 48.dp, start = 24.dp, end = 24.dp, bottom = 24.dp)
-        ) {
-            Column {
-                Text("Mi Perfil", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                Text("Datos públicos", color = Color.White.copy(alpha = 0.7f), fontSize = 14.sp)
-            }
-            
-            IconButton(
-                onClick = onEditClick,
-                modifier = Modifier.align(Alignment.TopEnd)
-            ) {
-                Icon(Icons.Default.Edit, null, tint = Color.White)
-            }
-        }
+        EcoTopBar(
+            title = "Mi Perfil",
+            subtitle = "Datos públicos",
+            actionIcon = Icons.Default.Edit,
+            onActionClick = onEditClick
+        )
 
         // Profile Card
         Card(
@@ -144,7 +132,9 @@ fun StatItem(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
     ) {
         Row(
             modifier = Modifier.padding(12.dp),
@@ -153,19 +143,31 @@ fun StatItem(
             Box(
                 modifier = Modifier
                     .size(40.dp)
-                    .background(Color(0xFFE0F2F1), CircleShape),
+                    .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(imageVector = icon, contentDescription = null, tint = EcoGuiaColors.Jade, modifier = Modifier.size(20.dp))
             }
-            
-            Column(modifier = Modifier.padding(horizontal = 12.dp).weight(1f)) {
-                Text(title, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                Text(subtitle, color = Color.Gray, fontSize = 12.sp)
+
+            Column(modifier = Modifier
+                .padding(horizontal = 12.dp)
+                .weight(1f)
+            ) {
+                Text(
+                    text = title,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = subtitle,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 12.sp
+                )
             }
-            
+
             Surface(
-                color = Color(0xFFE0F2F1),
+                color = EcoGuiaColors.Jade.copy(alpha = 0.12f),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Text(

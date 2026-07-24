@@ -1,8 +1,8 @@
-/**
+﻿/**
  * Archivo: EditProfileScreen.kt
  * Autor: ZahirMora
- * Fecha de última actualización: 2026-07-21
- * Descripción: Pantalla de edición de perfil. Permite al usuario modificar su nombre completo de forma flexible.
+ * Fecha de Ãºltima actualizaciÃ³n: 2026-07-21
+ * DescripciÃ³n: Pantalla de ediciÃ³n de perfil. Permite al usuario modificar su nombre completo de forma flexible.
  */
 
 package mx.utng.ecoguiawear.ui.screens
@@ -27,7 +27,7 @@ import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 
 /**
- * Composable que representa la pantalla de edición de perfil.
+ * Composable que representa la pantalla de ediciÃ³n de perfil.
  */
 @Composable
 fun EditProfileScreen(
@@ -37,12 +37,12 @@ fun EditProfileScreen(
     // Usamos un solo campo de nombre completo para mayor flexibilidad
     var fullName by remember { mutableStateOf(user?.displayName ?: "") }
     var publicUser by remember { mutableStateOf("@${user?.displayName?.lowercase()?.replace(" ", "_") ?: "usuario"}") }
-    var bio by remember { mutableStateOf("Me gusta descubrir detalles históricos y compartir cápsulas.") }
+    var bio by remember { mutableStateOf("Me gusta descubrir detalles histÃ³ricos y compartir cÃ¡psulas.") }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF1F4F1))
+            .background(MaterialTheme.colorScheme.background)
     ) {
         // Header
         Box(
@@ -85,14 +85,14 @@ fun EditProfileScreen(
             }
             
             item {
-                EcoTextField(value = publicUser, onValueChange = { publicUser = it }, label = "USUARIO PÚBLICO")
+                EcoTextField(value = publicUser, onValueChange = { publicUser = it }, label = "USUARIO PÃšBLICO")
             }
             
             item {
                 EcoTextField(
                     value = bio, 
                     onValueChange = { bio = it }, 
-                    label = "BIOGRAFÍA",
+                    label = "BIOGRAFÃA",
                     modifier = Modifier.height(100.dp)
                 )
             }
@@ -116,3 +116,4 @@ fun EditProfileScreenPreview() {
         EditProfileScreen(null, {})
     }
 }
+

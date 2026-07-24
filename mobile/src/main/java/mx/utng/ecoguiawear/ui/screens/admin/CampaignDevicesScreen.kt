@@ -1,8 +1,8 @@
-/**
+﻿/**
  * Archivo: CampaignDevicesScreen.kt
  * Autor: ZahirMora
- * Fecha de última actualización: 2026-07-22
- * Descripción: Pantalla de selección de dispositivos para una campaña visual.
+ * Fecha de Ãºltima actualizaciÃ³n: 2026-07-22
+ * DescripciÃ³n: Pantalla de selecciÃ³n de dispositivos para una campaÃ±a visual.
  */
 
 package mx.utng.ecoguiawear.ui.screens.admin
@@ -35,7 +35,7 @@ fun CampaignDevicesScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF1F4F1))
+            .background(MaterialTheme.colorScheme.background)
     ) {
         // Header
         Box(
@@ -66,12 +66,12 @@ fun CampaignDevicesScreen(
                 .clip(RoundedCornerShape(24.dp))
                 .background(Color(0xFFE8F5E9))
         ) {
-            Text("Mapa de disponibilidad", modifier = Modifier.align(Alignment.Center), color = Color.Gray)
+            Text("Mapa de disponibilidad", modifier = Modifier.align(Alignment.Center), color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
 
         // Selected List
         Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-            Text("Seleccionados para campaña", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
+            Text("Seleccionados para campaÃ±a", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
             
             LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 item {
@@ -109,18 +109,18 @@ fun DeviceItemToggle(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row(
             modifier = Modifier.padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Icon placeholder
-            Box(modifier = Modifier.size(32.dp).background(Color(0xFFF1F4F1), RoundedCornerShape(8.dp)))
+            Box(modifier = Modifier.size(32.dp).background(MaterialTheme.colorScheme.background, RoundedCornerShape(8.dp)))
             
             Column(modifier = Modifier.padding(horizontal = 12.dp).weight(1f)) {
-                Text(title, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                Text(subtitle, color = Color.Gray, fontSize = 10.sp)
+                Text(title, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
+                Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
             }
             
             Text(
@@ -141,3 +141,7 @@ fun CampaignDevicesScreenPreview() {
         CampaignDevicesScreen({})
     }
 }
+
+
+
+

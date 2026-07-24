@@ -1,8 +1,8 @@
-/**
+﻿/**
  * Archivo: SiteContentScreen.kt
  * Autor: ZahirMora
- * Fecha de última actualización: 2026-07-22
- * Descripción: Gestión del contenido histórico y descriptivo de un sitio (Paso 2).
+ * Fecha de Ãºltima actualizaciÃ³n: 2026-07-22
+ * DescripciÃ³n: GestiÃ³n del contenido histÃ³rico y descriptivo de un sitio (Paso 2).
  */
 
 package mx.utng.ecoguiawear.ui.screens.admin
@@ -38,7 +38,7 @@ fun SiteContentScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF1F4F1))
+            .background(MaterialTheme.colorScheme.background)
     ) {
         // Header
         Box(
@@ -73,8 +73,8 @@ fun SiteContentScreen(
             shape = RoundedCornerShape(24.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text("Texto turístico curado", color = Color.White, fontWeight = FontWeight.Bold)
-                Text("Secciones necesarias para datos históricos de la guía.", color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp)
+                Text("Texto turÃ­stico curado", color = Color.White, fontWeight = FontWeight.Bold)
+                Text("Secciones necesarias para datos histÃ³ricos de la guÃ­a.", color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp)
             }
         }
 
@@ -84,11 +84,11 @@ fun SiteContentScreen(
                 .weight(1f)
                 .padding(horizontal = 16.dp)
         ) {
-            Text("Descripción histórica", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
+            Text("DescripciÃ³n histÃ³rica", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
             
             LazyColumn(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 item {
-                    EcoTextField(value = historyTitle, onValueChange = { historyTitle = it }, label = "TÍTULO DE SECCIÓN")
+                    EcoTextField(value = historyTitle, onValueChange = { historyTitle = it }, label = "TÃTULO DE SECCIÃ“N")
                 }
                 item {
                     EcoTextField(
@@ -126,3 +126,4 @@ fun SiteContentScreenPreview() {
         SiteContentScreen({})
     }
 }
+

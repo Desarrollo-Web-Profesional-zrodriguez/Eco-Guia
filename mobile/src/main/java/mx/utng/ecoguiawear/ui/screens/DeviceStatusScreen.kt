@@ -1,8 +1,8 @@
-/**
+﻿/**
  * Archivo: DeviceStatusScreen.kt
  * Autor: ZahirMora
- * Fecha de última actualización: 2026-07-22
- * Descripción: Pantalla de diagnóstico inmersiva que muestra el estado de conexión de los servicios críticos.
+ * Fecha de Ãºltima actualizaciÃ³n: 2026-07-22
+ * DescripciÃ³n: Pantalla de diagnÃ³stico inmersiva que muestra el estado de conexiÃ³n de los servicios crÃ­ticos.
  */
 
 package mx.utng.ecoguiawear.ui.screens
@@ -56,7 +56,7 @@ fun DeviceStatusScreen(
             Spacer(modifier = Modifier.height(48.dp))
             
             StatusDiagnosticItem(
-                title = "Eco-Guía móvil",
+                title = "Eco-GuÃ­a mÃ³vil",
                 icon = Icons.Default.Phonelink,
                 isConnected = true
             )
@@ -72,7 +72,7 @@ fun DeviceStatusScreen(
             Spacer(modifier = Modifier.height(16.dp))
             
             StatusDiagnosticItem(
-                title = "Cámara lista",
+                title = "CÃ¡mara lista",
                 icon = Icons.Default.CameraAlt,
                 isConnected = true
             )
@@ -101,7 +101,7 @@ fun StatusDiagnosticItem(
             .fillMaxWidth()
             .height(70.dp),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.1f))
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.1f))
     ) {
         Row(
             modifier = Modifier
@@ -137,3 +137,4 @@ fun DeviceStatusScreenPreview() {
         DeviceStatusScreen({})
     }
 }
+

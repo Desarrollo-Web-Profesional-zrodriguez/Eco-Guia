@@ -1,8 +1,8 @@
-/**
+﻿/**
  * Archivo: SiteOperationScreen.kt
  * Autor: ZahirMora
- * Fecha de última actualización: 2026-07-22
- * Descripción: Configuración de horarios, costos y accesibilidad para el sitio (Paso 4).
+ * Fecha de Ãºltima actualizaciÃ³n: 2026-07-22
+ * DescripciÃ³n: ConfiguraciÃ³n de horarios, costos y accesibilidad para el sitio (Paso 4).
  */
 
 package mx.utng.ecoguiawear.ui.screens.admin
@@ -31,14 +31,14 @@ import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 fun SiteOperationScreen(
     onFinish: () -> Unit
 ) {
-    var hours by remember { mutableStateOf("Martes a domingo • 10:00 - 17:00") }
-    var cost by remember { mutableStateOf("$85 general • estudiantes gratis") }
-    var accessibility by remember { mutableStateOf("Entrada con rampa, baños cercanos") }
+    var hours by remember { mutableStateOf("Martes a domingo â€¢ 10:00 - 17:00") }
+    var cost by remember { mutableStateOf("$85 general â€¢ estudiantes gratis") }
+    var accessibility by remember { mutableStateOf("Entrada con rampa, baÃ±os cercanos") }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF1F4F1))
+            .background(MaterialTheme.colorScheme.background)
     ) {
         // Header
         Box(
@@ -48,7 +48,7 @@ fun SiteOperationScreen(
                 .padding(top = 48.dp, start = 24.dp, end = 24.dp, bottom = 16.dp)
         ) {
             Column {
-                Text("Operación", color = Color.White, fontSize = 14.sp)
+                Text("OperaciÃ³n", color = Color.White, fontSize = 14.sp)
                 Text("Horarios y acceso", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
             }
             
@@ -69,8 +69,8 @@ fun SiteOperationScreen(
             shape = RoundedCornerShape(24.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text("Datos prácticos", color = Color.White, fontWeight = FontWeight.Bold)
-                Text("Información de utilidad necesaria del sitio de interés.", color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp)
+                Text("Datos prÃ¡cticos", color = Color.White, fontWeight = FontWeight.Bold)
+                Text("InformaciÃ³n de utilidad necesaria del sitio de interÃ©s.", color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp)
             }
         }
 
@@ -112,3 +112,4 @@ fun SiteOperationScreenPreview() {
         SiteOperationScreen({})
     }
 }
+

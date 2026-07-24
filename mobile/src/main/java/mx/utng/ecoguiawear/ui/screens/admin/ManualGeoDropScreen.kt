@@ -1,8 +1,8 @@
-/**
+﻿/**
  * Archivo: ManualGeoDropScreen.kt
  * Autor: ZahirMora
- * Fecha de última actualización: 2026-07-22
- * Descripción: Pantalla para el anclaje manual de cápsulas (Geo-Drops) por parte de un administrador.
+ * Fecha de Ãºltima actualizaciÃ³n: 2026-07-22
+ * DescripciÃ³n: Pantalla para el anclaje manual de cÃ¡psulas (Geo-Drops) por parte de un administrador.
  */
 
 package mx.utng.ecoguiawear.ui.screens.admin
@@ -39,7 +39,7 @@ fun ManualGeoDropScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF1F4F1))
+            .background(MaterialTheme.colorScheme.background)
     ) {
         // Header
         Box(
@@ -50,7 +50,7 @@ fun ManualGeoDropScreen(
         ) {
             Column {
                 Text("Geo-Drop", color = Color.White, fontSize = 14.sp)
-                Text("Anclar cápsula", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text("Anclar cÃ¡psula", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
             }
             
             IconButton(
@@ -71,7 +71,7 @@ fun ManualGeoDropScreen(
                 .background(Color.Gray.copy(alpha = 0.2f)),
             contentAlignment = Alignment.Center
         ) {
-            Text("Vista previa de cápsula", color = Color.Gray)
+            Text("Vista previa de cÃ¡psula", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
 
         // Form Section
@@ -81,22 +81,22 @@ fun ManualGeoDropScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White)
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.Edit, null, tint = EcoGuiaColors.Jade, modifier = Modifier.size(20.dp))
                         Column(modifier = Modifier.padding(start = 12.dp)) {
-                            Text("Título", fontSize = 11.sp, color = Color.Gray)
-                            Text(title, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                            Text("TÃ­tulo", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(title, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
                         }
                     }
                     
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.Place, null, tint = EcoGuiaColors.Jade, modifier = Modifier.size(20.dp))
                         Column(modifier = Modifier.padding(start = 12.dp)) {
-                            Text("Ubicación", fontSize = 11.sp, color = Color.Gray)
-                            Text(location, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                            Text("UbicaciÃ³n", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(location, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
                         }
                         Spacer(modifier = Modifier.weight(1f))
                         Text("OK", color = EcoGuiaColors.Jade, fontWeight = FontWeight.Bold, fontSize = 12.sp)
@@ -106,8 +106,8 @@ fun ManualGeoDropScreen(
             
             Spacer(modifier = Modifier.height(24.dp))
             
-            Text("Visibilidad", fontSize = 12.sp, color = Color.Gray, modifier = Modifier.padding(bottom = 8.dp))
-            Text("Pública después de revisión", fontWeight = FontWeight.Medium, fontSize = 14.sp)
+            Text("Visibilidad", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(bottom = 8.dp))
+            Text("PÃºblica despuÃ©s de revisiÃ³n", fontWeight = FontWeight.Medium, fontSize = 14.sp)
         }
 
         Spacer(modifier = Modifier.weight(1f))
@@ -129,3 +129,7 @@ fun ManualGeoDropScreenPreview() {
         ManualGeoDropScreen({})
     }
 }
+
+
+
+

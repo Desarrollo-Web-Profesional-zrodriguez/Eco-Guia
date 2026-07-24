@@ -24,6 +24,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import mx.utng.ecoguiawear.ui.components.EcoTopBar
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 
@@ -38,27 +39,14 @@ fun MyCollectionScreen() {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF1F4F1))
+            .background(MaterialTheme.colorScheme.background)
     ) {
-        // Header
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(EcoGuiaColors.DeepBlue)
-                .padding(top = 48.dp, start = 24.dp, end = 24.dp, bottom = 24.dp)
-        ) {
-            Column {
-                Text("Mi Colección", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                Text("Guardados", color = Color.White.copy(alpha = 0.7f), fontSize = 14.sp)
-            }
-            
-            IconButton(
-                onClick = { },
-                modifier = Modifier.align(Alignment.TopEnd)
-            ) {
-                Icon(Icons.Default.Search, null, tint = Color.White)
-            }
-        }
+        EcoTopBar(
+            title = "Mi Colección",
+            subtitle = "Guardados",
+            actionIcon = Icons.Default.Search,
+            onActionClick = { }
+        )
 
         // Info Card
         Card(
@@ -124,7 +112,7 @@ fun CollectionItemPlaceholder(index: Int) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row(
             modifier = Modifier.padding(12.dp),
@@ -133,17 +121,29 @@ fun CollectionItemPlaceholder(index: Int) {
             Box(
                 modifier = Modifier
                     .size(40.dp)
-                    .background(Color(0xFFE0F2F1), RoundedCornerShape(12.dp)),
+                    .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp)),
                 contentAlignment = Alignment.Center
             ) {
                 // Icon placeholder
             }
-            
-            Column(modifier = Modifier.padding(horizontal = 12.dp).weight(1f)) {
-                Text(titles[index % 3], fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                Text(subtitles[index % 3], color = Color.Gray, fontSize = 12.sp)
+
+            Column(modifier = Modifier
+                .padding(horizontal = 12.dp)
+                .weight(1f)
+            ) {
+                Text(
+                    text = titles[index % 3],
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = subtitles[index % 3],
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 12.sp
+                )
             }
-            
+
             Text("Ver", color = EcoGuiaColors.Jade, fontWeight = FontWeight.Bold, fontSize = 12.sp)
         }
     }

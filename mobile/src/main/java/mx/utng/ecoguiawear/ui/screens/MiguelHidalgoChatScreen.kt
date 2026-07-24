@@ -1,9 +1,9 @@
-/**
+﻿/**
  * Archivo: MiguelHidalgoChatScreen.kt
  * Autor: ZahirMora
- * Fecha de última actualización: 2026-07-22
- * Descripción: Pantalla de chat interactivo con el avatar de Miguel Hidalgo IA. 
- * Implementa una interfaz de conversación guiada con burbujas de mensaje estilizadas.
+ * Fecha de Ãºltima actualizaciÃ³n: 2026-07-22
+ * DescripciÃ³n: Pantalla de chat interactivo con el avatar de Miguel Hidalgo IA. 
+ * Implementa una interfaz de conversaciÃ³n guiada con burbujas de mensaje estilizadas.
  */
 
 package mx.utng.ecoguiawear.ui.screens
@@ -39,7 +39,7 @@ fun MiguelHidalgoChatScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF1F4F1))
+            .background(MaterialTheme.colorScheme.background)
     ) {
         // Header
         Box(
@@ -74,7 +74,7 @@ fun MiguelHidalgoChatScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             shape = RoundedCornerShape(20.dp)
         ) {
             Row(
@@ -90,8 +90,8 @@ fun MiguelHidalgoChatScreen(
                     Text("MH", color = EcoGuiaColors.Background, fontWeight = FontWeight.Bold)
                 }
                 Column(modifier = Modifier.padding(start = 12.dp)) {
-                    Text("Miguel Hidalgo IA", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                    Text("Tu mentor e historiador virtual", color = Color.Gray, fontSize = 11.sp)
+                    Text("Miguel Hidalgo IA", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
+                    Text("Tu mentor e historiador virtual", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
                 }
             }
         }
@@ -105,7 +105,7 @@ fun MiguelHidalgoChatScreen(
         ) {
             item {
                 Text(
-                    "Conversación guiada", 
+                    "ConversaciÃ³n guiada", 
                     color = Color.Black, 
                     fontWeight = FontWeight.Bold, 
                     fontSize = 14.sp,
@@ -114,11 +114,11 @@ fun MiguelHidalgoChatScreen(
             }
             
             item {
-                UserChatBubble("¿Qué sucedió en esta casona?")
+                UserChatBubble("Â¿QuÃ© sucediÃ³ en esta casona?")
             }
             
             item {
-                IAChatBubble("Aquí se gestó la conspiración de Dolores el 15 de septiembre de 1810. Allende y Aldama vinieron a informar sobre la traición de la conspiración de Querétaro.")
+                IAChatBubble("AquÃ­ se gestÃ³ la conspiraciÃ³n de Dolores el 15 de septiembre de 1810. Allende y Aldama vinieron a informar sobre la traiciÃ³n de la conspiraciÃ³n de QuerÃ©taro.")
             }
             
             item {
@@ -135,7 +135,7 @@ fun MiguelHidalgoChatScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             shape = RoundedCornerShape(24.dp)
         ) {
             Row(
@@ -143,7 +143,7 @@ fun MiguelHidalgoChatScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    "¿Qué deseas descubrir?", 
+                    "Â¿QuÃ© deseas descubrir?", 
                     color = Color.LightGray, 
                     fontSize = 14.sp,
                     modifier = Modifier.weight(1f)
@@ -196,3 +196,7 @@ fun MiguelHidalgoChatScreenPreview() {
         MiguelHidalgoChatScreen({})
     }
 }
+
+
+
+

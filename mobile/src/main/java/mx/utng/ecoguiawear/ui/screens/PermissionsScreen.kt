@@ -1,8 +1,8 @@
-/**
+﻿/**
  * Archivo: PermissionsScreen.kt
  * Autor: ZahirMora
- * Fecha de última actualización: 2026-07-21
- * Descripción: Pantalla de gestión de permisos necesarios para la experiencia completa de la aplicación.
+ * Fecha de Ãºltima actualizaciÃ³n: 2026-07-21
+ * DescripciÃ³n: Pantalla de gestiÃ³n de permisos necesarios para la experiencia completa de la aplicaciÃ³n.
  */
 
 package mx.utng.ecoguiawear.ui.screens
@@ -35,7 +35,7 @@ fun PermissionsScreen() {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF1F4F1))
+            .background(MaterialTheme.colorScheme.background)
     ) {
         // Header
         Box(
@@ -68,7 +68,7 @@ fun PermissionsScreen() {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text("Activa la experiencia completa", color = Color.White, fontWeight = FontWeight.Bold)
                 Text(
-                    "Ubicación, cámara y notificaciones permiten descubrir historia de forma inmersiva.", 
+                    "UbicaciÃ³n, cÃ¡mara y notificaciones permiten descubrir historia de forma inmersiva.", 
                     color = Color.White.copy(alpha = 0.7f), 
                     fontSize = 12.sp
                 )
@@ -82,7 +82,7 @@ fun PermissionsScreen() {
             LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 item {
                     PermissionToggleItem(
-                        title = "Ubicación precisa",
+                        title = "UbicaciÃ³n precisa",
                         subtitle = "Geo-rutas y llegadas a sitios",
                         icon = Icons.Default.Place,
                         initialValue = true
@@ -90,7 +90,7 @@ fun PermissionsScreen() {
                 }
                 item {
                     PermissionToggleItem(
-                        title = "Cámara",
+                        title = "CÃ¡mara",
                         subtitle = "Para ver Geo-Drops en realidad aumentada",
                         icon = Icons.Default.CameraAlt,
                         initialValue = true
@@ -99,7 +99,7 @@ fun PermissionsScreen() {
                 item {
                     PermissionToggleItem(
                         title = "Notificaciones",
-                        subtitle = "Alertas de interés en tiempo real",
+                        subtitle = "Alertas de interÃ©s en tiempo real",
                         icon = Icons.Default.Notifications,
                         initialValue = false
                     )
@@ -121,7 +121,7 @@ fun PermissionToggleItem(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row(
             modifier = Modifier.padding(12.dp),
@@ -130,15 +130,15 @@ fun PermissionToggleItem(
             Box(
                 modifier = Modifier
                     .size(40.dp)
-                    .background(Color(0xFFE0F2F1), CircleShape),
+                    .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(imageVector = icon, contentDescription = null, tint = EcoGuiaColors.Jade, modifier = Modifier.size(20.dp))
             }
             
             Column(modifier = Modifier.padding(horizontal = 12.dp).weight(1f)) {
-                Text(title, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                Text(subtitle, color = Color.Gray, fontSize = 10.sp, lineHeight = 12.sp)
+                Text(title, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
+                Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp, lineHeight = 12.sp)
             }
             
             Switch(
@@ -147,7 +147,7 @@ fun PermissionToggleItem(
                 colors = SwitchDefaults.colors(
                     checkedThumbColor = Color.White,
                     checkedTrackColor = EcoGuiaColors.Jade,
-                    uncheckedThumbColor = Color.Gray,
+                    uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant,
                     uncheckedTrackColor = Color.LightGray
                 )
             )
@@ -162,3 +162,7 @@ fun PermissionsScreenPreview() {
         PermissionsScreen()
     }
 }
+
+
+
+

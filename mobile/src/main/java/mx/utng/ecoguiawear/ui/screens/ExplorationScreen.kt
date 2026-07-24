@@ -1,8 +1,8 @@
-/**
+﻿/**
  * Archivo: ExplorationScreen.kt
  * Autor: ZahirMora
- * Fecha de última actualización: 2026-07-20
- * Descripción: Pantalla principal de exploración. Muestra el mapa y sitios recomendados.
+ * Fecha de Ãºltima actualizaciÃ³n: 2026-07-20
+ * DescripciÃ³n: Pantalla principal de exploraciÃ³n. Muestra el mapa y sitios recomendados.
  */
 
 package mx.utng.ecoguiawear.ui.screens
@@ -24,11 +24,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
+import mx.utng.ecoguiawear.ui.components.EcoTopBar
 import androidx.compose.ui.tooling.preview.Preview
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 
 /**
- * Composable que representa la pantalla de exploración.
+ * Composable que representa la pantalla de exploraciÃ³n.
  */
 @Composable
 fun ExplorationScreen(
@@ -37,34 +38,16 @@ fun ExplorationScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF1F4F1))
+            .background(MaterialTheme.colorScheme.background)
     ) {
-        // Header Azul
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(140.dp)
-                .background(EcoGuiaColors.DeepBlue)
-                .padding(top = 32.dp, start = 16.dp, end = 16.dp, bottom = 16.dp)
-        ) {
-            Column {
-                Text("Explorar", color = EcoGuiaColors.Text, fontSize = 18.sp)
-                Text("Cerca de ti", color = EcoGuiaColors.Text, fontSize = 24.sp, fontWeight = FontWeight.Bold)
-            }
-            
-            IconButton(
-                onClick = onAdminClick,
-                modifier = Modifier.align(Alignment.TopEnd)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.AddCircle,
-                    contentDescription = "Admin",
-                    tint = EcoGuiaColors.Gold
-                )
-            }
-        }
+        EcoTopBar(
+            title = "Cerca de ti",
+            subtitle = "Explorar",
+            actionIcon = Icons.Default.AddCircle,
+            onActionClick = onAdminClick
+        )
         
-        // Simulación de Mapa
+        // SimulaciÃ³n de Mapa
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -74,8 +57,8 @@ fun ExplorationScreen(
                 .clip(RoundedCornerShape(24.dp))
                 .background(Color(0xFFE8F5E9)) // Color del mapa
         ) {
-            // Aquí iría el mapa real, por ahora un placeholder visual
-            Text("Mapa de Dolores Hidalgo", modifier = Modifier.align(Alignment.Center), color = Color.Gray)
+            // AquÃ­ irÃ­a el mapa real, por ahora un placeholder visual
+            Text("Mapa de Dolores Hidalgo", modifier = Modifier.align(Alignment.Center), color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         
         // Lista de Sitios
@@ -91,7 +74,7 @@ fun ExplorationScreen(
                 item {
                     RecommendedSiteItem(
                         title = "Museo de la Independencia",
-                        subtitle = "Geo-Drops: 3 • A 20 m",
+                        subtitle = "Geo-Drops: 3 â€¢ A 20 m",
                         icon = Icons.Default.Place,
                         trailing = "Ir"
                     )
@@ -99,7 +82,7 @@ fun ExplorationScreen(
                 item {
                     RecommendedSiteItem(
                         title = "Parroquia de Dolores",
-                        subtitle = "Ruta activa • A 350 m",
+                        subtitle = "Ruta activa â€¢ A 350 m",
                         icon = Icons.Default.Star,
                         trailing = "1.2 km"
                     )
@@ -122,7 +105,7 @@ fun RecommendedSiteItem(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row(
             modifier = Modifier.padding(12.dp),
@@ -131,19 +114,31 @@ fun RecommendedSiteItem(
             Box(
                 modifier = Modifier
                     .size(40.dp)
-                    .background(Color(0xFFE0F2F1), CircleShape),
+                    .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(imageVector = icon, contentDescription = null, tint = EcoGuiaColors.Jade, modifier = Modifier.size(20.dp))
             }
-            
-            Column(modifier = Modifier.padding(horizontal = 12.dp).weight(1f)) {
-                Text(title, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                Text(subtitle, color = Color.Gray, fontSize = 12.sp)
+
+            Column(modifier = Modifier
+                .padding(horizontal = 12.dp)
+                .weight(1f)
+            ) {
+                Text(
+                    text = title,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = subtitle,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 12.sp
+                )
             }
-            
+
             Surface(
-                color = Color(0xFFE0F2F1),
+                color = EcoGuiaColors.Jade.copy(alpha = 0.12f),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Text(
@@ -165,3 +160,4 @@ fun ExplorationScreenPreview() {
         ExplorationScreen({})
     }
 }
+

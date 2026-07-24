@@ -1,8 +1,8 @@
-/**
+﻿/**
  * Archivo: CreateRouteScreen.kt
  * Autor: ZahirMora
- * Fecha de última actualización: 2026-07-21
- * Descripción: Pantalla de creación de rutas personalizadas por parte del administrador.
+ * Fecha de Ãºltima actualizaciÃ³n: 2026-07-21
+ * DescripciÃ³n: Pantalla de creaciÃ³n de rutas personalizadas por parte del administrador.
  */
 
 package mx.utng.ecoguiawear.ui.screens
@@ -33,7 +33,7 @@ fun CreateRouteScreen() {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF1F4F1))
+            .background(MaterialTheme.colorScheme.background)
     ) {
         // Header
         Box(
@@ -64,7 +64,7 @@ fun CreateRouteScreen() {
                 .clip(RoundedCornerShape(24.dp))
                 .background(Color(0xFFE8F5E9))
         ) {
-            Text("Visor de Mapa", modifier = Modifier.align(Alignment.Center), color = Color.Gray)
+            Text("Visor de Mapa", modifier = Modifier.align(Alignment.Center), color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
 
         // Configuration List
@@ -90,7 +90,7 @@ fun CreateRouteScreen() {
                     ConfigStepItem(
                         number = 3,
                         title = "Recompensa final",
-                        subtitle = "Cápsula histórica"
+                        subtitle = "CÃ¡psula histÃ³rica"
                     )
                 }
             }
@@ -114,7 +114,7 @@ fun ConfigStepItem(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row(
             modifier = Modifier.padding(12.dp),
@@ -123,20 +123,20 @@ fun ConfigStepItem(
             Box(
                 modifier = Modifier
                     .size(32.dp)
-                    .background(Color(0xFFF1F4F1), CircleShape),
+                    .background(MaterialTheme.colorScheme.background, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = number.toString(),
-                    color = Color.Gray,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp
                 )
             }
             
             Column(modifier = Modifier.padding(horizontal = 12.dp).weight(1f)) {
-                Text(title, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                Text(subtitle, color = Color.Gray, fontSize = 12.sp)
+                Text(title, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
+                Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
             }
             
             RadioButton(selected = false, onClick = null)
@@ -151,3 +151,7 @@ fun CreateRouteScreenPreview() {
         CreateRouteScreen()
     }
 }
+
+
+
+

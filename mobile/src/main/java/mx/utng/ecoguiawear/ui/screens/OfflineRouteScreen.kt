@@ -1,8 +1,8 @@
-/**
+﻿/**
  * Archivo: OfflineRouteScreen.kt
  * Autor: ZahirMora
- * Fecha de última actualización: 2026-07-21
- * Descripción: Pantalla que muestra el contenido de una ruta descargada para acceso sin conexión.
+ * Fecha de Ãºltima actualizaciÃ³n: 2026-07-21
+ * DescripciÃ³n: Pantalla que muestra el contenido de una ruta descargada para acceso sin conexiÃ³n.
  */
 
 package mx.utng.ecoguiawear.ui.screens
@@ -35,7 +35,7 @@ fun OfflineRouteScreen() {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF1F4F1))
+            .background(MaterialTheme.colorScheme.background)
     ) {
         // Header
         Box(
@@ -82,14 +82,14 @@ fun OfflineRouteScreen() {
             LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 item {
                     LocalContentItem(
-                        title = "Centro histórico",
+                        title = "Centro histÃ³rico",
                         subtitle = "12 sitios descargados",
                         icon = Icons.Default.Place
                     )
                 }
                 item {
                     LocalContentItem(
-                        title = "Mi colección",
+                        title = "Mi colecciÃ³n",
                         subtitle = "18 fotos guardadas",
                         icon = Icons.Default.Favorite
                     )
@@ -115,7 +115,7 @@ fun LocalContentItem(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row(
             modifier = Modifier.padding(12.dp),
@@ -124,15 +124,15 @@ fun LocalContentItem(
             Box(
                 modifier = Modifier
                     .size(40.dp)
-                    .background(Color(0xFFE0F2F1), CircleShape),
+                    .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(imageVector = icon, contentDescription = null, tint = EcoGuiaColors.Jade, modifier = Modifier.size(20.dp))
             }
             
             Column(modifier = Modifier.padding(horizontal = 12.dp).weight(1f)) {
-                Text(title, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                Text(subtitle, color = Color.Gray, fontSize = 12.sp)
+                Text(title, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
+                Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
             }
             
             RadioButton(selected = false, onClick = null)
@@ -147,3 +147,7 @@ fun OfflineRouteScreenPreview() {
         OfflineRouteScreen()
     }
 }
+
+
+
+

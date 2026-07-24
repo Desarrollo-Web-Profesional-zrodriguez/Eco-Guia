@@ -1,8 +1,8 @@
-/**
+﻿/**
  * Archivo: ModerationListScreen.kt
  * Autor: ZahirMora
- * Fecha de última actualización: 2026-07-22
- * Descripción: Pantalla que lista los reportes y contenidos pendientes de moderación.
+ * Fecha de Ãºltima actualizaciÃ³n: 2026-07-22
+ * DescripciÃ³n: Pantalla que lista los reportes y contenidos pendientes de moderaciÃ³n.
  */
 
 package mx.utng.ecoguiawear.ui.screens.admin
@@ -32,7 +32,7 @@ fun ModerationListScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF1F4F1))
+            .background(MaterialTheme.colorScheme.background)
     ) {
         // Header
         Box(
@@ -67,7 +67,7 @@ fun ModerationListScreen(
             shape = RoundedCornerShape(24.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text("Moderación responsable", color = Color.White, fontWeight = FontWeight.Bold)
+                Text("ModeraciÃ³n responsable", color = Color.White, fontWeight = FontWeight.Bold)
                 Text("Revisa los reportes para mantener una comunidad saludable.", color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp)
             }
         }
@@ -112,7 +112,7 @@ fun ReportListItem(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row(
             modifier = Modifier.padding(12.dp),
@@ -121,15 +121,15 @@ fun ReportListItem(
             Box(
                 modifier = Modifier
                     .size(32.dp)
-                    .background(Color(0xFFF1F4F1), RoundedCornerShape(8.dp)),
+                    .background(MaterialTheme.colorScheme.background, RoundedCornerShape(8.dp)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(Icons.Default.Info, null, tint = Color.Gray, modifier = Modifier.size(16.dp))
             }
             
             Column(modifier = Modifier.padding(horizontal = 12.dp).weight(1f)) {
-                Text(title, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                Text(subtitle, color = Color.Gray, fontSize = 12.sp)
+                Text(title, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
+                Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
             }
             
             TextButton(onClick = onViewClick) {
@@ -146,3 +146,7 @@ fun ModerationListScreenPreview() {
         ModerationListScreen({})
     }
 }
+
+
+
+

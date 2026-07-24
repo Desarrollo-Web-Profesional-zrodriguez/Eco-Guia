@@ -1,8 +1,8 @@
-/**
+﻿/**
  * Archivo: SearchExperienceScreen.kt
  * Autor: ZahirMora
- * Fecha de última actualización: 2026-07-21
- * Descripción: Pantalla de búsqueda de experiencias con filtros rápidos para museos, cápsulas y chat IA.
+ * Fecha de Ãºltima actualizaciÃ³n: 2026-07-21
+ * DescripciÃ³n: Pantalla de bÃºsqueda de experiencias con filtros rÃ¡pidos para museos, cÃ¡psulas y chat IA.
  */
 
 package mx.utng.ecoguiawear.ui.screens
@@ -32,7 +32,7 @@ fun SearchExperienceScreen() {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF1F4F1))
+            .background(MaterialTheme.colorScheme.background)
     ) {
         // Header
         Box(
@@ -63,27 +63,27 @@ fun SearchExperienceScreen() {
             shape = RoundedCornerShape(24.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text("¿Qué quieres explorar?", color = Color.White, fontWeight = FontWeight.Bold)
-                Text("Encuentra museos, crea cápsulas o haz preguntas a la IA.", color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp)
+                Text("Â¿QuÃ© quieres explorar?", color = Color.White, fontWeight = FontWeight.Bold)
+                Text("Encuentra museos, crea cÃ¡psulas o haz preguntas a la IA.", color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp)
             }
         }
 
         // Quick Filters
         Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-            Text("Filtros rápidos", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
+            Text("Filtros rÃ¡pidos", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
             
             LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 item {
                     FilterItem(
                         title = "Museos",
-                        subtitle = "12 sitios históricos cerca",
+                        subtitle = "12 sitios histÃ³ricos cerca",
                         icon = Icons.Default.Place
                     )
                 }
                 item {
                     FilterItem(
                         title = "Geo-Drops",
-                        subtitle = "24 cápsulas activas",
+                        subtitle = "24 cÃ¡psulas activas",
                         icon = Icons.Default.AddCircle
                     )
                 }
@@ -108,7 +108,7 @@ fun FilterItem(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -117,15 +117,15 @@ fun FilterItem(
             Box(
                 modifier = Modifier
                     .size(40.dp)
-                    .background(Color(0xFFE0F2F1), CircleShape),
+                    .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(imageVector = icon, contentDescription = null, tint = EcoGuiaColors.Jade, modifier = Modifier.size(20.dp))
             }
             
             Column(modifier = Modifier.padding(horizontal = 16.dp).weight(1f)) {
-                Text(title, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                Text(subtitle, color = Color.Gray, fontSize = 12.sp)
+                Text(title, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
+                Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
             }
             
             Icon(Icons.Default.ChevronRight, null, tint = Color.LightGray)
@@ -140,3 +140,7 @@ fun SearchExperienceScreenPreview() {
         SearchExperienceScreen()
     }
 }
+
+
+
+

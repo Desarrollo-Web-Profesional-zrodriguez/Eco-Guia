@@ -1,8 +1,8 @@
-/**
+﻿/**
  * Archivo: ReportDetailScreen.kt
  * Autor: ZahirMora
- * Fecha de última actualización: 2026-07-22
- * Descripción: Pantalla para la resolución detallada de un reporte de moderación.
+ * Fecha de Ãºltima actualizaciÃ³n: 2026-07-22
+ * DescripciÃ³n: Pantalla para la resoluciÃ³n detallada de un reporte de moderaciÃ³n.
  */
 
 package mx.utng.ecoguiawear.ui.screens.admin
@@ -34,7 +34,7 @@ fun ReportDetailScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF1F4F1))
+            .background(MaterialTheme.colorScheme.background)
     ) {
         // Header
         Box(
@@ -59,12 +59,12 @@ fun ReportDetailScreen(
                 .background(Color.Gray.copy(alpha = 0.2f)),
             contentAlignment = Alignment.Center
         ) {
-            Text("Archivo Reportado", color = Color.Gray)
+            Text("Archivo Reportado", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
 
         // Action Section
         Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-            Text("Decisión del reporte", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
+            Text("DecisiÃ³n del reporte", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
             
             LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 item {
@@ -77,15 +77,15 @@ fun ReportDetailScreen(
                 }
                 item {
                     DecisionItem(
-                        title = "Mala ubicación",
-                        subtitle = "El punto está desplazado",
+                        title = "Mala ubicaciÃ³n",
+                        subtitle = "El punto estÃ¡ desplazado",
                         color = EcoGuiaColors.Gold,
                         tag = "Mover"
                     )
                 }
                 item {
                     DecisionItem(
-                        title = "Análisis asertivo",
+                        title = "AnÃ¡lisis asertivo",
                         subtitle = "Contenido verificado",
                         color = EcoGuiaColors.Jade,
                         tag = "Aprobar"
@@ -116,7 +116,7 @@ fun DecisionItem(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row(
             modifier = Modifier.padding(12.dp),
@@ -129,8 +129,8 @@ fun DecisionItem(
             )
             
             Column(modifier = Modifier.padding(horizontal = 12.dp).weight(1f)) {
-                Text(title, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                Text(subtitle, color = Color.Gray, fontSize = 12.sp)
+                Text(title, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
+                Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
             }
             
             Surface(
@@ -156,3 +156,7 @@ fun ReportDetailScreenPreview() {
         ReportDetailScreen({})
     }
 }
+
+
+
+

@@ -1,8 +1,8 @@
-/**
+﻿/**
  * Archivo: MuseumPortal360Screen.kt
  * Autor: ZahirMora
- * Fecha de última actualización: 2026-07-22
- * Descripción: Pantalla de portal inmersivo que muestra la vista 360 del museo y puntos de interés.
+ * Fecha de Ãºltima actualizaciÃ³n: 2026-07-22
+ * DescripciÃ³n: Pantalla de portal inmersivo que muestra la vista 360 del museo y puntos de interÃ©s.
  */
 
 package mx.utng.ecoguiawear.ui.screens.admin
@@ -62,7 +62,7 @@ fun MuseumPortal360Screen() {
                         .background(EcoGuiaColors.DeepBlue.copy(alpha = 0.6f), RoundedCornerShape(12.dp))
                         .padding(horizontal = 12.dp, vertical = 6.dp)
                 ) {
-                    Text("Dolores Hidalgo - Centro Histórico", color = Color.White, fontSize = 10.sp)
+                    Text("Dolores Hidalgo - Centro HistÃ³rico", color = Color.White, fontSize = 10.sp)
                 }
             }
             
@@ -75,7 +75,7 @@ fun MuseumPortal360Screen() {
             ) {
                 PortalStatItem("360", "vista")
                 PortalStatItem("12", "puntos")
-                PortalStatItem("IA", "guía")
+                PortalStatItem("IA", "guÃ­a")
             }
         }
     }
@@ -88,7 +88,7 @@ fun PortalStatItem(value: String, label: String) {
             .fillMaxWidth()
             .height(70.dp),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.1f))
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.1f))
     ) {
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -108,3 +108,4 @@ fun MuseumPortal360ScreenPreview() {
         MuseumPortal360Screen()
     }
 }
+
