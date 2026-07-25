@@ -16,6 +16,7 @@ import mx.utng.ecoguiawear.data.haptics.HapticController
 import mx.utng.ecoguiawear.data.repository.DemoRadarRepository
 import mx.utng.ecoguiawear.data.wear.LocationHelper
 import mx.utng.ecoguiawear.data.wear.PhoneMessageClient
+import mx.utng.ecoguiawear.data.wear.SensorHelper
 import mx.utng.ecoguiawear.data.wear.WearMessageListener
 import mx.utng.ecoguiawear.presentation.navigation.EcoGuiaWearNavGraph
 import mx.utng.ecoguiawear.presentation.theme.EcoGuiaWearTheme
@@ -24,6 +25,7 @@ class MainActivity : ComponentActivity(), MessageClient.OnMessageReceivedListene
 
     private lateinit var messageListener: WearMessageListener
     private lateinit var locationHelper: LocationHelper
+    private lateinit var sensorHelper: SensorHelper
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
@@ -35,6 +37,11 @@ class MainActivity : ComponentActivity(), MessageClient.OnMessageReceivedListene
         locationHelper = LocationHelper(applicationContext) { location ->
             repository.updateCurrentLocation(location.latitude, location.longitude)
         }
+
+        sensorHelper = SensorHelper(applicationContext) { heading ->
+            repository.updateHeading(heading)
+        }
+        sensorHelper.start()
 
         Wearable.getMessageClient(this).addListener(this)
 
@@ -77,6 +84,7 @@ class MainActivity : ComponentActivity(), MessageClient.OnMessageReceivedListene
     override fun onDestroy() {
         super.onDestroy()
         locationHelper.stopUpdates()
+        sensorHelper.stop()
         Wearable.getMessageClient(this).removeListener(this)
     }
 }

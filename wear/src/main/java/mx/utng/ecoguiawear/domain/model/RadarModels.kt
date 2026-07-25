@@ -65,6 +65,7 @@ data class RadarUiState(
     val isGpsEnabled: Boolean = true,
     val isCameraReady: Boolean = true,
     val alerts: List<AlertEntity> = emptyList(),
+    val currentHeading: Float = 0f,
     val target: RadarTarget = RadarTarget(
         id = "none",
         title = "Esperando objetivo",

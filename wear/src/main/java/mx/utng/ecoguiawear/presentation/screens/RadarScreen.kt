@@ -63,7 +63,7 @@ fun RadarScreen(
         }
         item {
             CompassArrow(
-                bearingDegrees = target.bearingDegrees,
+                bearingDegrees = target.bearingDegrees - state.currentHeading,
                 modifier = Modifier.size(108.dp)
             )
         }

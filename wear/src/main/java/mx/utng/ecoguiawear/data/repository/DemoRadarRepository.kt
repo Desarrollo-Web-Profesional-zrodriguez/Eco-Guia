@@ -254,6 +254,10 @@ class DemoRadarRepository(context: Context) : RadarRepository {
         recalculateRadar()
     }
 
+    override fun updateHeading(heading: Float) {
+        _radarState.update { it.copy(currentHeading = heading) }
+    }
+
     private fun recalculateRadar() {
         _radarState.update { state ->
             val target = state.target

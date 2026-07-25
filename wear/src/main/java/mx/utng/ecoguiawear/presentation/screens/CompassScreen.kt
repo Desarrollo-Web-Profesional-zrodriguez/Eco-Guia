@@ -37,7 +37,7 @@ fun CompassScreen(
         
         item {
             CompassArrow(
-                bearingDegrees = state.target.bearingDegrees,
+                bearingDegrees = state.target.bearingDegrees - state.currentHeading,
                 modifier = Modifier.size(120.dp)
             )
         }

@@ -4,4 +4,5 @@
 - [x] Crear `WearMessageClient` en el módulo móvil
 - [x] Integrar sincronización en `LocationViewModel` y `ExplorationScreen`
 - [x] Actualizar `RadarRepository` y `WearMessageListener` en Wear OS
+- [x] Implementar soporte de Brújula (Heading) para rotación dinámica de la flecha
 - [x] Validar comunicación real entre dispositivos
