@@ -87,10 +87,28 @@ class WearMessageClient(private val context: Context) {
         }
     }
 
+    /**
+     * Envía una señal al reloj notificando que la ruta fue completada con éxito.
+     */
+    suspend fun completeRoute() {
+        try {
+            val nodes = Wearable.getNodeClient(context).connectedNodes.await()
+            nodes.forEach { node ->
+                Wearable.getMessageClient(context)
+                    .sendMessage(node.id, PATH_COMPLETE_ROUTE, "completed".toByteArray())
+                    .await()
+            }
+            Log.d("WearMessageClient", "Señal de ruta completada enviada a ${nodes.size} nodos")
+        } catch (e: Exception) {
+            Log.e("WearMessageClient", "Error al enviar señal de ruta completada: ${e.message}")
+        }
+    }
+
     companion object {
         const val PATH_SYNC_TARGET = "/eco-guia/sync/target"
         const val PATH_SYNC_ROUTE = "/eco-guia/sync/route"
         const val PATH_CANCEL_ROUTE = "/eco-guia/cancel/route"
+        const val PATH_COMPLETE_ROUTE = "/eco-guia/complete/route"
         const val PATH_SYNC_PROGRESS = "/eco-guia/sync/progress"
     }
 }

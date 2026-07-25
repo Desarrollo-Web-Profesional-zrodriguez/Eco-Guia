@@ -118,34 +118,53 @@ class RouteViewModel(
 
     /**
      * Actualiza el progreso de la ruta según la posición GPS en vivo del usuario.
-     * Marca una parada como completada si el usuario está a menos de 50m.
+     * Respeta el orden secuencial estricto: solo permite completar la primera parada no visitada.
      */
     fun updateProgressWithLocation(location: Location) {
         val stops = _activeStops.value
-        stops.forEach { stop ->
-            val lat = stop.latitude ?: return@forEach
-            val lng = stop.longitude ?: return@forEach
+        val firstUnvisited = stops.firstOrNull { completedStops[it.id] != true } ?: return
+        val lat = firstUnvisited.latitude ?: return
+        val lng = firstUnvisited.longitude ?: return
 
-            val results = FloatArray(1)
-            Location.distanceBetween(location.latitude, location.longitude, lat, lng, results)
-            val distance = results[0].toDouble()
+        val results = FloatArray(1)
+        Location.distanceBetween(location.latitude, location.longitude, lat, lng, results)
+        val distance = results[0].toDouble()
 
-            // Marca completada si está a menos de 50 metros
-            if (distance <= 50.0 && completedStops[stop.id] != true) {
-                completedStops[stop.id] = true
-                Log.d("RouteViewModel", "Parada completada: ${stop.siteName} (${distance.toInt()}m)")
-                notifyWearProgress()
-            }
+        if (distance <= 50.0) {
+            completedStops[firstUnvisited.id] = true
+            Log.d("RouteViewModel", "Parada secuencial completada: ${firstUnvisited.siteName} (${distance.toInt()}m)")
+            notifyWearProgress()
         }
     }
 
     /**
      * Marca manualmente una parada como completada o no completada (toggle).
+     * En caso de marcar completada, exige que todas las paradas anteriores estén completadas.
+     * En caso de desmarcar, desmarca también todas las paradas posteriores para mantener orden estricto.
      */
     fun toggleStopCompleted(stopId: String) {
-        val current = completedStops[stopId] == true
-        completedStops[stopId] = !current
-        notifyWearProgress()
+        val stops = _activeStops.value
+        val targetIndex = stops.indexOfFirst { it.id == stopId }
+        if (targetIndex == -1) return
+
+        val isCurrentlyDone = completedStops[stopId] == true
+
+        if (!isCurrentlyDone) {
+            // Para completar esta parada, debemos asegurar que las anteriores estén completadas
+            val canComplete = (0 until targetIndex).all { idx -> completedStops[stops[idx].id] == true }
+            if (canComplete) {
+                completedStops[stopId] = true
+                notifyWearProgress()
+            } else {
+                Log.w("RouteViewModel", "No se puede completar la parada $stopId antes de las anteriores.")
+            }
+        } else {
+            // Al desmarcar, desmarcamos esta parada y todas las posteriores
+            for (idx in targetIndex until stops.size) {
+                completedStops[stops[idx].id] = false
+            }
+            notifyWearProgress()
+        }
     }
 
     private fun notifyWearProgress() {
@@ -173,6 +192,23 @@ class RouteViewModel(
                 Log.d("RouteViewModel", "Ruta cancelada en el móvil y señal enviada al reloj")
             } catch (e: Exception) {
                 Log.e("RouteViewModel", "Error al enviar cancelación a Wear OS: ${e.message}")
+            }
+        }
+    }
+
+    /**
+     * Marca la ruta como completada y envía la señal de felicitación al reloj.
+     */
+    fun completeActiveRoute() {
+        _activeRoute.value = null
+        _activeStops.value = emptyList()
+        completedStops.clear()
+        viewModelScope.launch {
+            try {
+                wearMessageClient?.completeRoute()
+                Log.d("RouteViewModel", "Ruta completada enviada al reloj")
+            } catch (e: Exception) {
+                Log.e("RouteViewModel", "Error al enviar señal de completado a Wear OS: ${e.message}")
             }
         }
     }

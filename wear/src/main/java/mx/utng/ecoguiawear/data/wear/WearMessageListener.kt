@@ -99,6 +99,10 @@ class WearMessageListener(
                 android.util.Log.d("WearMessageListener", "Cancelando ruta en el reloj por solicitud del móvil.")
                 repository.clearActiveRoute()
             }
+            "/eco-guia/complete/route" -> {
+                android.util.Log.d("WearMessageListener", "Ruta completada recibida en el reloj.")
+                repository.markRouteCompleted()
+            }
             "/eco-guia/sync/progress" -> {
                 val parts = payload.split("|")
                 if (parts.size == 2) {

@@ -182,11 +182,20 @@ class DemoRadarRepository(context: Context) : RadarRepository {
     override fun completeArrival() {
         _radarState.update { state ->
             val nextVisited = (state.routeSummary.visitedStops + 1).coerceAtMost(state.routeSummary.totalStops)
+            val nextWaypoint = state.routeSummary.waypoints.getOrNull(nextVisited)
+            val nextTitle = nextWaypoint?.title ?: "Siguiente Punto"
+
             state.copy(
                 mode = RadarMode.SCANNING,
-                target = state.target.copy(distanceMeters = 80, title = "Siguiente Punto"),
+                target = state.target.copy(
+                    id = nextWaypoint?.id ?: state.target.id,
+                    title = nextTitle,
+                    distanceMeters = if (nextWaypoint != null) 30 else 0,
+                    latitude = nextWaypoint?.latitude,
+                    longitude = nextWaypoint?.longitude
+                ),
                 routeSummary = state.routeSummary.copy(visitedStops = nextVisited),
-                lastAlert = "Continuando ruta..."
+                lastAlert = "Parada registrada"
             )
         }
     }
@@ -297,6 +306,25 @@ class DemoRadarRepository(context: Context) : RadarRepository {
         if (currentLat != 0.0) {
             performAutoSearch(currentLat, currentLng)
         }
+    }
+
+    override fun markRouteCompleted() {
+        _radarState.update {
+            it.copy(
+                mode = RadarMode.SCANNING,
+                isRouteCompleted = true,
+                lastAlert = "🎉 Ruta Completada"
+            )
+        }
+    }
+
+    override fun dismissRouteCompleted() {
+        _radarState.update {
+            it.copy(
+                isRouteCompleted = false
+            )
+        }
+        clearActiveRoute()
     }
 
     override fun updateCurrentLocation(lat: Double, lng: Double) {

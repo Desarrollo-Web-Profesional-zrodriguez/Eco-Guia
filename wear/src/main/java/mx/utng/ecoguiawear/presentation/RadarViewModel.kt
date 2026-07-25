@@ -67,6 +67,11 @@ class RadarViewModel(
         pulse(HapticPulse.TOGGLE)
     }
 
+    fun dismissRouteCompleted() {
+        repository.dismissRouteCompleted()
+        pulse(HapticPulse.TOGGLE)
+    }
+
     fun openPhoneCamera() {
         sendPhoneEvent(PhoneMessageClient.PATH_OPEN_CAMERA, state.value.target.id)
     }

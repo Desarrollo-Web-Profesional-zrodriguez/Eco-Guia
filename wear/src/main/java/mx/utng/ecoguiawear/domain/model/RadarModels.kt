@@ -84,5 +84,6 @@ data class RadarUiState(
         waypoints = emptyList()
     ),
     val hapticSettings: HapticSettings = HapticSettings(),
-    val lastAlert: String = "Radar listo"
+    val lastAlert: String = "Radar listo",
+    val isRouteCompleted: Boolean = false
 )

@@ -268,7 +268,7 @@ fun MainAppContainer(activity: ComponentActivity, repository: EcoGuiaRepositoryI
                                 routeViewModel.viewModelScope.launch {
                                     val ok = EcoGuiaRepositoryImpl().saveRouteToCollection(userId, route.id)
                                     android.util.Log.d("MainActivity", "Guardado de ruta en DB completado: $ok para routeId=${route.id}")
-                                    routeViewModel.stopActiveRoute()
+                                    routeViewModel.completeActiveRoute()
                                     notificationViewModel.showNotification("🎉 ¡Ruta completada y guardada en Mi Colección!", NotificationType.SUCCESS)
                                     navController.navigate("collection") {
                                         popUpTo("exploration") { inclusive = false }
