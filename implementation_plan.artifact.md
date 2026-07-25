@@ -1,63 +1,72 @@
-# Plan de Implementación: Registro Dinámico de Sitios (Modo Creador)
+# Plan de Implementación: Refinamiento de UX y Catálogos (Alta de Sitio)
 
-Este plan permitirá que cualquier usuario (o administrador) pueda registrar nuevos sitios históricos directamente desde la app, utilizando su ubicación GPS actual para "anclar" el sitio en el mapa. Esto facilita las pruebas fuera de Dolores Hidalgo.
+Este plan tiene como objetivo profesionalizar el flujo de registro mediante el uso de catálogos dinámicos, sugerencias de direcciones y una interfaz más intuitiva con Chips y placeholders.
 
 ## User Review Required
 
 > [!IMPORTANT]
-> - El registro de sitios requiere que el usuario esté físicamente en el lugar que desea registrar para obtener las coordenadas más precisas.
-> - Se integrará el flujo de 4 pasos ya existente en la UI con la base de datos real.
+> - Se requiere ejecutar el script SQL proporcionado para crear la tabla de **Categorías** en Neon PostgreSQL.
+> - Se integrará la SDK de **Google Places** para las sugerencias de direcciones (requiere que la API Key tenga habilitado "Places API").
 
 ## Proposed Changes
 
-### 1. Repositorio de Datos [MODIFY]
-Añadir la capacidad de guardar nuevos sitios en la base de datos.
+### 1. Base de Datos y Repositorio [MODIFY]
+Crear el catálogo de categorías y permitir su consulta.
+
+#### [NEW] [site_categories.sql](file:///C:/Users/Lenovo/AppData/Local/Google/AndroidStudio2026.1.2/projects/ecoguiawear.c57ae389/.artifacts/e977fbfe-3bf7-4da5-b32d-1d1152484a66/scratch/site_categories.sql)
+- Definición de la tabla `site_categories` e inserciones iniciales (Museo, Monumento, Templo, etc.).
 
 #### [MODIFY] [EcoGuiaRepository.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/shared/src/main/java/mx/utng/ecoguia/shared/domain/repository/EcoGuiaRepository.kt)
-- Añadir función `createHistoricalSite`.
-
-#### [MODIFY] [EcoGuiaRepositoryImpl.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/shared/src/main/java/mx/utng/ecoguia/shared/data/repository/EcoGuiaRepositoryImpl.kt)
-- Implementar la inserción SQL usando PostGIS para convertir latitud/longitud en un tipo `GEOGRAPHY`.
+- Añadir función `getSiteCategories()`.
 
 ---
 
-### 2. Lógica de Negocio (ViewModel) [NEW]
-Crear un ViewModel que gestione el estado temporal del nuevo sitio durante los 4 pasos del registro.
+### 2. Componentes de UI [MODIFY]
+Mejorar los componentes base para soportar placeholders y chips.
 
-#### [NEW] [SiteRegistrationViewModel.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/viewmodel/SiteRegistrationViewModel.kt)
-- Almacenar los datos de los 4 pasos:
-    - Paso 1: Nombre, categoría, dirección.
-    - Paso 2: Historia y descripciones.
-    - Paso 3: Coordenadas (con botón para "Capturar ubicación actual").
-    - Paso 4: Horarios, costos y accesibilidad.
-- Función `registerSite` para persistir todo al finalizar.
+#### [MODIFY] [CommonComponents.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/components/CommonComponents.kt)
+- Actualizar `EcoTextField` para incluir un parámetro `placeholder`.
+- Crear componente `EcoChipGroup` para selección múltiple de accesibilidad.
+
+#### [NEW] [AddressAutocomplete.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/components/AddressAutocomplete.kt)
+- Componente que utiliza la API de Google Places para sugerir direcciones conforme el usuario escribe.
 
 ---
 
-### 3. Interfaz de Usuario (Admin) [MODIFY]
-Conectar las pantallas de "Alta de sitio" con el nuevo ViewModel.
+### 3. Pantallas de Registro [MODIFY]
+Integrar los nuevos controles en el flujo de 4 pasos.
 
 #### [MODIFY] [SiteRegistrationScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/admin/SiteRegistrationScreen.kt)
-- Vincular campos con el ViewModel.
-
-#### [MODIFY] [SiteLocationScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/admin/SiteLocationScreen.kt)
-- Añadir botón "Obtener mi ubicación" que consuma el GPS actual.
+- Cambiar el input de "Categoría" por un selector desplegable (Dropdown) que cargue datos del repositorio.
+- Integrar el buscador de direcciones en el campo "Dirección".
+- Añadir placeholders de ejemplo (ej. "Nombre: Parroquia de Dolores").
 
 #### [MODIFY] [SiteOperationScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/admin/SiteOperationScreen.kt)
-- Ejecutar la acción final de guardado.
+- Reemplazar el input de "Accesibilidad" por los **Chips de Selección** (Rampas, Elevador, Braille, etc.).
 
----
+## SQL para la Consola (Neon)
+```sql
+CREATE TABLE site_categories (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(50) NOT NULL UNIQUE,
+    icon VARCHAR(30),
+    is_active BOOLEAN DEFAULT TRUE
+);
 
-### 4. Navegación [MODIFY]
-Asegurar que el flujo de 4 pasos pase los datos correctamente.
-
-#### [MODIFY] [MainActivity.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/MainActivity.kt)
-- Inyectar el `SiteRegistrationViewModel` compartido entre las pantallas de registro.
+INSERT INTO site_categories (name, icon) VALUES
+('Museo', 'museum'),
+('Monumento', 'account_balance'),
+('Plaza', 'location_city'),
+('Templo', 'church'),
+('Restaurante Histórico', 'restaurant'),
+('Parque', 'park'),
+('Galería', 'image');
+```
 
 ## Verification Plan
 
 ### Manual Verification
-1. **Registro:** Ir al menú de Admin > Alta de sitio.
-2. **Paso 3:** Tocar "Obtener mi ubicación" y verificar que las coordenadas cambien a las actuales.
-3. **Publicación:** Al terminar el Paso 4, verificar que aparezca la notificación de "Sitio publicado".
-4. **Verificación en Mapa:** Regresar a la pantalla de exploración y confirmar que el nuevo sitio aparece marcado en el mapa en tu ubicación actual.
+1. **Categorías:** Verificar que al entrar al Paso 1, las categorías se carguen desde la base de datos y aparezcan en una lista.
+2. **Dirección:** Escribir una calle conocida en Dolores Hidalgo y confirmar que Google sugiera la dirección completa.
+3. **Accesibilidad:** Seleccionar varios Chips (ej. Rampas y Braille) y confirmar que se guarden como texto separado por comas.
+4. **Placeholders:** Confirmar que los campos vacíos muestren textos de ayuda en gris claro.

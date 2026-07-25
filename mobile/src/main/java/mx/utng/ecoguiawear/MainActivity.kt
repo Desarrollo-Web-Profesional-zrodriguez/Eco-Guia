@@ -44,6 +44,7 @@ import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 import mx.utng.ecoguiawear.ui.viewmodel.AuthViewModel
 import mx.utng.ecoguiawear.ui.viewmodel.NotificationViewModel
 import mx.utng.ecoguiawear.ui.viewmodel.NotificationType
+import mx.utng.ecoguiawear.ui.viewmodel.SiteRegistrationViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import mx.utng.ecoguiawear.ui.components.EcoBottomBar
 import mx.utng.ecoguiawear.ui.components.BottomMenuSheet
@@ -74,6 +75,7 @@ fun MainAppContainer(activity: ComponentActivity, repository: EcoGuiaRepositoryI
     val navController = rememberNavController()
     val authViewModel: AuthViewModel = viewModel()
     val notificationViewModel: NotificationViewModel = viewModel()
+    val siteRegistrationViewModel: SiteRegistrationViewModel = viewModel()
     
     // Gestión de Permisos
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -178,7 +180,7 @@ fun MainAppContainer(activity: ComponentActivity, repository: EcoGuiaRepositoryI
                     ExplorationScreen(onAdminClick = { navController.navigate("more_options") })
                 }
                 composable("collection") {
-                    MyCollectionScreen()
+                    MyCollectionScreen(userId = authViewModel.currentUser?.id ?: "guest")
                 }
                 composable("profile") {
                     ProfileScreen(
@@ -310,19 +312,38 @@ fun MainAppContainer(activity: ComponentActivity, repository: EcoGuiaRepositoryI
 
                 // Admin & Moderation Module
                 composable("site_registration") {
-                    SiteRegistrationScreen(onNext = { navController.navigate("site_content") })
+                    SiteRegistrationScreen(
+                        viewModel = siteRegistrationViewModel,
+                        onNext = { navController.navigate("site_content") }
+                    )
                 }
                 composable("site_content") {
-                    SiteContentScreen(onNext = { navController.navigate("site_location") })
+                    SiteContentScreen(
+                        viewModel = siteRegistrationViewModel,
+                        onNext = { navController.navigate("site_location") }
+                    )
                 }
                 composable("site_location") {
-                    SiteLocationScreen(onNext = { navController.navigate("site_operation") })
+                    SiteLocationScreen(
+                        viewModel = siteRegistrationViewModel,
+                        onNext = { navController.navigate("site_operation") }
+                    )
                 }
                 composable("site_operation") {
-                    SiteOperationScreen(onFinish = { 
-                        notificationViewModel.showNotification("Sitio publicado con éxito.", NotificationType.SUCCESS)
-                        navController.navigate("exploration") { popUpTo("exploration") { inclusive = true } }
-                    })
+                    SiteOperationScreen(
+                        viewModel = siteRegistrationViewModel,
+                        onFinish = { 
+                            siteRegistrationViewModel.registerSite(
+                                onSuccess = {
+                                    notificationViewModel.showNotification("Sitio publicado con éxito.", NotificationType.SUCCESS)
+                                    navController.navigate("exploration") { popUpTo("exploration") { inclusive = true } }
+                                },
+                                onError = { msg ->
+                                    notificationViewModel.showNotification(msg, NotificationType.ERROR)
+                                }
+                            )
+                        }
+                    )
                 }
                 composable("gallery_addition") {
                     GalleryAdditionScreen(

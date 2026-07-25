@@ -35,6 +35,13 @@ class EcoGuiaRepositoryImpl(
     }
 
     /**
+     * Recupera el catálogo de categorías.
+     */
+    override suspend fun getSiteCategories(): List<RemoteCategory> {
+        return neonClient.executeQuery("SELECT id, name, icon FROM site_categories WHERE is_active = TRUE ORDER BY name ASC")
+    }
+
+    /**
      * Recupera los Geo-Drops (cápsulas) ordenados por fecha de creación.
      */
     override suspend fun getGeoDrops(): List<RemoteGeoDrop> {
@@ -130,6 +137,75 @@ class EcoGuiaRepositoryImpl(
             if (time != null) "Connected! Database time: $time" else "Connected, but no data."
         } catch (e: Exception) {
             "Connection failed: ${e.message}"
+        }
+    }
+
+    /**
+     * Recupera la colección del usuario. Por ahora simula datos si la tabla no existe.
+     */
+    override suspend fun getUserCollection(userId: String): List<RemoteCollectionItem> {
+        return try {
+            // Intentamos obtener datos reales (suponiendo que existe la tabla)
+            neonClient.executeQuery<RemoteCollectionItem>(
+                "SELECT id, title, subtitle, type, created_at FROM user_collections WHERE user_id = $1 ORDER BY created_at DESC",
+                listOf(userId)
+            )
+        } catch (e: Exception) {
+            // Fallback a datos simulados para no romper la UI durante el desarrollo
+            listOf(
+                RemoteCollectionItem("1", "Parroquia de Dolores", "Sitio Histórico", "site", "2026-07-24"),
+                RemoteCollectionItem("2", "Mural de la Independencia", "Foto Guardada", "photo", "2026-07-23"),
+                RemoteCollectionItem("3", "Ruta de los Conspiradores", "Ruta Turística", "route", "2026-07-22")
+            )
+        }
+    }
+
+    /**
+     * Registra un nuevo sitio histórico utilizando PostGIS.
+     */
+    override suspend fun createHistoricalSite(
+        name: String,
+        siteType: String,
+        address: String,
+        shortDesc: String,
+        historyDesc: String,
+        lat: Double,
+        lng: Double,
+        radiusM: Int,
+        hours: String,
+        cost: String,
+        accessibility: String
+    ): Boolean {
+        val query = """
+            INSERT INTO historical_sites (
+                name, slug, site_type, short_description, historical_description, 
+                address, location, detection_radius_m, is_active,
+                cost_info
+            ) VALUES (
+                $1, $2, $3, $4, $5, $6, 
+                ST_SetSRID(ST_MakePoint($7::double precision, $8::double precision), 4326)::geography, 
+                $9::integer, TRUE, $10
+            )
+        """.trimIndent()
+        
+        // Generar un slug único añadiendo un sufijo aleatorio corto para evitar colisiones (Error 23505)
+        val randomSuffix = (1..4).map { (('a'..'z') + ('0'..'9')).random() }.joinToString("")
+        val baseSlug = name.lowercase().trim().replace(" ", "-").replace(Regex("[^a-z0-9-]"), "")
+        val slug = "${baseSlug}-${randomSuffix}"
+        
+        return try {
+            val rowsAffected = neonClient.executeCommand(
+                query = query,
+                params = listOf(
+                    name, slug, siteType, shortDesc, historyDesc, 
+                    address, lng.toString(), lat.toString(), radiusM.toString(), cost
+                )
+            )
+            android.util.Log.d("EcoGuiaRepo", "Sitio creado: $rowsAffected filas afectadas.")
+            rowsAffected > 0
+        } catch (e: Exception) {
+            android.util.Log.e("EcoGuiaRepo", "Error al crear sitio: ${e.message}", e)
+            false
         }
     }
 }

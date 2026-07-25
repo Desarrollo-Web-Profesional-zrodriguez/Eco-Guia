@@ -139,6 +139,14 @@ fun MoreOptionsScreen(
             if (isAdmin) {
                 item {
                     MenuOptionItem(
+                        title = "Alta de sitio",
+                        subtitle = "Registrar nuevo punto histórico",
+                        icon = Icons.Default.AddLocationAlt,
+                        onClick = { onOptionClick("site_registration") }
+                    )
+                }
+                item {
+                    MenuOptionItem(
                         title = "Panel",
                         subtitle = "Administración de sistema",
                         icon = Icons.Default.AdminPanelSettings,

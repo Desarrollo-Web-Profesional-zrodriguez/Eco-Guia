@@ -1,8 +1,8 @@
 ﻿/**
  * Archivo: SiteContentScreen.kt
- * Autor: ZahirMora
- * Fecha de Ãºltima actualizaciÃ³n: 2026-07-22
- * DescripciÃ³n: GestiÃ³n del contenido histÃ³rico y descriptivo de un sitio (Paso 2).
+ * Autor: Zahir Rodriguez
+ * Fecha de última actualización: 2026-07-24
+ * Descripción: Gestión del contenido histórico y descriptivo de un sitio (Paso 2).
  */
 
 package mx.utng.ecoguiawear.ui.screens.admin
@@ -26,14 +26,16 @@ import mx.utng.ecoguiawear.ui.components.EcoButton
 import mx.utng.ecoguiawear.ui.components.EcoTextField
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
+import mx.utng.ecoguiawear.ui.viewmodel.SiteRegistrationViewModel
 
 @Composable
 fun SiteContentScreen(
+    viewModel: SiteRegistrationViewModel,
     onNext: () -> Unit
 ) {
     var historyTitle by remember { mutableStateOf("Memoria viva de la Independencia") }
-    var shortDesc by remember { mutableStateOf("Explora relatos, documentos y relatos conectados con el inicio del movimiento insurgente.") }
-    var detailedDesc by remember { mutableStateOf("Este museo conserva piezas y narrativas esenciales para comprender el origen del movimiento de Independencia...") }
+    var shortDesc by viewModel.shortDesc
+    var detailedDesc by viewModel.historyDesc
 
     Column(
         modifier = Modifier
@@ -73,8 +75,8 @@ fun SiteContentScreen(
             shape = RoundedCornerShape(24.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text("Texto turÃ­stico curado", color = Color.White, fontWeight = FontWeight.Bold)
-                Text("Secciones necesarias para datos histÃ³ricos de la guÃ­a.", color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp)
+                Text("Texto turístico curado", color = Color.White, fontWeight = FontWeight.Bold)
+                Text("Secciones necesarias para datos históricos de la guía.", color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp)
             }
         }
 
@@ -84,11 +86,11 @@ fun SiteContentScreen(
                 .weight(1f)
                 .padding(horizontal = 16.dp)
         ) {
-            Text("DescripciÃ³n histÃ³rica", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
+            Text("Descripción histórica", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
             
             LazyColumn(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 item {
-                    EcoTextField(value = historyTitle, onValueChange = { historyTitle = it }, label = "TÃTULO DE SECCIÃ“N")
+                    EcoTextField(value = historyTitle, onValueChange = { historyTitle = it }, label = "TÍTULO DE SECCIÓN")
                 }
                 item {
                     EcoTextField(
@@ -123,7 +125,7 @@ fun SiteContentScreen(
 @Composable
 fun SiteContentScreenPreview() {
     EcoGuiaMobileTheme {
-        SiteContentScreen({})
+        SiteContentScreen(SiteRegistrationViewModel(), {})
     }
 }
 

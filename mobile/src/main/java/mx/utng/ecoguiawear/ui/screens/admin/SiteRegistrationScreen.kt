@@ -1,13 +1,14 @@
 ﻿/**
  * Archivo: SiteRegistrationScreen.kt
- * Autor: ZahirMora
- * Fecha de Ãºltima actualizaciÃ³n: 2026-07-22
- * DescripciÃ³n: Pantalla inicial para dar de alta un sitio histÃ³rico (Paso 1).
+ * Autor: Zahir Rodriguez
+ * Fecha de última actualización: 2026-07-24
+ * Descripción: Pantalla inicial para dar de alta un sitio histórico (Paso 1).
  */
 
 package mx.utng.ecoguiawear.ui.screens.admin
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -22,25 +23,37 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
 import mx.utng.ecoguiawear.ui.components.EcoButton
 import mx.utng.ecoguiawear.ui.components.EcoTextField
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
+import mx.utng.ecoguiawear.ui.viewmodel.SiteRegistrationViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SiteRegistrationScreen(
+    viewModel: SiteRegistrationViewModel,
     onNext: () -> Unit
 ) {
-    var siteName by remember { mutableStateOf("Museo de la Independencia Nacional") }
-    var category by remember { mutableStateOf("Museo histÃ³rico") }
-    var address by remember { mutableStateOf("Zacatecas 6, Centro, Dolores Hidalgo") }
+    val context = LocalContext.current
+    var siteName by viewModel.name
+    var category by viewModel.siteType
+    var customCategory by viewModel.customCategory
+    var address by viewModel.address
+    
+    val categories by viewModel.categories
+    val isLoadingCategories by viewModel.isLoadingCategories
+    val suggestions by viewModel.addressSuggestions
+    
+    var expanded by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        // Header
+        // ... (Header and Card remain similar)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -49,7 +62,7 @@ fun SiteRegistrationScreen(
         ) {
             Column {
                 Text("Alta de sitio", color = Color.White, fontSize = 14.sp)
-                Text("Datos bÃ¡sicos", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text("Datos básicos", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
             }
             
             IconButton(
@@ -60,7 +73,6 @@ fun SiteRegistrationScreen(
             }
         }
 
-        // Selected Site Card
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -69,7 +81,7 @@ fun SiteRegistrationScreen(
             shape = RoundedCornerShape(24.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text("Museo de la Independencia", color = Color.White, fontWeight = FontWeight.Bold)
+                Text(if (siteName.isEmpty()) "Nuevo sitio" else siteName, color = Color.White, fontWeight = FontWeight.Bold)
                 Text(
                     "Ruta principal para visitantes locales y turistas.", 
                     color = Color.White.copy(alpha = 0.7f), 
@@ -84,17 +96,111 @@ fun SiteRegistrationScreen(
                 .weight(1f)
                 .padding(horizontal = 16.dp)
         ) {
-            Text("Alta de museo", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
+            Text("Detalles del lugar", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
             
             LazyColumn(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 item {
-                    EcoTextField(value = siteName, onValueChange = { siteName = it }, label = "NOMBRE DEL SITIO")
+                    EcoTextField(
+                        value = siteName, 
+                        onValueChange = { siteName = it }, 
+                        label = "NOMBRE DEL SITIO",
+                        placeholder = "Ej. Parroquia de Dolores"
+                    )
                 }
+                
                 item {
-                    EcoTextField(value = category, onValueChange = { category = it }, label = "CATEGORÃA")
+                    // Selector de Categoría (Menú desplegable corregido)
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        EcoTextField(
+                            value = if (isLoadingCategories) "Cargando..." else category,
+                            onValueChange = {},
+                            label = "CATEGORÍA",
+                            placeholder = "Selecciona una opción",
+                            readOnly = true,
+                            modifier = Modifier.clickable { if (!isLoadingCategories) expanded = true }
+                        )
+                        
+                        DropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = { expanded = false },
+                            modifier = Modifier
+                                .fillMaxWidth(0.9f)
+                                .background(EcoGuiaColors.Surface)
+                        ) {
+                            if (categories.isEmpty() && !isLoadingCategories) {
+                                DropdownMenuItem(
+                                    text = { Text("No hay categorías", color = Color.Gray) },
+                                    onClick = { expanded = false }
+                                )
+                            }
+                            categories.forEach { cat ->
+                                DropdownMenuItem(
+                                    text = { Text(cat.name, color = Color.White) },
+                                    onClick = {
+                                        category = cat.name
+                                        expanded = false
+                                    }
+                                )
+                            }
+                            DropdownMenuItem(
+                                text = { Text("Otro", color = EcoGuiaColors.Gold) },
+                                onClick = {
+                                    category = "Otro"
+                                    expanded = false
+                                }
+                            )
+                        }
+                    }
                 }
+                
+                if (category == "Otro") {
+                    item {
+                        EcoTextField(
+                            value = customCategory, 
+                            onValueChange = { customCategory = it }, 
+                            label = "ESPECIFICAR CATEGORÍA",
+                            placeholder = "Ej. Monumento Natural"
+                        )
+                    }
+                }
+                
                 item {
-                    EcoTextField(value = address, onValueChange = { address = it }, label = "DIRECCIÃ“N")
+                    Column {
+                        EcoTextField(
+                            value = address, 
+                            onValueChange = { 
+                                address = it
+                                viewModel.searchAddress(context, it)
+                            }, 
+                            label = "DIRECCIÓN",
+                            placeholder = "Ej. Zacatecas 6, Centro, Dolores Hidalgo"
+                        )
+                        
+                        if (suggestions.isNotEmpty()) {
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 4.dp),
+                                colors = CardDefaults.cardColors(containerColor = EcoGuiaColors.Surface),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Column {
+                                    suggestions.forEach { suggestion ->
+                                        Text(
+                                            text = suggestion.getFullText(null).toString(),
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .clickable { viewModel.onAddressSelected(suggestion) }
+                                                .padding(12.dp),
+                                            color = Color.White,
+                                            fontSize = 12.sp
+                                        )
+                                        HorizontalDivider(color = Color.White.copy(alpha = 0.1f))
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -102,7 +208,7 @@ fun SiteRegistrationScreen(
         // Action Button
         Box(modifier = Modifier.padding(24.dp)) {
             EcoButton(
-                text = "Guardar sitio",
+                text = "Guardar datos",
                 onClick = onNext
             )
         }
@@ -113,7 +219,7 @@ fun SiteRegistrationScreen(
 @Composable
 fun SiteRegistrationScreenPreview() {
     EcoGuiaMobileTheme {
-        SiteRegistrationScreen({})
+        SiteRegistrationScreen(SiteRegistrationViewModel(), {})
     }
 }
 

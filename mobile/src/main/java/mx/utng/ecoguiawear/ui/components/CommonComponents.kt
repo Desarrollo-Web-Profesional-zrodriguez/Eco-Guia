@@ -9,6 +9,7 @@ package mx.utng.ecoguiawear.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
@@ -24,7 +25,7 @@ import androidx.compose.ui.unit.sp
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 
 /**
- * Header estÃ¡ndar Material3 para las pantallas de la app.
+ * Header estándar Material3 para las pantallas de la app.
  *
  * Usa [MaterialTheme.colorScheme] para adaptarse automÃ¡ticamente al modo oscuro/claro.
  * Compatible con edge-to-edge gracias a [WindowInsets.statusBars].
@@ -113,12 +114,20 @@ fun EcoTextField(
     value: String,
     onValueChange: (String) -> Unit,
     label: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    placeholder: String = "",
+    readOnly: Boolean = false,
+    singleLine: Boolean = true
 ) {
     TextField(
         value = value,
         onValueChange = onValueChange,
         label = { Text(label, color = EcoGuiaColors.Muted, fontSize = 12.sp) },
+        placeholder = { 
+            if (placeholder.isNotBlank()) {
+                Text(placeholder, color = EcoGuiaColors.Muted.copy(alpha = 0.5f), fontSize = 14.sp)
+            }
+        },
         modifier = modifier
             .fillMaxWidth()
             .height(56.dp),
@@ -131,12 +140,53 @@ fun EcoTextField(
             unfocusedTextColor = EcoGuiaColors.Text
         ),
         shape = RoundedCornerShape(16.dp),
-        singleLine = true
+        singleLine = singleLine,
+        readOnly = readOnly
     )
 }
 
 /**
- * BotÃ³n con degradado Jade o fondo blanco.
+ * Grupo de chips para selección múltiple o única.
+ */
+@Composable
+fun EcoChipGroup(
+    options: List<String>,
+    selectedOptions: Set<String>,
+    onOptionSelected: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    // Usamos una LazyRow para evitar problemas de compatibilidad con FlowRow en ciertas versiones
+    LazyRow(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = PaddingValues(vertical = 4.dp)
+    ) {
+        items(options.size) { index ->
+            val option = options[index]
+            val isSelected = selectedOptions.contains(option)
+            FilterChip(
+                selected = isSelected,
+                onClick = { onOptionSelected(option) },
+                label = { Text(option) },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = EcoGuiaColors.Jade,
+                    selectedLabelColor = EcoGuiaColors.Background,
+                    containerColor = EcoGuiaColors.Surface.copy(alpha = 0.3f),
+                    labelColor = Color.White
+                ),
+                border = FilterChipDefaults.filterChipBorder(
+                    enabled = true,
+                    selected = isSelected,
+                    borderColor = Color.Gray.copy(alpha = 0.5f),
+                    selectedBorderColor = EcoGuiaColors.Jade
+                )
+            )
+        }
+    }
+}
+
+/**
+ * Botón con degradado Jade o fondo blanco.
  */
 @Composable
 fun EcoButton(

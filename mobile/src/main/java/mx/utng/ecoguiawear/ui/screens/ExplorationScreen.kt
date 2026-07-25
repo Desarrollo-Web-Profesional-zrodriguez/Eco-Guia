@@ -23,6 +23,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -32,6 +33,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.launch
+import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
@@ -53,6 +56,7 @@ fun ExplorationScreen(
     val currentLocation by locationViewModel.currentLocation
     val nearbySites by locationViewModel.nearbySites
     val closestSite by locationViewModel.closestSite
+    val scope = rememberCoroutineScope()
 
     // Iniciar actualizaciones de ubicación al entrar
     LaunchedEffect(Unit) {
@@ -128,7 +132,18 @@ fun ExplorationScreen(
                         title = site.name,
                         subtitle = site.siteType + " • " + (site.address ?: ""),
                         icon = Icons.Default.Place,
-                        trailing = "Ver"
+                        trailing = "Ver",
+                        onVerClick = {
+                            val siteLat = site.latitude
+                            val siteLng = site.longitude
+                            if (siteLat != null && siteLng != null) {
+                                scope.launch {
+                                    cameraPositionState.animate(
+                                        CameraUpdateFactory.newLatLngZoom(LatLng(siteLat, siteLng), 17f)
+                                    )
+                                }
+                            }
+                        }
                     )
                 }
             }
@@ -144,12 +159,14 @@ fun RecommendedSiteItem(
     title: String,
     subtitle: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
-    trailing: String
+    trailing: String,
+    onVerClick: () -> Unit = {}
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        onClick = onVerClick
     ) {
         Row(
             modifier = Modifier.padding(12.dp),
@@ -183,7 +200,8 @@ fun RecommendedSiteItem(
 
             Surface(
                 color = EcoGuiaColors.Jade.copy(alpha = 0.12f),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(12.dp),
+                onClick = onVerClick
             ) {
                 Text(
                     text = trailing,

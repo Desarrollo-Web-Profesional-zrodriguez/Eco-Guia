@@ -1,8 +1,8 @@
 ﻿/**
  * Archivo: SiteLocationScreen.kt
- * Autor: ZahirMora
- * Fecha de Ãºltima actualizaciÃ³n: 2026-07-22
- * DescripciÃ³n: ConfiguraciÃ³n de geolocalizaciÃ³n y radio de detecciÃ³n para un sitio (Paso 3).
+ * Autor: Zahir Rodriguez
+ * Fecha de última actualización: 2026-07-24
+ * Descripción: Configuración de geolocalización y radio de detección para un sitio (Paso 3).
  */
 
 package mx.utng.ecoguiawear.ui.screens.admin
@@ -11,7 +11,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,18 +22,37 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.android.gms.maps.model.CameraPosition
+import com.google.android.gms.maps.model.LatLng
+import com.google.maps.android.compose.*
 import mx.utng.ecoguiawear.ui.components.EcoButton
 import mx.utng.ecoguiawear.ui.components.EcoTextField
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
+import mx.utng.ecoguiawear.ui.viewmodel.SiteRegistrationViewModel
+import androidx.compose.ui.platform.LocalContext
 
 @Composable
 fun SiteLocationScreen(
+    viewModel: SiteRegistrationViewModel,
     onNext: () -> Unit
 ) {
-    var coordinates by remember { mutableStateOf("21.1561, -100.9350") }
-    var radius by remember { mutableStateOf("20 metros") }
-    var visibility by remember { mutableStateOf("Si, con moderaciÃ³n") }
+    val context = LocalContext.current
+    var lat by viewModel.latitude
+    var lng by viewModel.longitude
+    var radius by viewModel.radiusM
+    var visibility by remember { mutableStateOf("Si, con moderación") }
+
+    val cameraPositionState = rememberCameraPositionState {
+        position = CameraPosition.fromLatLngZoom(LatLng(lat.takeIf { it != 0.0 } ?: 21.1561, lng.takeIf { it != 0.0 } ?: -100.9350), 15f)
+    }
+
+    // Actualizar cámara cuando cambie la ubicación capturada
+    LaunchedEffect(lat, lng) {
+        if (lat != 0.0 && lng != 0.0) {
+            cameraPositionState.position = CameraPosition.fromLatLngZoom(LatLng(lat, lng), 17f)
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -48,28 +67,50 @@ fun SiteLocationScreen(
                 .padding(top = 48.dp, start = 24.dp, end = 24.dp, bottom = 16.dp)
         ) {
             Column {
-                Text("GeolocalizaciÃ³n", color = Color.White, fontSize = 14.sp)
+                Text("Geolocalización", color = Color.White, fontSize = 14.sp)
                 Text("Radio de llegada", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
             }
             
             IconButton(
-                onClick = { },
+                onClick = { viewModel.captureCurrentLocation(context) },
                 modifier = Modifier.align(Alignment.TopEnd)
             ) {
-                Icon(Icons.Default.AddCircle, null, tint = EcoGuiaColors.Gold)
+                Icon(Icons.Default.MyLocation, "Capturar ubicación actual", tint = EcoGuiaColors.Gold)
             }
         }
 
-        // Map Section Placeholder
+        // Map Section (Preview)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(180.dp)
+                .height(220.dp)
                 .padding(16.dp)
                 .clip(RoundedCornerShape(24.dp))
                 .background(Color(0xFFE8F5E9))
         ) {
-            Text("Visor de Mapa Satelital", modifier = Modifier.align(Alignment.Center), color = MaterialTheme.colorScheme.onSurfaceVariant)
+            GoogleMap(
+                modifier = Modifier.fillMaxSize(),
+                cameraPositionState = cameraPositionState,
+                onMapClick = { latLng ->
+                    lat = latLng.latitude
+                    lng = latLng.longitude
+                },
+                uiSettings = MapUiSettings(zoomControlsEnabled = false, myLocationButtonEnabled = false)
+            ) {
+                if (lat != 0.0 && lng != 0.0) {
+                    Marker(
+                        state = MarkerState(position = LatLng(lat, lng)),
+                        title = "Ubicación seleccionada"
+                    )
+                    Circle(
+                        center = LatLng(lat, lng),
+                        radius = radius.toDouble(),
+                        fillColor = EcoGuiaColors.Jade.copy(alpha = 0.2f),
+                        strokeColor = EcoGuiaColors.Jade,
+                        strokeWidth = 2f
+                    )
+                }
+            }
         }
 
         // Location Form
@@ -78,11 +119,15 @@ fun SiteLocationScreen(
                 .weight(1f)
                 .padding(horizontal = 16.dp)
         ) {
-            Text("UbicaciÃ³n y radio", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
+            Text("Ubicación y radio", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
             
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                EcoTextField(value = coordinates, onValueChange = { coordinates = it }, label = "COORDENADAS")
-                EcoTextField(value = radius, onValueChange = { radius = it }, label = "RADIO DE LLEGADA")
+                EcoTextField(
+                    value = if (lat == 0.0) "Toca el mapa o el icono superior" else "$lat, $lng", 
+                    onValueChange = { }, 
+                    label = "COORDENADAS"
+                )
+                EcoTextField(value = radius.toString(), onValueChange = { radius = it.toIntOrNull() ?: 50 }, label = "RADIO DE LLEGADA (Metros)")
                 EcoTextField(value = visibility, onValueChange = { visibility = it }, label = "VISIBILIDAD EN TV/SMART")
             }
         }
@@ -90,7 +135,7 @@ fun SiteLocationScreen(
         // Action Button
         Box(modifier = Modifier.padding(24.dp)) {
             EcoButton(
-                text = "Guardar ubicaciÃ³n",
+                text = "Confirmar ubicación",
                 onClick = onNext
             )
         }
@@ -101,7 +146,7 @@ fun SiteLocationScreen(
 @Composable
 fun SiteLocationScreenPreview() {
     EcoGuiaMobileTheme {
-        SiteLocationScreen({})
+        SiteLocationScreen(SiteRegistrationViewModel(), {})
     }
 }
 

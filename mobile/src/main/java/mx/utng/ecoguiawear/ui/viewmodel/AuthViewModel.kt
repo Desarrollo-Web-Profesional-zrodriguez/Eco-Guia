@@ -14,6 +14,7 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
 import mx.utng.ecoguia.shared.data.repository.EcoGuiaRepositoryImpl
 import mx.utng.ecoguia.shared.domain.model.RemoteUser
+import mx.utng.ecoguia.shared.domain.repository.EcoGuiaRepository
 
 /**
  * Representa los diferentes estados de un proceso de autenticación.
@@ -27,7 +28,7 @@ sealed class AuthState {
 }
 
 class AuthViewModel(
-    private val repository: EcoGuiaRepositoryImpl = EcoGuiaRepositoryImpl()
+    private val repository: EcoGuiaRepository = EcoGuiaRepositoryImpl()
 ) : ViewModel() {
 
     private val _authState = mutableStateOf<AuthState>(AuthState.Idle)

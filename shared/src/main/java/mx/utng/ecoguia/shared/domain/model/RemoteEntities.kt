@@ -25,6 +25,18 @@ data class RemoteUser(
 )
 
 /**
+ * Representa un elemento en la colección del usuario (Sitio, Foto, Ruta).
+ */
+@Serializable
+data class RemoteCollectionItem(
+    val id: String,
+    val title: String,
+    val subtitle: String,
+    val type: String, // 'site', 'photo', 'route'
+    @SerialName("created_at") val createdAt: String? = null
+)
+
+/**
  * Representa un sitio histórico o museo.
  */
 @Serializable
@@ -41,6 +53,16 @@ data class RemoteHistoricalSite(
     val longitude: Double? = null,
     @SerialName("detection_radius_m") val detectionRadiusM: Int = 50,
     @SerialName("is_active") val isActive: Boolean = true
+)
+
+/**
+ * Representa una categoría de sitio (Catálogo).
+ */
+@Serializable
+data class RemoteCategory(
+    val id: String? = null,
+    val name: String,
+    val icon: String? = null
 )
 
 /**

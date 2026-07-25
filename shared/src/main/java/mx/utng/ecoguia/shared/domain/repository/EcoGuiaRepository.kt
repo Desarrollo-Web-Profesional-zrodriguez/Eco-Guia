@@ -36,6 +36,28 @@ interface EcoGuiaRepository {
     suspend fun getNearbySites(lat: Double, lng: Double, radiusM: Int = 250): List<RemoteHistoricalSite>
 
     /**
+     * Obtiene el catálogo de categorías para los sitios.
+     */
+    suspend fun getSiteCategories(): List<RemoteCategory>
+
+    /**
+     * Registra un nuevo sitio histórico en la nube.
+     */
+    suspend fun createHistoricalSite(
+        name: String,
+        siteType: String,
+        address: String,
+        shortDesc: String,
+        historyDesc: String,
+        lat: Double,
+        lng: Double,
+        radiusM: Int,
+        hours: String,
+        cost: String,
+        accessibility: String
+    ): Boolean
+
+    /**
      * Inicia sesión verificando credenciales en la base de datos remota.
      * Retorna el objeto RemoteUser si tiene éxito, null en caso contrario.
      */
@@ -57,4 +79,9 @@ interface EcoGuiaRepository {
      * Prueba la conexión con el servidor de base de datos.
      */
     suspend fun testConnection(): String
+
+    /**
+     * Obtiene los elementos guardados por un usuario.
+     */
+    suspend fun getUserCollection(userId: String): List<RemoteCollectionItem>
 }

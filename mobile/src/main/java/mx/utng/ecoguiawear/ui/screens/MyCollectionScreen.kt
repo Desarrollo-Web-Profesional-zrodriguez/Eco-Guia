@@ -24,17 +24,30 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import mx.utng.ecoguia.shared.domain.model.RemoteCollectionItem
 import mx.utng.ecoguiawear.ui.components.EcoTopBar
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
+import mx.utng.ecoguiawear.ui.viewmodel.CollectionViewModel
 
 /**
  * Composable que representa la pantalla "Mi Colección".
  */
 @Composable
-fun MyCollectionScreen() {
+fun MyCollectionScreen(
+    userId: String,
+    viewModel: CollectionViewModel = viewModel()
+) {
     var selectedTab by remember { mutableIntStateOf(0) }
-    val tabs = listOf("Fotos", "Rutas", "Audio")
+    val tabs = listOf("Todos", "Fotos", "Rutas", "Audio")
+    
+    val items by viewModel.items
+    val isLoading by viewModel.isLoading
+
+    LaunchedEffect(userId) {
+        viewModel.loadCollection(userId)
+    }
 
     Column(
         modifier = Modifier
@@ -57,7 +70,7 @@ fun MyCollectionScreen() {
             shape = RoundedCornerShape(24.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text("18 guardados en tu colección", color = Color.White, fontWeight = FontWeight.Bold)
+                Text("${items.size} guardados en tu colección", color = Color.White, fontWeight = FontWeight.Bold)
                 Text("Fotos, rutas y cápsulas que has guardado durante tus viajes.", color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp)
                 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -83,7 +96,7 @@ fun MyCollectionScreen() {
                                 title,
                                 color = if (selectedTab == index) Color.White else Color.White.copy(alpha = 0.5f),
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 12.sp
+                                fontSize = 11.sp
                             )
                         }
                     }
@@ -95,9 +108,19 @@ fun MyCollectionScreen() {
         Column(modifier = Modifier.padding(horizontal = 16.dp)) {
             Text("Recientes", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
             
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                items(3) { index ->
-                    CollectionItemPlaceholder(index)
+            if (isLoading) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = EcoGuiaColors.Jade)
+                }
+            } else if (items.isEmpty()) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("No tienes elementos guardados.", color = Color.Gray)
+                }
+            } else {
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    items(items.size) { index ->
+                        CollectionItemRow(items[index])
+                    }
                 }
             }
         }
@@ -105,10 +128,7 @@ fun MyCollectionScreen() {
 }
 
 @Composable
-fun CollectionItemPlaceholder(index: Int) {
-    val titles = listOf("Detalle del arco principal", "Mural comunitario", "Ruta Independencia")
-    val subtitles = listOf("Museo - Guardado hoy", "Foto - Hace 2 días", "Ruta - 3 items guardados")
-    
+fun CollectionItemRow(item: RemoteCollectionItem) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -124,7 +144,7 @@ fun CollectionItemPlaceholder(index: Int) {
                     .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                // Icon placeholder
+                Text(if (item.type == "site") "🏛️" else if (item.type == "photo") "📸" else "🗺️")
             }
 
             Column(modifier = Modifier
@@ -132,13 +152,13 @@ fun CollectionItemPlaceholder(index: Int) {
                 .weight(1f)
             ) {
                 Text(
-                    text = titles[index % 3],
+                    text = item.title,
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
-                    text = subtitles[index % 3],
+                    text = "${item.subtitle} - ${item.createdAt?.take(10)}",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp
                 )
@@ -153,6 +173,6 @@ fun CollectionItemPlaceholder(index: Int) {
 @Composable
 fun MyCollectionScreenPreview() {
     EcoGuiaMobileTheme {
-        MyCollectionScreen()
+        MyCollectionScreen("dummy_user")
     }
 }
