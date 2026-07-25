@@ -127,4 +127,9 @@ interface EcoGuiaRepository {
      * Elimina una ruta turística existente por su ID.
      */
     suspend fun deleteRoute(routeId: String): Boolean
+
+    /**
+     * Guarda una ruta completada en la colección personal del usuario (user_saved_items).
+     */
+    suspend fun saveRouteToCollection(userId: String, routeId: String): Boolean
 }

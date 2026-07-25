@@ -69,9 +69,28 @@ class WearMessageClient(private val context: Context) {
         }
     }
 
+    /**
+     * Sincroniza el progreso (paradas completadas y total) con el reloj.
+     */
+    suspend fun syncRouteProgress(completedCount: Int, totalStops: Int) {
+        try {
+            val nodes = Wearable.getNodeClient(context).connectedNodes.await()
+            val payload = "$completedCount|$totalStops"
+            nodes.forEach { node ->
+                Wearable.getMessageClient(context)
+                    .sendMessage(node.id, PATH_SYNC_PROGRESS, payload.toByteArray())
+                    .await()
+            }
+            Log.d("WearMessageClient", "Progreso de ruta enviado al reloj: $completedCount/$totalStops")
+        } catch (e: Exception) {
+            Log.e("WearMessageClient", "Error al enviar progreso a Wear OS: ${e.message}")
+        }
+    }
+
     companion object {
         const val PATH_SYNC_TARGET = "/eco-guia/sync/target"
         const val PATH_SYNC_ROUTE = "/eco-guia/sync/route"
         const val PATH_CANCEL_ROUTE = "/eco-guia/cancel/route"
+        const val PATH_SYNC_PROGRESS = "/eco-guia/sync/progress"
     }
 }

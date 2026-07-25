@@ -134,6 +134,7 @@ class RouteViewModel(
             if (distance <= 50.0 && completedStops[stop.id] != true) {
                 completedStops[stop.id] = true
                 Log.d("RouteViewModel", "Parada completada: ${stop.siteName} (${distance.toInt()}m)")
+                notifyWearProgress()
             }
         }
     }
@@ -144,6 +145,19 @@ class RouteViewModel(
     fun toggleStopCompleted(stopId: String) {
         val current = completedStops[stopId] == true
         completedStops[stopId] = !current
+        notifyWearProgress()
+    }
+
+    private fun notifyWearProgress() {
+        val completed = completedStops.values.count { it }
+        val total = _activeStops.value.size
+        viewModelScope.launch {
+            try {
+                wearMessageClient?.syncRouteProgress(completed, total)
+            } catch (e: Exception) {
+                Log.e("RouteViewModel", "Error sincronizando avance con Wear OS: ${e.message}")
+            }
+        }
     }
 
     /**

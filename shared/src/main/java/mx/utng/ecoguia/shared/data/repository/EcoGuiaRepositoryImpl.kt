@@ -153,15 +153,15 @@ class EcoGuiaRepositoryImpl(
     override suspend fun getUserCollection(userId: String): List<RemoteCollectionItem> {
         val query = """
             SELECT
-                usi.site_id::text  AS id,
-                hs.name            AS title,
-                hs.site_type       AS subtitle,
-                'site'             AS type,
+                usi.id::text                        AS id,
+                COALESCE(hs.name, r.title, 'Elemento Guardado')   AS title,
+                COALESCE(hs.site_type, r.description, 'Colección') AS subtitle,
+                CASE WHEN usi.route_id IS NOT NULL THEN 'route' ELSE 'site' END AS type,
                 usi.created_at
             FROM user_saved_items usi
-            JOIN historical_sites hs ON hs.id = usi.site_id
+            LEFT JOIN historical_sites hs ON hs.id = usi.site_id
+            LEFT JOIN routes r ON r.id = usi.route_id
             WHERE usi.user_id = $1::uuid
-              AND usi.site_id IS NOT NULL
             ORDER BY usi.created_at DESC
         """.trimIndent()
         return try {
@@ -198,14 +198,15 @@ class EcoGuiaRepositoryImpl(
     override suspend fun removeSavedSite(userId: String, siteId: String): Boolean {
         val query = """
             DELETE FROM user_saved_items
-            WHERE user_id = $1::uuid AND site_id = $2::uuid
+            WHERE user_id = $1::uuid 
+              AND (id = $2::uuid OR site_id = $2::uuid OR route_id = $2::uuid)
         """.trimIndent()
         return try {
             val rows = neonClient.executeCommand(query, listOf(userId, siteId))
-            android.util.Log.d("EcoGuiaRepo", "Sitio eliminado de colección: $siteId ($rows filas)")
+            android.util.Log.d("EcoGuiaRepo", "Elemento eliminado de colección: $siteId ($rows filas)")
             rows > 0
         } catch (e: Exception) {
-            android.util.Log.e("EcoGuiaRepo", "Error al eliminar sitio: ${e.message}", e)
+            android.util.Log.e("EcoGuiaRepo", "Error al eliminar elemento de colección: ${e.message}", e)
             false
         }
     }
@@ -358,6 +359,25 @@ class EcoGuiaRepositoryImpl(
             rows > 0
         } catch (e: Exception) {
             android.util.Log.e("EcoGuiaRepo", "Error al eliminar ruta: ${e.message}", e)
+            false
+        }
+    }
+
+    /**
+     * Guarda explícitamente una ruta completada en la colección del usuario en user_saved_items.
+     */
+    override suspend fun saveRouteToCollection(userId: String, routeId: String): Boolean {
+        val query = """
+            INSERT INTO user_saved_items (user_id, route_id)
+            VALUES ($1::uuid, $2::uuid)
+            ON CONFLICT DO NOTHING
+        """.trimIndent()
+        return try {
+            val rows = neonClient.executeCommand(query, listOf(userId, routeId))
+            android.util.Log.d("EcoGuiaRepo", "Ruta $routeId guardada explícitamente en colección para usuario $userId ($rows filas)")
+            true
+        } catch (e: Exception) {
+            android.util.Log.e("EcoGuiaRepo", "Error al guardar ruta explícita en colección: ${e.message}", e)
             false
         }
     }

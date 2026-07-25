@@ -145,6 +145,23 @@ fun ActiveRouteScreen(
                     color = EcoGuiaColors.Jade,
                     trackColor = Color.White.copy(alpha = 0.1f)
                 )
+
+                if (completedCount == totalStops && stops.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(14.dp))
+                    Button(
+                        onClick = {
+                            onFinishRoute()
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = EcoGuiaColors.Gold,
+                            contentColor = EcoGuiaColors.DeepBlue
+                        ),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("🏆 Completar y ver en Mi Colección", fontWeight = FontWeight.Bold)
+                    }
+                }
             }
         }
 

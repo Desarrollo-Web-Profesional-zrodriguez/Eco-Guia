@@ -50,6 +50,7 @@ import mx.utng.ecoguiawear.ui.components.EcoBottomBar
 import mx.utng.ecoguiawear.ui.components.BottomMenuSheet
 
 import androidx.activity.enableEdgeToEdge
+import androidx.lifecycle.viewModelScope
 
 import mx.utng.ecoguiawear.ui.screens.admin.*
 
@@ -260,7 +261,26 @@ fun MainAppContainer(activity: ComponentActivity, repository: EcoGuiaRepositoryI
                 }
                 composable("active_route") {
                     ActiveRouteScreen(
-                        onFinishRoute = { navController.popBackStack() },
+                        onFinishRoute = {
+                            val route = routeViewModel.activeRoute.value
+                            val userId = authViewModel.currentUser?.id ?: "guest"
+                            if (route != null) {
+                                routeViewModel.viewModelScope.launch {
+                                    val ok = EcoGuiaRepositoryImpl().saveRouteToCollection(userId, route.id)
+                                    android.util.Log.d("MainActivity", "Guardado de ruta en DB completado: $ok para routeId=${route.id}")
+                                    routeViewModel.stopActiveRoute()
+                                    notificationViewModel.showNotification("🎉 ¡Ruta completada y guardada en Mi Colección!", NotificationType.SUCCESS)
+                                    navController.navigate("collection") {
+                                        popUpTo("exploration") { inclusive = false }
+                                    }
+                                }
+                            } else {
+                                routeViewModel.stopActiveRoute()
+                                navController.navigate("collection") {
+                                    popUpTo("exploration") { inclusive = false }
+                                }
+                            }
+                        },
                         routeViewModel = routeViewModel
                     )
                 }

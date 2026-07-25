@@ -61,7 +61,7 @@ fun MyCollectionScreen(
     val isLoading by viewModel.isLoading
     val saveError by viewModel.saveError
 
-    LaunchedEffect(userId) {
+    LaunchedEffect(Unit) {
         viewModel.loadCollection(userId)
     }
 
