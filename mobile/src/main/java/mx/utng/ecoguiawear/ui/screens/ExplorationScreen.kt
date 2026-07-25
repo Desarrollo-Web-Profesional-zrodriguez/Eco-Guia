@@ -205,6 +205,10 @@ fun ExplorationScreen(
                         trailing = "Ver",
                         onVerClick = {
                             isFollowingUser = false // Desactivar seguimiento al ver un sitio
+                            
+                            // Sincronizar con el reloj
+                            locationViewModel.syncTargetWithWatch(site)
+                            
                             val siteLat = site.latitude
                             val siteLng = site.longitude
                             if (siteLat != null && siteLng != null) {

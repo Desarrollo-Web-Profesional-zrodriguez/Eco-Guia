@@ -1,9 +1,7 @@
-# Tareas: Expansión de Radar y Miguel Hidalgo IA
+# Tareas: Sincronización Wear OS y Renombrado
 
-- [x] Personalizar botones de Zoom (+/-) en color Jade
-- [x] Mover botón de Mira (Ubicación) a la parte superior derecha
-- [x] Validar consistencia visual de los controles
-- [x] Intentar migración a Gemini 2.0 (Bloqueado por cuota)
-- [ ] `[/]` Implementar `GroqClient` y modelos de datos
-- [ ] `[ ]` Inyectar contexto de sitios históricos (RAG) en `ChatViewModel`
-- [ ] `[ ]` Validar chat interactivo con Groq
+- [x] Renombrar aplicación a "EcoGuia" en Mobile y Wear
+- [x] Crear `WearMessageClient` en el módulo móvil
+- [x] Integrar sincronización en `LocationViewModel` y `ExplorationScreen`
+- [x] Actualizar `RadarRepository` y `WearMessageListener` en Wear OS
+- [x] Validar comunicación real entre dispositivos

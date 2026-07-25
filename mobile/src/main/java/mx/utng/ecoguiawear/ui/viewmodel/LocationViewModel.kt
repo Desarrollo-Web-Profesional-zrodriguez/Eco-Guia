@@ -26,10 +26,13 @@ import kotlinx.coroutines.launch
 import mx.utng.ecoguia.shared.data.repository.EcoGuiaRepositoryImpl
 import mx.utng.ecoguia.shared.domain.model.RemoteHistoricalSite
 import mx.utng.ecoguia.shared.domain.repository.EcoGuiaRepository
+import mx.utng.ecoguiawear.data.wear.WearMessageClient
 
 class LocationViewModel(
     private val repository: EcoGuiaRepository = EcoGuiaRepositoryImpl()
 ) : ViewModel() {
+
+    private var wearMessageClient: WearMessageClient? = null
 
     private val _currentLocation = mutableStateOf<Location?>(null)
     val currentLocation: State<Location?> = _currentLocation
@@ -48,6 +51,9 @@ class LocationViewModel(
      */
     @SuppressLint("MissingPermission")
     fun startLocationUpdates(context: Context) {
+        if (wearMessageClient == null) {
+            wearMessageClient = WearMessageClient(context)
+        }
         if (fusedLocationClient == null) {
             fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
         }
@@ -117,6 +123,17 @@ class LocationViewModel(
             } catch (e: Exception) {
                 Log.e("LocationViewModel", "Error al obtener sitios cercanos: ${e.message}")
             }
+        }
+    }
+
+    /**
+     * Sincroniza un sitio seleccionado con el reloj inteligente.
+     */
+    fun syncTargetWithWatch(site: RemoteHistoricalSite) {
+        viewModelScope.launch {
+            val siteLat = site.latitude ?: return@launch
+            val siteLng = site.longitude ?: return@launch
+            wearMessageClient?.syncTarget(site.id, site.name, siteLat, siteLng)
         }
     }
 

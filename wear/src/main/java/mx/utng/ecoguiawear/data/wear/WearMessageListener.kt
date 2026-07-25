@@ -66,6 +66,16 @@ class WearMessageListener(
                     repository.setPermissions(gps, camera)
                 }
             }
+            "/eco-guia/sync/target" -> {
+                val parts = payload.split("|")
+                if (parts.size == 4) {
+                    val id = parts[0]
+                    val name = parts[1]
+                    val lat = parts[2].toDoubleOrNull() ?: return
+                    val lng = parts[3].toDoubleOrNull() ?: return
+                    repository.setSyncTarget(id, name, lat, lng)
+                }
+            }
         }
     }
 }

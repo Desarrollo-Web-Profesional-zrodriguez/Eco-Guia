@@ -1,17 +1,28 @@
-# Walkthrough: Migración de Cerebro IA a Gemini 2.0
+# Walkthrough: Sincronización de Radar y Nuevo Nombre "EcoGuia"
 
-Se ha actualizado el motor de inteligencia artificial de Miguel Hidalgo para resolver el error 404 causado por el retiro de los modelos antiguos.
+Se ha implementado la comunicación en tiempo real entre el móvil y el reloj, y se ha actualizado la identidad de la aplicación.
 
 ## Cambios Realizados
 
-### Chat IA (ChatViewModel)
-- **Actualización de Modelo:** Se migró de `gemini-1.5-flash` a **`gemini-2.0-flash`**.
-    - Dado que estamos en julio de 2026, los modelos 1.5 ya no están disponibles. El uso de la versión 2.0 asegura la continuidad del servicio.
-- **Manejo de Errores Mejorado:**
-    - Se añadieron mensajes específicos para errores de permisos (403) y modelo no encontrado (404), manteniendo siempre el tono histórico de Miguel Hidalgo.
+### Identidad de la Marca
+- **Nuevo Nombre:** La aplicación ha sido renombrada de "Eco-Guía Control" a **"EcoGuia"** tanto en el módulo móvil como en el de Wear OS.
+- **Manifiesto y Recursos:** Se actualizaron los labels en `AndroidManifest.xml` y `strings.xml`.
 
-## Notas Importantes
-> [!CAUTION]
-> Si después de esta actualización recibes un mensaje sobre la "llave de acceso", por favor verifica que tu API Key sea correcta en [Google AI Studio](https://aistudio.google.com/). Las claves válidas suelen empezar con `AIza`.
+### Sincronización Wear OS (Radar Real)
+- **WearMessageClient (Mobile):** Nuevo componente encargado de enviar paquetes de datos de sitios históricos al reloj inteligente.
+- **Integración en Exploración:**
+    - Al presionar el botón "Ver" en la pantalla de **Exploración** del móvil, se envía automáticamente el ID, nombre y coordenadas del sitio al reloj.
+- **Recepción en Wear OS:**
+    - El `WearMessageListener` en el reloj ahora escucha la ruta `/eco-guia/sync/target`.
+    - El radar del reloj se actualiza instantáneamente con el nuevo objetivo, cambiando su título y reiniciando el modo de escaneo.
 
- render_diffs(file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/viewmodel/ChatViewModel.kt)
+## Verificación
+
+### Prueba de Sincronización
+1. Abrir **EcoGuia** en el teléfono y en el reloj.
+2. En el teléfono, seleccionar un sitio (ej: "Parroquia de Dolores") en la lista de recomendados.
+3. **Resultado:** El reloj muestra inmediatamente "Nuevo objetivo: Parroquia de Dolores" y la flecha del radar comienza a apuntar hacia la dirección del sitio.
+
+ render_diffs(file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/AndroidManifest.xml)
+ render_diffs(file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/viewmodel/LocationViewModel.kt)
+ render_diffs(file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/wear/src/main/java/mx/utng/ecoguiawear/data/repository/DemoRadarRepository.kt)

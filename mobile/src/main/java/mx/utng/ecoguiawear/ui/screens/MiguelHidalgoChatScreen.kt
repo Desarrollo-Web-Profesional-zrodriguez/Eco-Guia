@@ -27,10 +27,43 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 import mx.utng.ecoguiawear.ui.viewmodel.ChatViewModel
+
+/**
+ * Función auxiliar para formatear texto con negritas sencillas (**texto**) 
+ * y viñetas (* o -).
+ */
+fun formatAIText(text: String): AnnotatedString {
+    // Primero reemplazamos viñetas de texto (* ) por caracteres de punto (• )
+    val bulletedText = text.lines().joinToString("\n") { line ->
+        if (line.trim().startsWith("* ") || line.trim().startsWith("- ")) {
+            "  • ${line.trim().substring(2)}"
+        } else {
+            line
+        }
+    }
+
+    return buildAnnotatedString {
+        val parts = bulletedText.split("**")
+        parts.forEachIndexed { index, part ->
+            if (index % 2 == 1) {
+                // Texto entre asteriscos es negrita
+                withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
+                    append(part)
+                }
+            } else {
+                append(part)
+            }
+        }
+    }
+}
 
 /**
  * Composable que representa la interfaz de chat con Miguel Hidalgo IA.
@@ -212,12 +245,17 @@ fun IAChatBubble(text: String) {
     ) {
         Box(
             modifier = Modifier
-                .widthIn(max = 280.dp)
+                .widthIn(max = 300.dp)
                 .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 20.dp, bottomStart = 20.dp, bottomEnd = 20.dp))
                 .background(Color.White)
                 .padding(horizontal = 16.dp, vertical = 10.dp)
         ) {
-            Text(text, color = Color.DarkGray, fontSize = 13.sp, lineHeight = 18.sp)
+            Text(
+                text = formatAIText(text), 
+                color = Color.DarkGray, 
+                fontSize = 14.sp, 
+                lineHeight = 20.sp
+            )
         }
     }
 }

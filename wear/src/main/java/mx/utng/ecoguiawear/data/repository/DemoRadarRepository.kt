@@ -209,6 +209,23 @@ class DemoRadarRepository(context: Context) : RadarRepository {
         }
     }
 
+    override fun setSyncTarget(id: String, name: String, lat: Double, lng: Double) {
+        _radarState.update {
+            it.copy(
+                mode = RadarMode.SCANNING,
+                target = RadarTarget(
+                    id = id,
+                    title = name,
+                    subtitle = "Sincronizado desde móvil",
+                    type = TargetType.HISTORIC_SITE,
+                    distanceMeters = 50, // Se actualizará con GPS real si se implementa
+                    bearingDegrees = 0f
+                ),
+                lastAlert = "Nuevo objetivo: $name"
+            )
+        }
+    }
+
     private fun nextTargetForDistance(current: RadarTarget, distance: Int): RadarTarget {
         return if (distance == 0) {
             current.copy(

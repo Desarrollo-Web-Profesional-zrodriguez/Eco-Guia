@@ -24,7 +24,9 @@ data class RadarTarget(
     val subtitle: String,
     val type: TargetType,
     val distanceMeters: Int,
-    val bearingDegrees: Float
+    val bearingDegrees: Float,
+    val latitude: Double? = null,
+    val longitude: Double? = null
 )
 
 data class RouteSummary(
@@ -32,7 +34,16 @@ data class RouteSummary(
     val visitedStops: Int,
     val totalStops: Int,
     val nextStop: String,
-    val estimatedMinutes: Int
+    val estimatedMinutes: Int,
+    val waypoints: List<Waypoint> = emptyList()
+)
+
+data class Waypoint(
+    val id: String,
+    val title: String,
+    val latitude: Double,
+    val longitude: Double,
+    val isReached: Boolean = false
 )
 
 data class HapticSettings(

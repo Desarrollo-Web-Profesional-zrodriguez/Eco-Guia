@@ -1,39 +1,44 @@
-# Eco-Guía Dolores: Migración a Groq IA y RAG Contextual
+# EcoGuia: Sincronización Real con Wear OS y Cambio de Nombre
 
-Debido a los problemas de cuota persistentes con Gemini, migraremos el cerebro de Miguel Hidalgo a **Groq IA**. Además, implementaremos una técnica de **RAG (Generación Aumentada por Recuperación)** para que la IA conozca todos los sitios históricos registrados en tiempo real.
+Este plan implementa la sincronización real entre el dispositivo móvil y el reloj inteligente, permitiendo que el radar del reloj apunte a un sitio histórico seleccionado en el móvil. Además, se renombrará la aplicación a "EcoGuia".
 
 ## Proposed Changes
 
-### Infraestructura de IA (Shared & Mobile)
+### Renombrado de la Aplicación
 
-#### [NEW] [GroqModels.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/shared/src/main/java/mx/utng/ecoguia/shared/data/remote/GroqModels.kt)
-- Definir las clases de datos para la API de Groq (OpenAI compatible): `ChatRequest`, `Message`, `ChatResponse`, etc.
+#### [MODIFY] [AndroidManifest.xml](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/AndroidManifest.xml)
+- Cambiar `android:label="Eco-Guía Control"` a `android:label="EcoGuia"`.
 
-#### [NEW] [GroqClient.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/shared/src/main/java/mx/utng/ecoguia/shared/data/remote/GroqClient.kt)
-- Implementar el cliente HTTP usando Ktor para realizar peticiones a `api.groq.com`.
-- Usar el modelo `llama-3.3-70b-versatile` por su alta capacidad de razonamiento histórico.
+#### [MODIFY] [strings.xml](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/wear/src/main/res/values/strings.xml)
+- Cambiar `<string name="app_name">Eco-Guia Wear</string>` a `<string name="app_name">EcoGuia</string>`.
 
-#### [MODIFY] [ChatViewModel.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/viewmodel/ChatViewModel.kt)
-- Reemplazar el SDK de Gemini por `GroqClient`.
-- **Implementar Contexto RAG:** Al inicializar, el ViewModel descargará todos los sitios históricos desde Neon.
-- **System Prompt Dinámico:** Generar un JSON/Texto con la descripción de los sitios y pasarlo como contexto para que Miguel Hidalgo pueda responder preguntas específicas sobre los lugares que el usuario ha registrado.
+### Sincronización Wear OS (Real-Time Radar)
 
-### Estabilidad de Navegación
+#### [NEW] [WearMessageClient.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/data/wear/WearMessageClient.kt)
+- Implementar un cliente en el módulo móvil para enviar mensajes al reloj usando `Wearable.getMessageClient`.
+- Definir la ruta `/eco-guia/sync/target` para enviar datos de sitios.
 
-#### [MODIFY] [MainActivity.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/MainActivity.kt)
-- Asegurar que el `ChatViewModel` se mantenga vivo durante la navegación para no perder el contexto descargado de los sitios.
+#### [MODIFY] [LocationViewModel.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/viewmodel/LocationViewModel.kt)
+- Añadir método `syncTargetWithWatch(site: RemoteHistoricalSite)` que use el `WearMessageClient`.
+- Este método enviará el ID, nombre y coordenadas del sitio al reloj.
 
-## User Review Required
+#### [MODIFY] [ExplorationScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/ExplorationScreen.kt)
+- Llamar a `locationViewModel.syncTargetWithWatch(site)` cuando el usuario presione "Ver" en un sitio recomendado.
 
-> [!NOTE]
-> **API Key de Groq:** Se utilizará la clave proporcionada: `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`.
->
-> Groq es notablemente más rápido y no tiene las restricciones de "créditos prepagados" que nos están bloqueando en Google.
+#### [MODIFY] [RadarRepository.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/wear/src/main/java/mx/utng/ecoguiawear/domain/repository/RadarRepository.kt)
+- Añadir `setSyncTarget(id: String, name: String, lat: Double, lng: Double)` a la interfaz.
+
+#### [MODIFY] [DemoRadarRepository.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/wear/src/main/java/mx/utng/ecoguiawear/data/repository/DemoRadarRepository.kt)
+- Implementar `setSyncTarget` para actualizar el `RadarTarget` en el `RadarUiState`.
+- Cambiar el modo a `SCANNING` automáticamente al recibir un nuevo objetivo.
+
+#### [MODIFY] [WearMessageListener.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/wear/src/main/java/mx/utng/ecoguiawear/data/wear/WearMessageListener.kt)
+- Manejar la ruta `/eco-guia/sync/target` y llamar a `repository.setSyncTarget`.
 
 ## Verification Plan
 
 ### Manual Verification
-1. Abrir el chat.
-2. Miguel Hidalgo debería decir: "Cargando memorias de la patria..." (mientras descarga los sitios de la DB).
-3. Preguntar sobre un sitio específico que acabes de registrar (ej. "¿Qué puedes decirme de la Parroquia?").
-4. Verificar que la respuesta sea instantánea y precisa gracias a Groq y al contexto inyectado.
+1. Abrir la app en el móvil y en el reloj (simulador o físico).
+2. Verificar que el nombre en el lanzador de apps sea "EcoGuia".
+3. En el móvil, ir a **Exploración** y presionar "Ver" en cualquier sitio.
+4. El reloj debería actualizar su pantalla de Radar inmediatamente mostrando el nombre del sitio seleccionado y apuntando hacia él (la flecha se moverá según la ubicación).
