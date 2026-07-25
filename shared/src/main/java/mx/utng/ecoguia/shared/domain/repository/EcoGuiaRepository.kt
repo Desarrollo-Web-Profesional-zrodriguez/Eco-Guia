@@ -28,6 +28,11 @@ interface EcoGuiaRepository {
     suspend fun getRoutes(): List<RemoteRoute>
 
     /**
+     * Busca rutas turísticas cuyas paradas estén dentro de un radio en metros (ej. 50km = 50000m).
+     */
+    suspend fun getNearbyRoutes(lat: Double, lng: Double, radiusM: Int = 50000): List<RemoteRoute>
+
+    /**
      * Obtiene la lista de cápsulas de información (Geo-Drops) aprobadas.
      */
     suspend fun getGeoDrops(): List<RemoteGeoDrop>

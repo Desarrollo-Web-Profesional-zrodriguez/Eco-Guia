@@ -42,6 +42,8 @@ fun RadarScreen(
     onOpenArrival: () -> Unit,
     onOpenSummary: () -> Unit,
     onOpenSettings: () -> Unit,
+    onSelectNextAutoTarget: () -> Unit = {},
+    onSelectPreviousAutoTarget: () -> Unit = {},
     onRefresh: () -> Unit = {},
     onOpenStealth: () -> Unit = {},
     onNavigateBack: () -> Unit = {},
@@ -72,35 +74,48 @@ fun RadarScreen(
                 modifier = Modifier.fillMaxWidth()
             )
         }
-        // Subtítulo del objetivo (ej: "Detección automática" o "Sincronizado desde móvil")
+        // Subtítulo del objetivo con flechas para alternar entre los 3 sitios más cercanos
         if (target.subtitle.isNotBlank()) {
             item {
-                if (target.isAutoTarget) {
-                    // Badge parpadeante para detección automática por radar de proximidad
-                    val infiniteTransition = rememberInfiniteTransition(label = "auto_pulse")
-                    val pulseAlpha by infiniteTransition.animateFloat(
-                        initialValue = 0.5f,
-                        targetValue = 1f,
-                        animationSpec = infiniteRepeatable(
-                            animation = tween(900, easing = FastOutSlowInEasing),
-                            repeatMode = RepeatMode.Reverse
-                        ),
-                        label = "auto_alpha"
-                    )
+                if (target.isAutoTarget && state.nearbyAutoTargets.isNotEmpty()) {
+                    val count = state.nearbyAutoTargets.size
+                    val currentIndex = state.selectedAutoIndex
+
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(top = 2.dp),
-                        horizontalArrangement = Arrangement.Center,
+                        horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        Button(
+                            onClick = onSelectPreviousAutoTarget,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = EcoGuiaColors.Surface,
+                                contentColor = EcoGuiaColors.Jade
+                            ),
+                            modifier = Modifier.size(30.dp)
+                        ) {
+                            Text("<", fontSize = 12.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+                        }
+
                         Text(
-                            text = "⊙ Detección automática",
+                            text = "${currentIndex + 1}/$count · ${target.title.take(12)}",
                             color = EcoGuiaColors.Jade,
                             style = MaterialTheme.typography.bodySmall,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.alpha(pulseAlpha)
+                            textAlign = TextAlign.Center
                         )
+
+                        Button(
+                            onClick = onSelectNextAutoTarget,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = EcoGuiaColors.Surface,
+                                contentColor = EcoGuiaColors.Jade
+                            ),
+                            modifier = Modifier.size(30.dp)
+                        ) {
+                            Text(">", fontSize = 12.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+                        }
                     }
                 } else {
                     Text(

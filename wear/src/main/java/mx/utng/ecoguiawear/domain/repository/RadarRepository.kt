@@ -27,6 +27,8 @@ interface RadarRepository {
     fun clearActiveRoute()
     fun markRouteCompleted()
     fun dismissRouteCompleted()
+    fun selectNextAutoTarget()
+    fun selectPreviousAutoTarget()
     fun updateCurrentLocation(lat: Double, lng: Double)
     fun updateHeading(heading: Float)
 }

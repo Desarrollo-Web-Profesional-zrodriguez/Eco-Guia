@@ -141,7 +141,25 @@ class DemoRadarRepository(context: Context) : RadarRepository {
 
     override fun setRouteProgress(visited: Int, total: Int) {
         _radarState.update { state ->
-            state.copy(routeSummary = state.routeSummary.copy(visitedStops = visited, totalStops = total))
+            val nextWaypoint = state.routeSummary.waypoints.getOrNull(visited)
+            val updatedTarget = if (nextWaypoint != null) {
+                state.target.copy(
+                    id = nextWaypoint.id,
+                    title = nextWaypoint.title,
+                    subtitle = "Parada ${visited + 1} de $total",
+                    distanceMeters = 50,
+                    latitude = nextWaypoint.latitude,
+                    longitude = nextWaypoint.longitude
+                )
+            } else {
+                state.target
+            }
+
+            state.copy(
+                target = updatedTarget,
+                routeSummary = state.routeSummary.copy(visitedStops = visited, totalStops = total),
+                lastAlert = if (visited >= total && total > 0) "🎉 Última parada alcanzada" else "Avanzando a parada ${visited + 1}"
+            )
         }
     }
 
@@ -300,6 +318,7 @@ class DemoRadarRepository(context: Context) : RadarRepository {
                     estimatedMinutes = 0,
                     waypoints = emptyList()
                 ),
+                isRouteCompleted = false,
                 lastAlert = "Ruta finalizada"
             )
         }
@@ -346,53 +365,88 @@ class DemoRadarRepository(context: Context) : RadarRepository {
         recalculateRadar()
     }
 
+    override fun selectNextAutoTarget() {
+        _radarState.update { state ->
+            val list = state.nearbyAutoTargets
+            if (list.isEmpty()) return@update state
+            val nextIndex = (state.selectedAutoIndex + 1) % list.size
+            val selectedTarget = list[nextIndex]
+            state.copy(
+                selectedAutoIndex = nextIndex,
+                target = selectedTarget,
+                lastAlert = "Objetivo ${nextIndex + 1}/${list.size}: ${selectedTarget.title}"
+            )
+        }
+        recalculateRadar()
+    }
+
+    override fun selectPreviousAutoTarget() {
+        _radarState.update { state ->
+            val list = state.nearbyAutoTargets
+            if (list.isEmpty()) return@update state
+            val prevIndex = if (state.selectedAutoIndex - 1 < 0) list.size - 1 else state.selectedAutoIndex - 1
+            val selectedTarget = list[prevIndex]
+            state.copy(
+                selectedAutoIndex = prevIndex,
+                target = selectedTarget,
+                lastAlert = "Objetivo ${prevIndex + 1}/${list.size}: ${selectedTarget.title}"
+            )
+        }
+        recalculateRadar()
+    }
+
     private fun performAutoSearch(lat: Double, lng: Double) {
         scope.launch {
             try {
-                android.util.Log.d("RadarRepo", "Iniciando búsqueda automática de sitios (50km)...")
-                val nearbySites = remoteRepository.getNearbySites(lat, lng, 50000)
+                val radius = mx.utng.ecoguia.shared.config.EcoGuiaConfig.SEARCH_RADIUS_METERS
+                android.util.Log.d("RadarRepo", "Iniciando búsqueda automática de 3 sitios cercanos (${radius / 1000}km)...")
+                val nearbySites = remoteRepository.getNearbySites(lat, lng, radius)
                 if (nearbySites.isNotEmpty()) {
-                    val closest = nearbySites.minByOrNull { site ->
+                    val top3 = nearbySites.map { site ->
                         val results = FloatArray(1)
                         android.location.Location.distanceBetween(lat, lng, site.latitude ?: 0.0, site.longitude ?: 0.0, results)
-                        results[0]
+                        val dist = results[0].toInt()
+                        RadarTarget(
+                            id = site.id,
+                            title = site.name,
+                            subtitle = "Detección automática (${radius / 1000}km)",
+                            type = TargetType.HISTORIC_SITE,
+                            distanceMeters = dist,
+                            bearingDegrees = 0f,
+                            latitude = site.latitude,
+                            longitude = site.longitude,
+                            isAutoTarget = true
+                        ) to dist
+                    }.sortedBy { it.second }.take(3).map { it.first }
+
+                    val activeTarget = top3.firstOrNull() ?: return@launch
+
+                    val now = System.currentTimeMillis()
+                    val lastAlertTime = lastAlertPerSiteTime[activeTarget.id] ?: 0L
+                    val shouldNotifyHaptics = (now - lastAlertTime) > THIRTY_MINUTES_MS
+
+                    if (shouldNotifyHaptics) {
+                        lastAlertPerSiteTime[activeTarget.id] = now
+                        dao.insertAlert(
+                            mx.utng.ecoguia.shared.domain.model.AlertEntity(
+                                id = java.util.UUID.randomUUID().toString(),
+                                message = "📍 Cerca de ${activeTarget.title}",
+                                type = "SITE",
+                                timestamp = now
+                            )
+                        )
                     }
 
-                    closest?.let { site ->
-                        val now = System.currentTimeMillis()
-                        val lastAlertTime = lastAlertPerSiteTime[site.id] ?: 0L
-                        val shouldNotifyHaptics = (now - lastAlertTime) > THIRTY_MINUTES_MS
-
-                        if (shouldNotifyHaptics) {
-                            lastAlertPerSiteTime[site.id] = now
-                            android.util.Log.d("RadarRepo", "Emitiendo alerta de proximidad de 30 min para ${site.name}")
-                            // Registrar la alerta pasiva en la BD del reloj para AlertsScreen
-                            dao.insertAlert(
-                                mx.utng.ecoguia.shared.domain.model.AlertEntity(
-                                    id = java.util.UUID.randomUUID().toString(),
-                                    message = "📍 Cerca de ${site.name}",
-                                    type = "SITE",
-                                    timestamp = now
-                                )
-                            )
-                        }
-
-                        _radarState.update { 
-                            it.copy(
-                                target = RadarTarget(
-                                    id = site.id,
-                                    title = site.name,
-                                    subtitle = "Detección automática (50km)",
-                                    type = TargetType.HISTORIC_SITE,
-                                    distanceMeters = 0,
-                                    bearingDegrees = 0f,
-                                    latitude = site.latitude,
-                                    longitude = site.longitude,
-                                    isAutoTarget = true
-                                ),
-                                lastAlert = if (shouldNotifyHaptics) "📍 Nuevo sitio en radio: ${site.name}" else it.lastAlert
-                            )
-                        }
+                    _radarState.update { state ->
+                        // Si el usuario ya está navegando un objetivo automático específico, conservar su índice si sigue en la lista
+                        val existingIndex = top3.indexOfFirst { it.id == state.target.id }
+                        val selectedIdx = if (existingIndex != -1) existingIndex else 0
+                        state.copy(
+                            nearbyAutoTargets = top3,
+                            selectedAutoIndex = selectedIdx,
+                            target = top3[selectedIdx],
+                            lastAlert = if (shouldNotifyHaptics) "📍 Nuevo sitio en radio: ${top3[selectedIdx].title}" else state.lastAlert
+                        )
                     }
                 }
             } catch (e: Exception) {
@@ -401,8 +455,16 @@ class DemoRadarRepository(context: Context) : RadarRepository {
         }
     }
 
+    private var smoothedHeading: Float = 0f
+
     override fun updateHeading(heading: Float) {
-        _radarState.update { it.copy(currentHeading = heading) }
+        // Filtro pasa-bajas personalizable para suavizar temblores en la aguja de la brújula
+        val diff = Math.abs(heading - smoothedHeading)
+        if (diff > mx.utng.ecoguia.shared.config.EcoGuiaConfig.COMPASS_HEADING_THRESHOLD_DEGREES) {
+            val factor = mx.utng.ecoguia.shared.config.EcoGuiaConfig.COMPASS_SMOOTHING_FACTOR
+            smoothedHeading = smoothedHeading + factor * (heading - smoothedHeading)
+            _radarState.update { it.copy(currentHeading = smoothedHeading) }
+        }
     }
 
     private fun recalculateRadar() {
@@ -460,8 +522,6 @@ class DemoRadarRepository(context: Context) : RadarRepository {
                     }
                     if (updatedWaypoints.any { !it.isReached }) {
                         setSyncRoute(state.routeSummary.title, updatedWaypoints)
-                    } else {
-                        _radarState.update { it.copy(lastAlert = "Ruta completada 🏁") }
                     }
                 }
             }

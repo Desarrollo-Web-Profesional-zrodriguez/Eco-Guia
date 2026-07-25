@@ -41,6 +41,16 @@ class RadarViewModel(
         sendPhoneEvent(PhoneMessageClient.PATH_RADAR_STATE, state.value.mode.name)
     }
 
+    fun selectNextAutoTarget() {
+        repository.selectNextAutoTarget()
+        pulse(HapticPulse.TOGGLE)
+    }
+
+    fun selectPreviousAutoTarget() {
+        repository.selectPreviousAutoTarget()
+        pulse(HapticPulse.TOGGLE)
+    }
+
     fun toggleStealthMode() {
         repository.toggleStealthMode()
         pulse(HapticPulse.TOGGLE)

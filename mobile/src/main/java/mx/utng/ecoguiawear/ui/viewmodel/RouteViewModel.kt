@@ -79,6 +79,22 @@ class RouteViewModel(
     }
 
     /**
+     * Carga las rutas turísticas cercanas a la ubicación actual del usuario (radio 50km).
+     */
+    fun loadNearbyRoutes(lat: Double, lng: Double, radiusM: Int = 50000) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                _routes.value = repository.getNearbyRoutes(lat, lng, radiusM)
+            } catch (e: Exception) {
+                Log.e("RouteViewModel", "Error al cargar rutas cercanas: ${e.message}")
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    /**
      * Inicia una ruta turística, consulta sus paradas y las sincroniza con Wear OS.
      */
     fun startRoute(context: Context, route: RemoteRoute) {

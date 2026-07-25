@@ -103,7 +103,21 @@ class LocationViewModel(
     }
 
     /**
-     * Consulta el repositorio para obtener sitios en un radio de 1km.
+     * Carga todos los sitios históricos activos sin restricción de distancia (ideal para crear rutas).
+     */
+    fun loadAllHistoricalSites() {
+        viewModelScope.launch {
+            try {
+                val sites = repository.getHistoricalSites()
+                _nearbySites.value = sites
+            } catch (e: Exception) {
+                Log.e("LocationViewModel", "Error al cargar sitios históricos: ${e.message}")
+            }
+        }
+    }
+
+    /**
+     * Consulta el repositorio para obtener sitios en un radio de 50km.
      */
     private fun fetchNearbySites(location: Location) {
         viewModelScope.launch {

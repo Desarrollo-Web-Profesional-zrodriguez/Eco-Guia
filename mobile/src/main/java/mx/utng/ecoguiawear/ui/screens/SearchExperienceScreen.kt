@@ -23,7 +23,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -45,11 +49,27 @@ import mx.utng.ecoguiawear.ui.viewmodel.RouteViewModel
 @Composable
 fun SearchExperienceScreen(
     onSelectRoute: () -> Unit = {},
-    routeViewModel: RouteViewModel = viewModel()
+    routeViewModel: RouteViewModel = viewModel(),
+    locationViewModel: mx.utng.ecoguiawear.ui.viewmodel.LocationViewModel = viewModel()
 ) {
     val context = LocalContext.current
     val routes by routeViewModel.routes
     val isLoading by routeViewModel.isLoading
+    val currentLocation by locationViewModel.currentLocation
+
+    var searchQuery by remember { mutableStateOf("") }
+
+    LaunchedEffect(Unit) {
+        routeViewModel.loadRoutes()
+    }
+
+    val filteredRoutes = remember(routes, searchQuery) {
+        val q = searchQuery.trim().lowercase()
+        if (q.isEmpty()) routes
+        else routes.filter { r ->
+            r.title.lowercase().contains(q) || (r.description?.lowercase()?.contains(q) == true)
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -70,46 +90,77 @@ fun SearchExperienceScreen(
             Icon(Icons.Default.Map, null, tint = Color.White, modifier = Modifier.align(Alignment.TopEnd))
         }
 
+        // Campo de búsqueda por categoría / palabras clave
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = { searchQuery = it },
+            placeholder = { Text("Buscar por categoría o nombre (ej: Museos, Independencia)...", fontSize = 12.sp) },
+            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = EcoGuiaColors.Jade) },
+            trailingIcon = {
+                if (searchQuery.isNotEmpty()) {
+                    IconButton(onClick = { searchQuery = "" }) {
+                        Icon(Icons.Default.Close, contentDescription = "Limpiar", tint = Color.Gray)
+                    }
+                }
+            },
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = EcoGuiaColors.Jade,
+                unfocusedBorderColor = Color.Gray.copy(alpha = 0.3f)
+            )
+        )
+
         // Info Banner
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(horizontal = 16.dp, vertical = 4.dp),
             colors = CardDefaults.cardColors(containerColor = EcoGuiaColors.Surface),
-            shape = RoundedCornerShape(24.dp)
+            shape = RoundedCornerShape(20.dp)
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("Elige tu aventura histórica", color = Color.White, fontWeight = FontWeight.Bold)
+            Column(modifier = Modifier.padding(14.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("📍 Rutas cercanas (50 km)", color = Color.White, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.weight(1f))
+                    Text("${filteredRoutes.size} encontrada(s)", color = EcoGuiaColors.Gold, fontSize = 11.sp)
+                }
                 Text(
-                    "Selecciona una ruta para sincronizar con tu reloj y recibir guiado por voz.",
+                    "Selecciona una ruta para sincronizar con tu reloj y comenzar el recorrido.",
                     color = Color.White.copy(alpha = 0.7f),
-                    fontSize = 12.sp
+                    fontSize = 11.sp
                 )
             }
         }
 
         // Catálogo de Rutas
         Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-            Text("Rutas disponibles", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 8.dp))
-
+            Spacer(modifier = Modifier.height(8.dp))
             when {
                 isLoading -> {
                     Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator(color = EcoGuiaColors.Jade)
                     }
                 }
-                routes.isEmpty() -> {
+                filteredRoutes.isEmpty() -> {
                     Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text("🗺️", fontSize = 40.sp)
                             Spacer(modifier = Modifier.height(8.dp))
-                            Text("No hay rutas registradas aún.", color = Color.Gray, fontSize = 14.sp)
+                            Text(
+                                if (searchQuery.isNotEmpty()) "Sin resultados para \"$searchQuery\""
+                                else "No hay rutas cercanas en 50 km.",
+                                color = Color.Gray,
+                                fontSize = 14.sp
+                            )
                         }
                     }
                 }
                 else -> {
                     LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        items(routes) { route ->
+                        items(filteredRoutes) { route ->
                             RouteCatalogItem(
                                 route = route,
                                 onStartClick = {

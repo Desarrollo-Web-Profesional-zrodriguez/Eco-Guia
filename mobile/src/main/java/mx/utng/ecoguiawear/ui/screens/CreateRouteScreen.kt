@@ -66,8 +66,12 @@ fun CreateRouteScreen(
     val isLoading by routeViewModel.isLoading
     val createSuccess by routeViewModel.createSuccess
 
+    var siteSearchQuery by remember { mutableStateOf("") }
+    val currentLocation by locationViewModel.currentLocation
+
     LaunchedEffect(Unit) {
         locationViewModel.startLocationUpdates(context)
+        locationViewModel.loadAllHistoricalSites()
     }
 
     LaunchedEffect(createSuccess) {
@@ -189,23 +193,70 @@ fun CreateRouteScreen(
                     )
                 }
 
-                if (availableSites.isEmpty()) {
+                item {
+                    OutlinedTextField(
+                        value = siteSearchQuery,
+                        onValueChange = { siteSearchQuery = it },
+                        placeholder = { Text("Buscar sitio por nombre o tipo...", fontSize = 12.sp) },
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = EcoGuiaColors.Jade)
+                    )
+                }
+
+                val filteredSites = availableSites.filter { site ->
+                    val queryMatch = siteSearchQuery.isBlank() ||
+                        site.name.contains(siteSearchQuery, ignoreCase = true) ||
+                        site.siteType.contains(siteSearchQuery, ignoreCase = true)
+
+                    val distanceMatch = if (currentLocation != null && site.latitude != null && site.longitude != null) {
+                        val results = FloatArray(1)
+                        android.location.Location.distanceBetween(
+                            currentLocation!!.latitude, currentLocation!!.longitude,
+                            site.latitude!!, site.longitude!!, results
+                        )
+                        results[0] <= 50000 // 50km
+                    } else true
+
+                    queryMatch && distanceMatch
+                }
+
+                if (filteredSites.isEmpty()) {
                     item {
                         Text(
-                            text = "Cargando sitios para la ruta...",
+                            text = if (siteSearchQuery.isNotEmpty()) "No hay sitios que coincidan con la búsqueda." else "Cargando sitios a menos de 50km...",
                             fontSize = 12.sp,
                             color = Color.Gray
                         )
                     }
                 } else {
-                    items(availableSites) { site ->
+                    items(filteredSites) { site ->
                         val isSelected = selectedSiteIds.contains(site.id)
+                        val orderIndex = selectedSiteIds.indexOf(site.id)
+
                         SiteSelectionRow(
                             site = site,
                             isSelected = isSelected,
+                            orderIndex = if (orderIndex != -1) orderIndex + 1 else null,
+                            canMoveUp = orderIndex > 0,
+                            canMoveDown = orderIndex != -1 && orderIndex < selectedSiteIds.size - 1,
                             onToggle = {
                                 if (isSelected) selectedSiteIds.remove(site.id)
                                 else selectedSiteIds.add(site.id)
+                            },
+                            onMoveUp = {
+                                if (orderIndex > 0) {
+                                    val temp = selectedSiteIds[orderIndex]
+                                    selectedSiteIds[orderIndex] = selectedSiteIds[orderIndex - 1]
+                                    selectedSiteIds[orderIndex - 1] = temp
+                                }
+                            },
+                            onMoveDown = {
+                                if (orderIndex != -1 && orderIndex < selectedSiteIds.size - 1) {
+                                    val temp = selectedSiteIds[orderIndex]
+                                    selectedSiteIds[orderIndex] = selectedSiteIds[orderIndex + 1]
+                                    selectedSiteIds[orderIndex + 1] = temp
+                                }
                             }
                         )
                     }
@@ -254,7 +305,12 @@ fun CreateRouteScreen(
 fun SiteSelectionRow(
     site: RemoteHistoricalSite,
     isSelected: Boolean,
-    onToggle: () -> Unit
+    orderIndex: Int? = null,
+    canMoveUp: Boolean = false,
+    canMoveDown: Boolean = false,
+    onToggle: () -> Unit,
+    onMoveUp: () -> Unit = {},
+    onMoveDown: () -> Unit = {}
 ) {
     Card(
         modifier = Modifier
@@ -279,8 +335,13 @@ fun SiteSelectionRow(
                     ),
                 contentAlignment = Alignment.Center
             ) {
-                if (isSelected) {
-                    Icon(Icons.Default.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+                if (isSelected && orderIndex != null) {
+                    Text(
+                        text = "#$orderIndex",
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        fontSize = 14.sp
+                    )
                 } else {
                     Icon(Icons.Default.Place, contentDescription = null, tint = EcoGuiaColors.Jade, modifier = Modifier.size(20.dp))
                 }
@@ -293,6 +354,17 @@ fun SiteSelectionRow(
             ) {
                 Text(site.name, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
                 Text(site.siteType, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+
+            if (isSelected) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = onMoveUp, enabled = canMoveUp, modifier = Modifier.size(32.dp)) {
+                        Text("▲", fontSize = 12.sp, color = if (canMoveUp) EcoGuiaColors.Jade else Color.Gray.copy(alpha = 0.3f))
+                    }
+                    IconButton(onClick = onMoveDown, enabled = canMoveDown, modifier = Modifier.size(32.dp)) {
+                        Text("▼", fontSize = 12.sp, color = if (canMoveDown) EcoGuiaColors.Jade else Color.Gray.copy(alpha = 0.3f))
+                    }
+                }
             }
 
             Checkbox(

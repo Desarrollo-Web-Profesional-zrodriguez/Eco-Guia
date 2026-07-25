@@ -40,6 +40,30 @@ class EcoGuiaRepositoryImpl(
     }
 
     /**
+     * Obtiene rutas turísticas cercanas a un radio especificado (por defecto 50km = 50000m) usando PostGIS.
+     */
+    override suspend fun getNearbyRoutes(lat: Double, lng: Double, radiusM: Int): List<RemoteRoute> {
+        val query = """
+            SELECT DISTINCT r.*
+            FROM routes r
+            JOIN route_stops rs ON rs.route_id = r.id
+            JOIN historical_sites hs ON hs.id = rs.site_id
+            WHERE r.is_active = TRUE
+              AND ST_DWithin(
+                  hs.location,
+                  ST_SetSRID(ST_MakePoint($1::double precision, $2::double precision), 4326)::geography,
+                  $3::double precision
+              )
+        """.trimIndent()
+        return try {
+            neonClient.executeQuery<RemoteRoute>(query, listOf(lng.toString(), lat.toString(), radiusM.toString()))
+        } catch (e: Exception) {
+            android.util.Log.e("EcoGuiaRepo", "Error al buscar rutas cercanas: ${e.message}", e)
+            getRoutes()
+        }
+    }
+
+    /**
      * Recupera el catálogo de categorías.
      */
     override suspend fun getSiteCategories(): List<RemoteCategory> {
