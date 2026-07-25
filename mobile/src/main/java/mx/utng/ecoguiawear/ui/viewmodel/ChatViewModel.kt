@@ -25,7 +25,7 @@ data class ChatMessage(
 
 class ChatViewModel : ViewModel() {
 
-    private val apiKey = "AQ.Ab8RN6KsA71S9YkKyiZreIDs35JgoLBXQxZVQGlz8fz_o-7JyA"
+    private val apiKey = "AQ.Ab8RN6KwzLC-hAlXWUtaf0reFSipC6BYfcLFjoVj8Gd8Cbo3nw"
     
     private val generativeModel = GenerativeModel(
         modelName = "gemini-2.0-flash",
