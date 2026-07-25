@@ -16,6 +16,7 @@ class WearMessageListener(
 
     fun onMessageReceived(event: MessageEvent) {
         val payload = String(event.data)
+        android.util.Log.d("WearMessageListener", "Mensaje recibido: ${event.path} -> $payload")
         when (event.path) {
             "/eco-guia/simulate/link" -> {
                 val linked = payload.toBoolean()
@@ -74,6 +75,23 @@ class WearMessageListener(
                     val lat = parts[2].toDoubleOrNull() ?: return
                     val lng = parts[3].toDoubleOrNull() ?: return
                     repository.setSyncTarget(id, name, lat, lng)
+                }
+            }
+            "/eco-guia/sync/route" -> {
+                val parts = payload.split("|")
+                if (parts.size == 2) {
+                    val title = parts[0]
+                    val waypointsStr = parts[1]
+                    val waypoints = waypointsStr.split(";").filter { it.isNotBlank() }.map {
+                        val wpParts = it.split("|")
+                        mx.utng.ecoguiawear.domain.model.Waypoint(
+                            id = wpParts.getOrNull(0) ?: "0",
+                            title = wpParts.getOrNull(1) ?: "Punto",
+                            latitude = wpParts.getOrNull(2)?.toDoubleOrNull() ?: 0.0,
+                            longitude = wpParts.getOrNull(3)?.toDoubleOrNull() ?: 0.0
+                        )
+                    }
+                    repository.setSyncRoute(title, waypoints)
                 }
             }
         }

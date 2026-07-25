@@ -37,7 +37,6 @@ import kotlinx.coroutines.launch
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.res.painterResource
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
@@ -188,12 +187,31 @@ fun ExplorationScreen(
         
         // Lista de Sitios
         Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-            Text(
-                if (nearbySites.isEmpty()) "Buscando sitios históricos..." else "Sitios recomendados",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 12.dp)
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    if (nearbySites.isEmpty()) "Buscando sitios..." else "Sitios recomendados",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                
+                TextButton(onClick = {
+                    android.util.Log.d("ExplorationScreen", "Botón 'Probar Ruta' presionado.")
+                    scope.launch {
+                        val waypoints = listOf(
+                            "Parroquia" to (21.1578 to -100.9348),
+                            "Museo" to (21.1565 to -100.9360),
+                            "Casa Hidalgo" to (21.1550 to -100.9355)
+                        )
+                        mx.utng.ecoguiawear.data.wear.WearMessageClient(context).syncRoute("Ruta Centro", waypoints)
+                    }
+                }) {
+                    Text("Probar Ruta", color = EcoGuiaColors.Gold)
+                }
+            }
             
             LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 items(nearbySites.size) { index ->

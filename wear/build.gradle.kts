@@ -51,6 +51,7 @@ dependencies {
     implementation(libs.lifecycle.viewmodel.compose)
     implementation(libs.lifecycle.viewmodel.ktx)
     implementation(libs.play.services.wearable)
+    implementation(libs.play.services.location)
 
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)

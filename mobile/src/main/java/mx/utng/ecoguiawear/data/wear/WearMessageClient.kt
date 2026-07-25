@@ -20,7 +20,7 @@ class WearMessageClient(private val context: Context) {
                     .sendMessage(node.id, PATH_SYNC_TARGET, payload.toByteArray())
                     .await()
             }
-            Log.d("WearMessageClient", "Sincronización enviada: $name ($lat, $lng)")
+            Log.d("WearMessageClient", "Sincronización enviada (Target): $name ($lat, $lng) a ${nodes.size} nodos")
         } catch (e: Exception) {
             Log.e("WearMessageClient", "Error al sincronizar con el reloj: ${e.message}")
         }
@@ -43,6 +43,7 @@ class WearMessageClient(private val context: Context) {
                     .sendMessage(node.id, PATH_SYNC_ROUTE, payload.toByteArray())
                     .await()
             }
+            Log.d("WearMessageClient", "Sincronización enviada (Route): $title con ${waypoints.size} puntos a ${nodes.size} nodos")
         } catch (e: Exception) {
             Log.e("WearMessageClient", "Error al sincronizar ruta: ${e.message}")
         }

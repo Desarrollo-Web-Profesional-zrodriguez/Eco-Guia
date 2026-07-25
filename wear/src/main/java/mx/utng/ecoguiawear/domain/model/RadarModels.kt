@@ -66,12 +66,12 @@ data class RadarUiState(
     val isCameraReady: Boolean = true,
     val alerts: List<AlertEntity> = emptyList(),
     val target: RadarTarget = RadarTarget(
-        id = "geo-drop-museo-01",
-        title = "Geo-Drop Museo",
-        subtitle = "Museo de la Independencia Nacional",
-        type = TargetType.GEO_DROP,
-        distanceMeters = 64,
-        bearingDegrees = 34f
+        id = "none",
+        title = "Esperando objetivo",
+        subtitle = "Selecciona un sitio en el móvil",
+        type = TargetType.HISTORIC_SITE,
+        distanceMeters = 0,
+        bearingDegrees = 0f
     ),
     val routeSummary: RouteSummary = RouteSummary(
         title = "Ruta Independencia",

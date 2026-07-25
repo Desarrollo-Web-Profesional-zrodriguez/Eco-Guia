@@ -25,6 +25,9 @@ class DemoRadarRepository(context: Context) : RadarRepository {
     private val _radarState = MutableStateFlow(initialState)
     override val radarState: StateFlow<RadarUiState> = _radarState.asStateFlow()
 
+    private var currentLat: Double = 0.0
+    private var currentLng: Double = 0.0
+
     init {
         // Cargar estado inicial desde DB
         scope.launch {
@@ -100,7 +103,6 @@ class DemoRadarRepository(context: Context) : RadarRepository {
                 dao.insertAlert(mx.utng.ecoguia.shared.domain.model.AlertEntity(it.id, it.message, it.type, it.timestamp))
             }
         }
-        // El Flow de Room actualizará el estado automáticamente
     }
 
     override fun setPermissions(gps: Boolean, camera: Boolean) {
@@ -184,10 +186,6 @@ class DemoRadarRepository(context: Context) : RadarRepository {
         scope.launch {
             try {
                 _radarState.update { it.copy(lastAlert = "Buscando en Neon...") }
-                // Dolores Hidalgo base location
-                val lat = 21.1561
-                val lng = -100.9350
-                
                 val remoteDrops = remoteRepository.getGeoDrops()
                 if (remoteDrops.isNotEmpty()) {
                     val firstDrop = remoteDrops.first()
@@ -196,7 +194,7 @@ class DemoRadarRepository(context: Context) : RadarRepository {
                         title = firstDrop.title,
                         subtitle = firstDrop.description ?: "Cápsula en la nube",
                         type = TargetType.GEO_DROP,
-                        distanceMeters = 45, // Distancia simulada por ahora
+                        distanceMeters = 45,
                         bearingDegrees = 120f
                     )
                     _radarState.update { it.copy(target = target, lastAlert = "Cápsula encontrada") }
@@ -218,12 +216,141 @@ class DemoRadarRepository(context: Context) : RadarRepository {
                     title = name,
                     subtitle = "Sincronizado desde móvil",
                     type = TargetType.HISTORIC_SITE,
-                    distanceMeters = 50, // Se actualizará con GPS real si se implementa
-                    bearingDegrees = 0f
+                    distanceMeters = 50,
+                    bearingDegrees = 0f,
+                    latitude = lat,
+                    longitude = lng
                 ),
                 lastAlert = "Nuevo objetivo: $name"
             )
         }
+        recalculateRadar()
+    }
+
+    override fun setSyncRoute(title: String, waypoints: List<Waypoint>) {
+        android.util.Log.d("RadarRepo", "Cargando ruta: $title con ${waypoints.size} puntos.")
+        _radarState.update {
+            it.copy(
+                mode = RadarMode.SCANNING,
+                routeSummary = RouteSummary(
+                    title = title,
+                    visitedStops = waypoints.count { wp -> wp.isReached },
+                    totalStops = waypoints.size,
+                    nextStop = waypoints.firstOrNull { wp -> !wp.isReached }?.title ?: "Fin",
+                    estimatedMinutes = waypoints.count { wp -> !wp.isReached } * 5,
+                    waypoints = waypoints
+                ),
+                lastAlert = "Ruta cargada: $title"
+            )
+        }
+        updateTargetFromRoute()
+    }
+
+    override fun updateCurrentLocation(lat: Double, lng: Double) {
+        currentLat = lat
+        currentLng = lng
+        val targetName = _radarState.value.target.title
+        android.util.Log.d("RadarRepo", "Ubicación: $lat, $lng. Objetivo actual: $targetName")
+        recalculateRadar()
+    }
+
+    private fun recalculateRadar() {
+        _radarState.update { state ->
+            val target = state.target
+            val targetLat = target.latitude
+            val targetLng = target.longitude
+
+            if (targetLat == null || targetLng == null) {
+                android.util.Log.w("RadarRepo", "No hay coordenadas en el objetivo actual (${target.title}).")
+                return@update state
+            }
+
+            if (currentLat == 0.0) {
+                android.util.Log.w("RadarRepo", "Sin ubicación GPS aún para calcular rumbo.")
+                return@update state
+            }
+
+            val bearing = mx.utng.ecoguiawear.data.wear.LocationHelper.calculateBearing(
+                currentLat, currentLng, targetLat, targetLng
+            )
+            val distance = mx.utng.ecoguiawear.data.wear.LocationHelper.calculateDistance(
+                currentLat, currentLng, targetLat, targetLng
+            ).toInt()
+
+            android.util.Log.d("RadarRepo", "Recalculando para ${target.title}: Distancia=$distance m, Rumbo=$bearing")
+
+            val nextMode = when {
+                distance <= 5 -> RadarMode.ARRIVED
+                distance <= 20 -> RadarMode.FOLLOWING_ARROW
+                else -> RadarMode.SCANNING
+            }
+
+            // Auto-progresión de ruta si llegamos
+            var shouldUpdateRoute = false
+            if (nextMode == RadarMode.ARRIVED && state.routeSummary.waypoints.isNotEmpty()) {
+                shouldUpdateRoute = true
+            }
+
+            val nextState = state.copy(
+                mode = nextMode,
+                target = target.copy(
+                    distanceMeters = distance,
+                    bearingDegrees = bearing
+                ),
+                lastAlert = when(nextMode) {
+                    RadarMode.ARRIVED -> "¡Llegaste!"
+                    RadarMode.FOLLOWING_ARROW -> "Sigue la flecha"
+                    else -> "Caminando..."
+                }
+            )
+
+            if (shouldUpdateRoute) {
+                scope.launch {
+                    val updatedWaypoints = state.routeSummary.waypoints.map {
+                        if (it.id == target.id) it.copy(isReached = true) else it
+                    }
+                    if (updatedWaypoints.any { !it.isReached }) {
+                        setSyncRoute(state.routeSummary.title, updatedWaypoints)
+                    } else {
+                        // Fin de la ruta
+                        _radarState.update { it.copy(lastAlert = "Ruta completada 🏁") }
+                    }
+                }
+            }
+
+            nextState
+        }
+    }
+
+    private fun updateTargetFromRoute() {
+        _radarState.update { state ->
+            val waypoints = state.routeSummary.waypoints
+            val nextWaypoint = waypoints.firstOrNull { !it.isReached }
+            
+            if (nextWaypoint != null) {
+                android.util.Log.d("RadarRepo", "Actualizando objetivo a: ${nextWaypoint.title} (${nextWaypoint.latitude}, ${nextWaypoint.longitude})")
+                state.copy(
+                    target = RadarTarget(
+                        id = nextWaypoint.id,
+                        title = nextWaypoint.title,
+                        subtitle = "Punto de ruta",
+                        type = TargetType.HISTORIC_SITE,
+                        distanceMeters = 0,
+                        bearingDegrees = 0f,
+                        latitude = nextWaypoint.latitude,
+                        longitude = nextWaypoint.longitude
+                    ),
+                    routeSummary = state.routeSummary.copy(
+                        nextStop = nextWaypoint.title,
+                        visitedStops = waypoints.count { wp -> wp.isReached }
+                    )
+                )
+            } else {
+                android.util.Log.w("RadarRepo", "No hay más waypoints pendientes en la ruta.")
+                state
+            }
+        }
+        recalculateRadar()
     }
 
     private fun nextTargetForDistance(current: RadarTarget, distance: Int): RadarTarget {
