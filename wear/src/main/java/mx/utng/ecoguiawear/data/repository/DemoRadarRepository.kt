@@ -338,6 +338,15 @@ class DemoRadarRepository(context: Context) : RadarRepository {
                         if (shouldNotifyHaptics) {
                             lastAlertPerSiteTime[site.id] = now
                             android.util.Log.d("RadarRepo", "Emitiendo alerta de proximidad de 30 min para ${site.name}")
+                            // Registrar la alerta pasiva en la BD del reloj para AlertsScreen
+                            dao.insertAlert(
+                                mx.utng.ecoguia.shared.domain.model.AlertEntity(
+                                    id = java.util.UUID.randomUUID().toString(),
+                                    message = "📍 Cerca de ${site.name}",
+                                    type = "SITE",
+                                    timestamp = now
+                                )
+                            )
                         }
 
                         _radarState.update { 

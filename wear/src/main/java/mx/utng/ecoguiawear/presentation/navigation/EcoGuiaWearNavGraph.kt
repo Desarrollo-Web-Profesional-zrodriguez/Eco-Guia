@@ -116,7 +116,16 @@ fun EcoGuiaWearNavGraph(viewModel: RadarViewModel) {
                 }
             }
 
-            // Diálogo de llegada desactivado para mantener detección automática limpia
+            // Diálogo emergente de llegada: se activa únicamente si hay una RUTA ACTIVA
+            if (state.mode == RadarMode.ARRIVED && isRouteActive) {
+                Dialog(onDismissRequest = { }) {
+                    ArrivalScreen(
+                        state = state,
+                        onOpenPhone = viewModel::openPhoneCamera,
+                        onContinue = viewModel::completeArrival
+                    )
+                }
+            }
         }
     }
 }
