@@ -1,44 +1,25 @@
-# Eco-Guía Dolores: Sprint de Estabilización y Nuevas Funcionalidades
+# Eco-Guía Dolores: Actualización de Cerebro IA (Migración a Gemini 2.0)
 
-Este plan aborda la resolución de fallos de compilación, la integración de Google Places API para el registro de sitios y la finalización de las pantallas de usuario.
-
-## User Review Required
-
-> [!IMPORTANT]
-> Se requiere una API Key de Google Maps con **Places API** habilitada para que las sugerencias de dirección funcionen. Por ahora se usará un placeholder o se asumirá que la clave ya está configurada en el `Manifest`.
+El error 404 indica que el modelo `gemini-1.5-flash` ha sido retirado (estamos en julio de 2026). Para que Miguel Hidalgo vuelva a responder, debemos migrar a la nueva generación de modelos.
 
 ## Proposed Changes
 
-### Build & Infrastructure
+### Chat IA (Mobile)
 
-#### [MODIFY] [libs.versions.toml](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/gradle/libs.versions.toml)
-- Revertir Kotlin a `2.4.10` y BOM a `2024.09.00` para asegurar compatibilidad con el entorno actual.
+#### [MODIFY] [ChatViewModel.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/viewmodel/ChatViewModel.kt)
+- Cambiar el nombre del modelo de `gemini-1.5-flash` a `gemini-2.0-flash` (el estándar actual en 2026).
+- Mejorar el manejo de excepciones para que, en caso de error de red o de API Key, el mensaje sea más claro para el usuario.
 
-### Registro de Sitios (Admin)
+## User Review Required
 
-#### [MODIFY] [SiteRegistrationViewModel.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/viewmodel/SiteRegistrationViewModel.kt)
-- Añadir lógica para buscar direcciones usando `PlacesClient`.
-- Manejar estado de carga de categorías.
-
-#### [MODIFY] [SiteRegistrationScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/admin/SiteRegistrationScreen.kt)
-- Implementar lista de sugerencias de Google Places bajo el campo de dirección.
-- Mejorar el feedback visual cuando las categorías están cargando.
-
-### Pantallas de Usuario
-
-#### [NEW] [CollectionScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/CollectionScreen.kt)
-- Implementar la vista "Mi Colección" para mostrar sitios visitados o guardados.
-
-#### [NEW] [ProfileScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/ProfileScreen.kt)
-- Implementar la vista "Mi Perfil" con datos del usuario y estadísticas.
+> [!CAUTION]
+> **API Key sospechosa:** La clave que proporcionaste (`AQ.Ab8...`) no coincide con el formato tradicional de Google AI Studio (`AIzaSy...`).
+>
+> Si el cambio a **Gemini 2.0 Flash** no soluciona el problema, por favor genera una nueva clave en [Google AI Studio](https://aistudio.google.com/) y asegúrate de que empiece con `AIza`.
 
 ## Verification Plan
 
-### Automated Tests
-- Ejecutar `gradlew :mobile:assembleDebug` para verificar la compilación.
-
 ### Manual Verification
-1. Desplegar en dispositivo `ZY22MKBD44`.
-2. Abrir "Alta de Sitio" y verificar que las categorías se carguen desde Neon.
-3. Escribir en "Dirección" y verificar que aparezcan sugerencias (si la API Key es válida).
-4. Completar el flujo de 4 pasos y verificar la creación del sitio en el logcat.
+1. Abrir el chat de Miguel Hidalgo.
+2. Enviar un mensaje.
+3. El Padre de la Patria debería responder ahora que estamos usando un modelo activo.

@@ -1,9 +1,9 @@
 ﻿/**
  * Archivo: MiguelHidalgoChatScreen.kt
  * Autor: ZahirMora
- * Fecha de Ãºltima actualizaciÃ³n: 2026-07-22
- * DescripciÃ³n: Pantalla de chat interactivo con el avatar de Miguel Hidalgo IA. 
- * Implementa una interfaz de conversaciÃ³n guiada con burbujas de mensaje estilizadas.
+ * Fecha de última actualización: 2026-07-24
+ * Descripción: Pantalla de chat interactivo con el avatar de Miguel Hidalgo IA. 
+ * Implementa una interfaz de conversación guiada con burbujas de mensaje estilizadas.
  */
 
 package mx.utng.ecoguiawear.ui.screens
@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.*
@@ -26,16 +27,23 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
+import mx.utng.ecoguiawear.ui.viewmodel.ChatViewModel
 
 /**
  * Composable que representa la interfaz de chat con Miguel Hidalgo IA.
  */
 @Composable
 fun MiguelHidalgoChatScreen(
-    onKnowledgeBaseClick: () -> Unit
+    onKnowledgeBaseClick: () -> Unit,
+    viewModel: ChatViewModel = viewModel()
 ) {
+    var inputText by remember { mutableStateOf("") }
+    val messages = viewModel.messages
+    val isLoading by viewModel.isLoading
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -101,32 +109,36 @@ fun MiguelHidalgoChatScreen(
             modifier = Modifier
                 .weight(1f)
                 .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = PaddingValues(bottom = 16.dp)
         ) {
             item {
                 Text(
-                    "ConversaciÃ³n guiada", 
-                    color = Color.Black, 
+                    "Conversación histórica", 
+                    color = MaterialTheme.colorScheme.onBackground, 
                     fontWeight = FontWeight.Bold, 
                     fontSize = 14.sp,
                     modifier = Modifier.padding(top = 8.dp)
                 )
             }
             
-            item {
-                UserChatBubble("Â¿QuÃ© sucediÃ³ en esta casona?")
+            items(messages) { message ->
+                if (message.isUser) {
+                    UserChatBubble(message.text)
+                } else {
+                    IAChatBubble(message.text)
+                }
             }
-            
-            item {
-                IAChatBubble("AquÃ­ se gestÃ³ la conspiraciÃ³n de Dolores el 15 de septiembre de 1810. Allende y Aldama vinieron a informar sobre la traiciÃ³n de la conspiraciÃ³n de QuerÃ©taro.")
-            }
-            
-            item {
-                UserChatBubble("Dime de este sitio")
-            }
-            
-            item {
-                IAChatBubble("Actualmente funciona como el Museo de la Independencia, preservando la memoria del primer cura insurgente.")
+
+            if (isLoading) {
+                item {
+                    Text(
+                        "Miguel Hidalgo está redactando...", 
+                        fontSize = 12.sp, 
+                        color = Color.Gray,
+                        modifier = Modifier.padding(start = 8.dp)
+                    )
+                }
             }
         }
 
@@ -139,16 +151,37 @@ fun MiguelHidalgoChatScreen(
             shape = RoundedCornerShape(24.dp)
         ) {
             Row(
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    "Â¿QuÃ© deseas descubrir?", 
-                    color = Color.LightGray, 
-                    fontSize = 14.sp,
-                    modifier = Modifier.weight(1f)
+                TextField(
+                    value = inputText,
+                    onValueChange = { inputText = it },
+                    placeholder = { Text("Pregúntale al Padre de la Patria...", fontSize = 14.sp) },
+                    modifier = Modifier.weight(1f),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent
+                    ),
+                    singleLine = true
                 )
-                Icon(Icons.Default.Send, null, tint = EcoGuiaColors.Jade, modifier = Modifier.size(20.dp))
+                
+                IconButton(
+                    onClick = {
+                        viewModel.sendMessage(inputText)
+                        inputText = ""
+                    },
+                    enabled = !isLoading && inputText.isNotBlank()
+                ) {
+                    Icon(
+                        Icons.Default.Send, 
+                        null, 
+                        tint = if (inputText.isNotBlank()) EcoGuiaColors.Jade else Color.Gray, 
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
             }
         }
     }

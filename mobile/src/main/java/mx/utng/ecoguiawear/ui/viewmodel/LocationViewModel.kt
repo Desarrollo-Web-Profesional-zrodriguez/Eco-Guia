@@ -91,8 +91,8 @@ class LocationViewModel(
     private fun fetchNearbySites(location: Location) {
         viewModelScope.launch {
             try {
-                // Buscamos en un radio de 1000 metros para el mapa
-                val sites = repository.getNearbySites(location.latitude, location.longitude, 1000)
+                // Buscamos en un radio de 50000 metros (50km) para asegurar visibilidad de registros de prueba
+                val sites = repository.getNearbySites(location.latitude, location.longitude, 50000)
                 _nearbySites.value = sites
                 
                 // Lógica de proximidad: encontrar el sitio más cercano dentro de su propio radio de detección

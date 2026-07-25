@@ -34,6 +34,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.res.painterResource
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
@@ -57,6 +61,8 @@ fun ExplorationScreen(
     val nearbySites by locationViewModel.nearbySites
     val closestSite by locationViewModel.closestSite
     val scope = rememberCoroutineScope()
+    
+    var isFollowingUser by remember { mutableStateOf(true) }
 
     // Iniciar actualizaciones de ubicación al entrar
     LaunchedEffect(Unit) {
@@ -67,12 +73,21 @@ fun ExplorationScreen(
         position = CameraPosition.fromLatLngZoom(LatLng(21.1561, -100.9350), 15f)
     }
 
-    // Centrar cámara en el usuario cuando se obtiene ubicación por primera vez
+    // Centrar cámara en el usuario SOLO si isFollowingUser es true
     LaunchedEffect(currentLocation) {
-        currentLocation?.let {
-            cameraPositionState.position = CameraPosition.fromLatLngZoom(
-                LatLng(it.latitude, it.longitude), 17f
-            )
+        if (isFollowingUser) {
+            currentLocation?.let {
+                cameraPositionState.animate(
+                    CameraUpdateFactory.newLatLngZoom(LatLng(it.latitude, it.longitude), 17f)
+                )
+            }
+        }
+    }
+
+    // Detectar si el usuario mueve el mapa manualmente para desactivar el seguimiento
+    LaunchedEffect(cameraPositionState.isMoving) {
+        if (cameraPositionState.isMoving && cameraPositionState.cameraMoveStartedReason == CameraMoveStartedReason.GESTURE) {
+            isFollowingUser = false
         }
     }
 
@@ -92,7 +107,7 @@ fun ExplorationScreen(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(300.dp) // Aumentamos altura para mejor visibilidad
+                .height(300.dp)
                 .padding(horizontal = 16.dp)
                 .offset(y = (-20).dp)
                 .clip(RoundedCornerShape(24.dp))
@@ -102,7 +117,10 @@ fun ExplorationScreen(
                 modifier = Modifier.fillMaxSize(),
                 cameraPositionState = cameraPositionState,
                 properties = MapProperties(isMyLocationEnabled = currentLocation != null),
-                uiSettings = MapUiSettings(myLocationButtonEnabled = true)
+                uiSettings = MapUiSettings(
+                    myLocationButtonEnabled = false, 
+                    zoomControlsEnabled = false // Desactivamos los nativos para usar los personalizados
+                )
             ) {
                 nearbySites.forEach { site ->
                     val siteLat = site.latitude ?: return@forEach
@@ -112,6 +130,58 @@ fun ExplorationScreen(
                         title = site.name,
                         snippet = site.shortDescription
                     )
+                }
+            }
+
+            // Botón de Mira (Ubicación) - Superior Derecha
+            IconButton(
+                onClick = { isFollowingUser = true },
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(16.dp)
+                    .background(if (isFollowingUser) EcoGuiaColors.Jade else Color.White, CircleShape)
+                    .size(40.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.MyLocation,
+                    contentDescription = "Mi ubicación",
+                    tint = if (isFollowingUser) Color.White else EcoGuiaColors.DeepBlue
+                )
+            }
+
+            // Controles de Zoom Personalizados - Inferior Derecha
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // Zoom In (+)
+                IconButton(
+                    onClick = { 
+                        scope.launch {
+                            cameraPositionState.animate(CameraUpdateFactory.zoomIn())
+                        }
+                    },
+                    modifier = Modifier
+                        .background(EcoGuiaColors.Jade, CircleShape)
+                        .size(40.dp)
+                ) {
+                    Icon(Icons.Default.Add, "Zoom In", tint = Color.White)
+                }
+
+                // Zoom Out (-)
+                IconButton(
+                    onClick = { 
+                        scope.launch {
+                            cameraPositionState.animate(CameraUpdateFactory.zoomOut())
+                        }
+                    },
+                    modifier = Modifier
+                        .background(EcoGuiaColors.Jade, CircleShape)
+                        .size(40.dp)
+                ) {
+                    Icon(Icons.Default.Remove, "Zoom Out", tint = Color.White)
                 }
             }
         }
@@ -134,6 +204,7 @@ fun ExplorationScreen(
                         icon = Icons.Default.Place,
                         trailing = "Ver",
                         onVerClick = {
+                            isFollowingUser = false // Desactivar seguimiento al ver un sitio
                             val siteLat = site.latitude
                             val siteLng = site.longitude
                             if (siteLat != null && siteLng != null) {
