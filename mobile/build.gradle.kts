@@ -5,12 +5,12 @@ plugins {
 
 android {
     namespace = "mx.utng.ecoguiawear"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "mx.utng.ecoguiawear"
         minSdk = 24
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 1
         versionName = "1.0.0"
 
@@ -50,6 +50,9 @@ dependencies {
     implementation(libs.material3)
     implementation(libs.compose.material.icons.extended)
     implementation(libs.play.services.wearable)
+    implementation(libs.play.services.maps)
+    implementation(libs.play.services.location)
+    implementation(libs.maps.compose)
     implementation(libs.kotlinx.coroutines.play.services)
     implementation(libs.lifecycle.runtime.ktx)
     implementation(libs.lifecycle.viewmodel.compose)

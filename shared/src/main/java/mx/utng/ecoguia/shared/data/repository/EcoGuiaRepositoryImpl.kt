@@ -1,8 +1,13 @@
 /**
  * Archivo: EcoGuiaRepositoryImpl.kt
- * Autor: ZahirMora
- * Fecha de última actualización: 2026-07-20
+ * Autor: Zahir Rodriguez
+ * Fecha de última actualización: 2026-07-24
  * Descripción: Implementación del repositorio de datos que utiliza Neon HTTP API para PostgreSQL.
+ * Gestiona consultas espaciales complejas para detectar sitios históricos y Geo-Drops.
+ * 
+ * Funciones destacadas:
+ * - getNearbySites: Utiliza PostGIS (ST_DWithin) para encontrar sitios en un radio geográfico.
+ * - getHistoricalSites: Recupera sitios con sus coordenadas extraídas mediante ST_X y ST_Y.
  */
 
 package mx.utng.ecoguia.shared.data.repository
@@ -19,7 +24,7 @@ class EcoGuiaRepositoryImpl(
      * Recupera todos los sitios históricos marcados como activos.
      */
     override suspend fun getHistoricalSites(): List<RemoteHistoricalSite> {
-        return neonClient.executeQuery("SELECT * FROM historical_sites WHERE is_active = TRUE")
+        return neonClient.executeQuery("SELECT *, ST_Y(location::geometry) as latitude, ST_X(location::geometry) as longitude FROM historical_sites WHERE is_active = TRUE")
     }
 
     /**
@@ -33,7 +38,7 @@ class EcoGuiaRepositoryImpl(
      * Recupera los Geo-Drops (cápsulas) ordenados por fecha de creación.
      */
     override suspend fun getGeoDrops(): List<RemoteGeoDrop> {
-        return neonClient.executeQuery("SELECT * FROM geo_drops ORDER BY created_at DESC")
+        return neonClient.executeQuery("SELECT *, ST_Y(location::geometry) as latitude, ST_X(location::geometry) as longitude FROM geo_drops ORDER BY created_at DESC")
     }
 
     /**
@@ -60,7 +65,7 @@ class EcoGuiaRepositoryImpl(
      */
     override suspend fun getNearbySites(lat: Double, lng: Double, radiusM: Int): List<RemoteHistoricalSite> {
         val query = """
-            SELECT *, ST_AsText(location) as location_text 
+            SELECT *, ST_Y(location::geometry) as latitude, ST_X(location::geometry) as longitude 
             FROM historical_sites 
             WHERE is_active = TRUE 
             AND ST_DWithin(

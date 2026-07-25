@@ -1,8 +1,9 @@
 /**
  * Archivo: RemoteEntities.kt
- * Autor: ZahirMora
- * Fecha de última actualización: 2026-07-20
- * Descripción: Define los modelos de datos para la comunicación con la base de datos remota Neon (PostgreSQL).
+ * Autor: Zahir Rodriguez
+ * Fecha de última actualización: 2026-07-24
+ * Descripción: Modelos de datos serializables para la comunicación con la base de datos remota.
+ * Incluye soporte para coordenadas geográficas necesarias en el flujo de exploración.
  */
 
 package mx.utng.ecoguia.shared.domain.model
@@ -36,6 +37,8 @@ data class RemoteHistoricalSite(
     @SerialName("historical_description") val historicalDescription: String? = null,
     val address: String? = null,
     val location: String? = null,
+    val latitude: Double? = null,
+    val longitude: Double? = null,
     @SerialName("detection_radius_m") val detectionRadiusM: Int = 50,
     @SerialName("is_active") val isActive: Boolean = true
 )
@@ -67,6 +70,8 @@ data class RemoteGeoDrop(
     val type: String = "photo",
     @SerialName("media_url") val mediaUrl: String? = null,
     val location: String? = null,
+    val latitude: Double? = null,
+    val longitude: Double? = null,
     @SerialName("status") val status: String = "pending",
     @SerialName("likes_count") val likesCount: Int = 0,
     @SerialName("created_at") val createdAt: String? = null

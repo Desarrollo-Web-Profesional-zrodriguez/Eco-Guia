@@ -1,16 +1,24 @@
 /**
  * Archivo: MainActivity.kt
- * Autor: ZahirMora
- * Fecha de última actualización: 2026-07-21
- * Descripción: Actividad principal que configura el Drawer lateral, el Scaffold global y la navegación reactiva.
+ * Autor: Zahir Rodriguez
+ * Fecha de última actualización: 2026-07-24
+ * Descripción: Actividad principal y punto de entrada de la aplicación. Configura el Scaffold global,
+ * la navegación mediante NavHost y gestiona los permisos críticos de ubicación y cámara.
+ * 
+ * Funciones destacadas:
+ * - MainAppContainer: Gestiona la estructura global de la UI y la inyección de ViewModels.
+ * - permissionLauncher: Maneja la solicitud de permisos de GPS en tiempo de ejecución.
  */
 
 package mx.utng.ecoguiawear
 
+import android.Manifest
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.*
@@ -67,9 +75,26 @@ fun MainAppContainer(activity: ComponentActivity, repository: EcoGuiaRepositoryI
     val authViewModel: AuthViewModel = viewModel()
     val notificationViewModel: NotificationViewModel = viewModel()
     
-    // Inicializar vinculación de ViewModels para notificaciones automáticas
+    // Gestión de Permisos
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val granted = permissions.entries.all { it.value }
+        if (!granted) {
+            notificationViewModel.showNotification(
+                "La app necesita GPS para funcionar correctamente.", 
+                NotificationType.INFO
+            )
+        }
+    }
+
+    // Inicializar vinculación de ViewModels para notificaciones automáticas y pedir permisos
     LaunchedEffect(Unit) {
         authViewModel.initNotifications(notificationViewModel)
+        permissionLauncher.launch(arrayOf(
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        ))
     }
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
