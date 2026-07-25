@@ -33,8 +33,11 @@ class WearMessageClient(private val context: Context) {
         try {
             val nodes = com.google.android.gms.wearable.Wearable.getNodeClient(context).connectedNodes.await()
             // Formato: Titulo|ID1,Name1,Lat1,Lng1;ID2,Name2,Lat2,Lng2
-            val waypointsStr = waypoints.joinToString(";") { (name, coords) ->
-                "id|${name}|${coords.first}|${coords.second}"
+            val waypointsStr = waypoints.joinToString(";") { (idAndName, coords) ->
+                val parts = idAndName.split("|")
+                val id = if (parts.size > 1) parts[0] else "0"
+                val name = if (parts.size > 1) parts[1] else idAndName
+                "$id|$name|${coords.first}|${coords.second}"
             }
             val payload = "$title|$waypointsStr"
             
@@ -49,8 +52,26 @@ class WearMessageClient(private val context: Context) {
         }
     }
 
+    /**
+     * Envía una señal al reloj para cancelar la ruta activa y volver al modo de detección automática de Geo-Drops.
+     */
+    suspend fun cancelRoute() {
+        try {
+            val nodes = Wearable.getNodeClient(context).connectedNodes.await()
+            nodes.forEach { node ->
+                Wearable.getMessageClient(context)
+                    .sendMessage(node.id, PATH_CANCEL_ROUTE, "cancel".toByteArray())
+                    .await()
+            }
+            Log.d("WearMessageClient", "Señal de cancelación de ruta enviada a ${nodes.size} nodos")
+        } catch (e: Exception) {
+            Log.e("WearMessageClient", "Error al enviar cancelación de ruta: ${e.message}")
+        }
+    }
+
     companion object {
         const val PATH_SYNC_TARGET = "/eco-guia/sync/target"
         const val PATH_SYNC_ROUTE = "/eco-guia/sync/route"
+        const val PATH_CANCEL_ROUTE = "/eco-guia/cancel/route"
     }
 }

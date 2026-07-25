@@ -31,7 +31,8 @@ import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 fun EcoBottomBar(
     currentRoute: String,
     onNavigate: (String) -> Unit,
-    onOpenSidebar: () -> Unit
+    onOpenSidebar: () -> Unit,
+    isRouteActive: Boolean = false
 ) {
     NavigationBar(
         containerColor = EcoGuiaColors.DeepBlue,
@@ -43,27 +44,33 @@ fun EcoBottomBar(
         NavigationBarItem(
             selected = currentRoute == "exploration",
             onClick = { onNavigate("exploration") },
-            icon = { Icon(Icons.Default.LocationOn, null) },
+            icon = { Icon(Icons.Default.LocationOn, contentDescription = "Mapa") },
             colors = NavigationBarItemDefaults.colors(
                 selectedIconColor = EcoGuiaColors.Jade,
                 unselectedIconColor = EcoGuiaColors.Muted,
                 indicatorColor = Color.Transparent
             )
         )
+        // Botón dinámico: Si hay una ruta activa en curso, muestra el acceso directo con ícono de Navegación resaltado
         NavigationBarItem(
-            selected = currentRoute == "radar",
-            onClick = { onNavigate("radar") },
-            icon = { Icon(Icons.Default.ShareLocation, null) },
+            selected = currentRoute == "active_route",
+            onClick = { onNavigate(if (isRouteActive) "active_route" else "search_experience") },
+            icon = {
+                Icon(
+                    imageVector = if (isRouteActive) Icons.Default.Navigation else Icons.Default.Map,
+                    contentDescription = if (isRouteActive) "Ruta en curso" else "Buscar rutas"
+                )
+            },
             colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = EcoGuiaColors.Jade,
-                unselectedIconColor = EcoGuiaColors.Muted,
+                selectedIconColor = if (isRouteActive) EcoGuiaColors.Gold else EcoGuiaColors.Jade,
+                unselectedIconColor = if (isRouteActive) EcoGuiaColors.Gold else EcoGuiaColors.Muted,
                 indicatorColor = Color.Transparent
             )
         )
         NavigationBarItem(
-            selected = currentRoute == "favorites",
-            onClick = { onNavigate("favorites") },
-            icon = { Icon(Icons.Default.FavoriteBorder, null) },
+            selected = currentRoute == "collection",
+            onClick = { onNavigate("collection") },
+            icon = { Icon(Icons.Default.FavoriteBorder, contentDescription = "Mi Colección") },
             colors = NavigationBarItemDefaults.colors(
                 selectedIconColor = EcoGuiaColors.Jade,
                 unselectedIconColor = EcoGuiaColors.Muted,
@@ -73,7 +80,7 @@ fun EcoBottomBar(
         NavigationBarItem(
             selected = false,
             onClick = { onNavigate("logout") },
-            icon = { Icon(Icons.AutoMirrored.Filled.ExitToApp, null) },
+            icon = { Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Salir") },
             colors = NavigationBarItemDefaults.colors(
                 unselectedIconColor = Color.Red.copy(alpha = 0.7f),
                 indicatorColor = Color.Transparent
@@ -82,7 +89,7 @@ fun EcoBottomBar(
         NavigationBarItem(
             selected = false,
             onClick = onOpenSidebar,
-            icon = { Icon(Icons.Default.Menu, null) },
+            icon = { Icon(Icons.Default.Menu, contentDescription = "Menú") },
             colors = NavigationBarItemDefaults.colors(
                 unselectedIconColor = EcoGuiaColors.Muted,
                 indicatorColor = Color.Transparent

@@ -60,6 +60,7 @@ import mx.utng.ecoguiawear.ui.viewmodel.LocationViewModel
 @Composable
 fun ExplorationScreen(
     onAdminClick: () -> Unit,
+    onOpenRoutes: () -> Unit = {},
     userId: String = "guest",
     locationViewModel: LocationViewModel = viewModel(),
     collectionViewModel: CollectionViewModel = viewModel()
@@ -214,17 +215,9 @@ fun ExplorationScreen(
                 )
 
                 TextButton(onClick = {
-                    android.util.Log.d("ExplorationScreen", "Botón 'Probar Ruta' presionado.")
-                    scope.launch {
-                        val waypoints = listOf(
-                            "Parroquia" to (21.1578 to -100.9348),
-                            "Museo" to (21.1565 to -100.9360),
-                            "Casa Hidalgo" to (21.1550 to -100.9355)
-                        )
-                        mx.utng.ecoguiawear.data.wear.WearMessageClient(context).syncRoute("Ruta Centro", waypoints)
-                    }
+                    onOpenRoutes()
                 }) {
-                    Text("Probar Ruta", color = EcoGuiaColors.Gold)
+                    Text("Ver Rutas", color = EcoGuiaColors.Gold, fontWeight = FontWeight.Bold)
                 }
             }
 

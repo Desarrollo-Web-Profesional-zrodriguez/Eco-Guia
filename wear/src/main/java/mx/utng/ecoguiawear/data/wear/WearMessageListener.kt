@@ -78,10 +78,10 @@ class WearMessageListener(
                 }
             }
             "/eco-guia/sync/route" -> {
-                val parts = payload.split("|")
-                if (parts.size == 2) {
-                    val title = parts[0]
-                    val waypointsStr = parts[1]
+                val firstPipe = payload.indexOf('|')
+                if (firstPipe != -1) {
+                    val title = payload.substring(0, firstPipe)
+                    val waypointsStr = payload.substring(firstPipe + 1)
                     val waypoints = waypointsStr.split(";").filter { it.isNotBlank() }.map {
                         val wpParts = it.split("|")
                         mx.utng.ecoguiawear.domain.model.Waypoint(
@@ -91,8 +91,13 @@ class WearMessageListener(
                             longitude = wpParts.getOrNull(3)?.toDoubleOrNull() ?: 0.0
                         )
                     }
+                    android.util.Log.d("WearMessageListener", "Sincronizando ruta recibida en reloj: $title con ${waypoints.size} waypoints")
                     repository.setSyncRoute(title, waypoints)
                 }
+            }
+            "/eco-guia/cancel/route" -> {
+                android.util.Log.d("WearMessageListener", "Cancelando ruta en el reloj por solicitud del móvil.")
+                repository.clearActiveRoute()
             }
         }
     }

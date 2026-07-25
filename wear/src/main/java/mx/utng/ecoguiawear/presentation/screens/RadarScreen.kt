@@ -56,23 +56,7 @@ fun RadarScreen(
                 subtitle = state.lastAlert
             )
         }
-        item {
-            Button(
-                label = { 
-                    Text(
-                        text = "Refrescar Neon",
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Center
-                    ) 
-                },
-                onClick = onRefresh,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = EcoGuiaColors.Gold,
-                    contentColor = EcoGuiaColors.Background
-                ),
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
+
         item {
             CompassArrow(
                 bearingDegrees = target.bearingDegrees - state.currentHeading,
@@ -144,12 +128,14 @@ fun RadarScreen(
             Button(
                 label = { 
                     Text(
-                        text = "Ver Geo-Drop",
+                        text = if (target.isAutoTarget) "📷 Capturar Geo-Drop" else "Ver Geo-Drop",
                         modifier = Modifier.fillMaxWidth(),
                         textAlign = TextAlign.Center
                     ) 
                 },
-                onClick = onOpenCompass,
+                onClick = {
+                    onOpenCompass()
+                },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = EcoGuiaColors.Jade,
                     contentColor = EcoGuiaColors.Background
@@ -157,23 +143,7 @@ fun RadarScreen(
                 modifier = Modifier.fillMaxWidth()
             )
         }
-        item {
-            Button(
-                label = { 
-                    Text(
-                        text = "Iniciar Ruta",
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Center
-                    ) 
-                },
-                onClick = onOpenSummary,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = EcoGuiaColors.Jade,
-                    contentColor = EcoGuiaColors.Background
-                ),
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
+
         item {
             Button(
                 label = { 

@@ -1,8 +1,13 @@
 /**
  * Archivo: MoreOptionsScreen.kt
- * Autor: ZahirMora
- * Fecha de última actualización: 2026-07-21
+ * Autor: Zahir Andres
+ * Fecha de última actualización: 2026-07-25
  * Descripción: Pantalla completa que muestra la cuadrícula de opciones adicionales del sistema.
+ * Todas las opciones están habilitadas para cualquier usuario.
+ *
+ * Funciones destacadas:
+ * - MoreOptionsScreen: Renderiza la cuadrícula de accesos rápidos a Mi Colección, Rutas,
+ *   Crear Ruta, Alta de Sitio, IA, Dispositivos, Modo Offline y Permisos.
  */
 
 package mx.utng.ecoguiawear.ui.screens
@@ -33,7 +38,7 @@ import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
  */
 @Composable
 fun MoreOptionsScreen(
-    isAdmin: Boolean,
+    isAdmin: Boolean = true,
     onOptionClick: (String) -> Unit
 ) {
     Column(
@@ -47,96 +52,64 @@ fun MoreOptionsScreen(
         )
 
         Column(modifier = Modifier.padding(24.dp)) {
-        
-        // Card de bienvenida al menú
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(100.dp)
-                .clip(RoundedCornerShape(24.dp))
-                .background(EcoGuiaColors.BackgroundGradient)
-                .padding(16.dp)
-        ) {
-            Column {
-                Text("Centro de navegación", color = Color.White, fontWeight = FontWeight.Bold)
-                Text(
-                    "Accesos rápidos para funciones que no caben en la barra inferior.",
-                    color = Color.White.copy(alpha = 0.7f),
-                    fontSize = 12.sp
-                )
-            }
-        }
-        
-        Spacer(modifier = Modifier.height(32.dp))
-        
-        Text("Usuario", color = MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.Bold)
-        
-        Spacer(modifier = Modifier.height(12.dp))
-        
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            item {
-                MenuOptionItem(
-                    title = "Mi colección",
-                    subtitle = "Fotos, rutas y cápsulas guardadas",
-                    icon = Icons.Default.Favorite,
-                    onClick = { onOptionClick("collection") }
-                )
-            }
-            
-            item {
-                MenuOptionItem(
-                    title = "Miguel Hidalgo IA",
-                    subtitle = "Chatbot histórico con AI",
-                    icon = Icons.Default.Chat,
-                    enabled = isAdmin,
-                    onClick = { onOptionClick("chat_ia") }
-                )
-            }
-            
-            item {
-                MenuOptionItem(
-                    title = "Mi perfil",
-                    subtitle = "Datos, logros y cuenta",
-                    icon = Icons.Default.Person,
-                    enabled = isAdmin,
-                    onClick = { onOptionClick("profile") }
-                )
-            }
-            
-            item {
-                MenuOptionItem(
-                    title = "Modo offline",
-                    subtitle = "Rutas descargadas",
-                    icon = Icons.Default.Download,
-                    enabled = isAdmin,
-                    onClick = { onOptionClick("offline") }
-                )
-            }
-            
-            item {
-                MenuOptionItem(
-                    title = "Ajustes",
-                    subtitle = "Permisos y seguridad",
-                    icon = Icons.Default.Settings,
-                    enabled = isAdmin,
-                    onClick = { onOptionClick("settings") }
-                )
+
+            // Card de bienvenida al menú
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(90.dp)
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(EcoGuiaColors.BackgroundGradient)
+                    .padding(16.dp)
+            ) {
+                Column {
+                    Text("Centro de navegación", color = Color.White, fontWeight = FontWeight.Bold)
+                    Text(
+                        "Accesos rápidos a todas las funciones del sistema.",
+                        color = Color.White.copy(alpha = 0.7f),
+                        fontSize = 12.sp
+                    )
+                }
             }
 
-            item {
-                MenuOptionItem(
-                    title = "Dispositivos",
-                    subtitle = "Control de reloj y TV",
-                    icon = Icons.Default.Watch,
-                    onClick = { onOptionClick("linked_devices") }
-                )
-            }
-            
-            if (isAdmin) {
+            Spacer(modifier = Modifier.height(20.dp))
+
+            Text("Opciones principales", color = MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.Bold)
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                item {
+                    MenuOptionItem(
+                        title = "Mi colección",
+                        subtitle = "Fotos, rutas y cápsulas guardadas",
+                        icon = Icons.Default.Favorite,
+                        onClick = { onOptionClick("collection") }
+                    )
+                }
+
+                item {
+                    MenuOptionItem(
+                        title = "Rutas turísticas",
+                        subtitle = "Explora y sigue recorridos guiados",
+                        icon = Icons.Default.Map,
+                        onClick = { onOptionClick("search_experience") }
+                    )
+                }
+
+                item {
+                    MenuOptionItem(
+                        title = "Crear ruta",
+                        subtitle = "Diseñar recorrido turístico",
+                        icon = Icons.Default.AltRoute,
+                        onClick = { onOptionClick("create_route") }
+                    )
+                }
+
                 item {
                     MenuOptionItem(
                         title = "Alta de sitio",
@@ -145,9 +118,59 @@ fun MoreOptionsScreen(
                         onClick = { onOptionClick("site_registration") }
                     )
                 }
+
                 item {
                     MenuOptionItem(
-                        title = "Panel",
+                        title = "Miguel Hidalgo IA",
+                        subtitle = "Chatbot histórico con AI",
+                        icon = Icons.Default.Chat,
+                        enabled = true,
+                        onClick = { onOptionClick("chat_ia") }
+                    )
+                }
+
+                item {
+                    MenuOptionItem(
+                        title = "Mi perfil",
+                        subtitle = "Datos, logros y cuenta",
+                        icon = Icons.Default.Person,
+                        enabled = true,
+                        onClick = { onOptionClick("profile") }
+                    )
+                }
+
+                item {
+                    MenuOptionItem(
+                        title = "Dispositivos",
+                        subtitle = "Control de reloj y TV",
+                        icon = Icons.Default.Watch,
+                        onClick = { onOptionClick("linked_devices") }
+                    )
+                }
+
+                item {
+                    MenuOptionItem(
+                        title = "Modo offline",
+                        subtitle = "Rutas descargadas",
+                        icon = Icons.Default.Download,
+                        enabled = true,
+                        onClick = { onOptionClick("offline") }
+                    )
+                }
+
+                item {
+                    MenuOptionItem(
+                        title = "Ajustes y Permisos",
+                        subtitle = "Permisos de GPS y alertas",
+                        icon = Icons.Default.Settings,
+                        enabled = true,
+                        onClick = { onOptionClick("permissions") }
+                    )
+                }
+
+                item {
+                    MenuOptionItem(
+                        title = "Panel Admin",
                         subtitle = "Administración de sistema",
                         icon = Icons.Default.AdminPanelSettings,
                         onClick = { onOptionClick("admin") }
@@ -156,7 +179,6 @@ fun MoreOptionsScreen(
             }
         }
     }
-}
 }
 
 @Preview(showBackground = true)

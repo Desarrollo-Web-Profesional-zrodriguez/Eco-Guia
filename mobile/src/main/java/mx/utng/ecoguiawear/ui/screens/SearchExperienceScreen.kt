@@ -1,34 +1,56 @@
-﻿/**
+/**
  * Archivo: SearchExperienceScreen.kt
- * Autor: ZahirMora
- * Fecha de Ãºltima actualizaciÃ³n: 2026-07-21
- * DescripciÃ³n: Pantalla de bÃºsqueda de experiencias con filtros rÃ¡pidos para museos, cÃ¡psulas y chat IA.
+ * Autor: Zahir Andres
+ * Fecha de última actualización: 2026-07-25
+ * Descripción: Pantalla de exploración y búsqueda de experiencias. Muestra el catálogo de rutas
+ * turísticas disponibles desde Neon PostgreSQL, permitiendo iniciar cualquiera de ellas.
+ *
+ * Funciones destacadas:
+ * - SearchExperienceScreen: Muestra el catálogo dinámico de rutas y accesos rápidos a IA y mapas.
+ * - RouteCatalogItem: Tarjeta interactiva con título, descripción y botón "Iniciar Recorrido".
  */
 
 package mx.utng.ecoguiawear.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import mx.utng.ecoguia.shared.domain.model.RemoteRoute
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
+import mx.utng.ecoguiawear.ui.viewmodel.RouteViewModel
 
+/**
+ * Pantalla que presenta las rutas turísticas disponibles para el usuario.
+ */
 @Composable
-fun SearchExperienceScreen() {
+fun SearchExperienceScreen(
+    onSelectRoute: () -> Unit = {},
+    routeViewModel: RouteViewModel = viewModel()
+) {
+    val context = LocalContext.current
+    val routes by routeViewModel.routes
+    val isLoading by routeViewModel.isLoading
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -39,22 +61,16 @@ fun SearchExperienceScreen() {
             modifier = Modifier
                 .fillMaxWidth()
                 .background(EcoGuiaColors.DeepBlue)
-                .padding(top = 32.dp, start = 24.dp, end = 24.dp, bottom = 16.dp)
+                .padding(top = 40.dp, start = 24.dp, end = 24.dp, bottom = 20.dp)
         ) {
             Column {
-                Text("Buscar", color = Color.White, fontSize = 14.sp)
-                Text("Experiencias", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text("Explorar", color = EcoGuiaColors.Gold, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                Text("Rutas Turísticas", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
             }
-            
-            IconButton(
-                onClick = { },
-                modifier = Modifier.align(Alignment.TopEnd)
-            ) {
-                Icon(Icons.Default.Search, null, tint = Color.White)
-            }
+            Icon(Icons.Default.Map, null, tint = Color.White, modifier = Modifier.align(Alignment.TopEnd))
         }
 
-        // Search Card
+        // Info Banner
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -63,47 +79,59 @@ fun SearchExperienceScreen() {
             shape = RoundedCornerShape(24.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text("Â¿QuÃ© quieres explorar?", color = Color.White, fontWeight = FontWeight.Bold)
-                Text("Encuentra museos, crea cÃ¡psulas o haz preguntas a la IA.", color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp)
+                Text("Elige tu aventura histórica", color = Color.White, fontWeight = FontWeight.Bold)
+                Text(
+                    "Selecciona una ruta para sincronizar con tu reloj y recibir guiado por voz.",
+                    color = Color.White.copy(alpha = 0.7f),
+                    fontSize = 12.sp
+                )
             }
         }
 
-        // Quick Filters
+        // Catálogo de Rutas
         Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-            Text("Filtros rÃ¡pidos", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
-            
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                item {
-                    FilterItem(
-                        title = "Museos",
-                        subtitle = "12 sitios histÃ³ricos cerca",
-                        icon = Icons.Default.Place
-                    )
+            Text("Rutas disponibles", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 8.dp))
+
+            when {
+                isLoading -> {
+                    Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = EcoGuiaColors.Jade)
+                    }
                 }
-                item {
-                    FilterItem(
-                        title = "Geo-Drops",
-                        subtitle = "24 cÃ¡psulas activas",
-                        icon = Icons.Default.AddCircle
-                    )
+                routes.isEmpty() -> {
+                    Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("🗺️", fontSize = 40.sp)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text("No hay rutas registradas aún.", color = Color.Gray, fontSize = 14.sp)
+                        }
+                    }
                 }
-                item {
-                    FilterItem(
-                        title = "Preguntar a Hidalgo IA",
-                        subtitle = "Respuesta en segundos",
-                        icon = Icons.Default.AutoAwesome
-                    )
+                else -> {
+                    LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        items(routes) { route ->
+                            RouteCatalogItem(
+                                route = route,
+                                onStartClick = {
+                                    routeViewModel.startRoute(context, route)
+                                    onSelectRoute()
+                                }
+                            )
+                        }
+                    }
                 }
             }
         }
     }
 }
 
+/**
+ * Fila de una ruta en el catálogo de búsqueda.
+ */
 @Composable
-fun FilterItem(
-    title: String,
-    subtitle: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector
+fun RouteCatalogItem(
+    route: RemoteRoute,
+    onStartClick: () -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -111,24 +139,44 @@ fun FilterItem(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
                 modifier = Modifier
-                    .size(40.dp)
-                    .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape),
+                    .size(44.dp)
+                    .background(EcoGuiaColors.Jade.copy(alpha = 0.12f), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(imageVector = icon, contentDescription = null, tint = EcoGuiaColors.Jade, modifier = Modifier.size(20.dp))
+                Icon(Icons.Default.Navigation, contentDescription = null, tint = EcoGuiaColors.Jade, modifier = Modifier.size(22.dp))
             }
-            
-            Column(modifier = Modifier.padding(horizontal = 16.dp).weight(1f)) {
-                Text(title, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
-                Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+
+            Column(
+                modifier = Modifier
+                    .padding(horizontal = 12.dp)
+                    .weight(1f)
+            ) {
+                Text(route.title, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
+                val desc = route.description ?: "Recorrido turístico por la ciudad"
+                Text(
+                    text = "${route.estimatedMinutes ?: 45} min · $desc",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 11.sp,
+                    maxLines = 2
+                )
             }
-            
-            Icon(Icons.Default.ChevronRight, null, tint = Color.LightGray)
+
+            Button(
+                onClick = onStartClick,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = EcoGuiaColors.Jade,
+                    contentColor = Color.White
+                ),
+                shape = RoundedCornerShape(12.dp),
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+            ) {
+                Text("Iniciar", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            }
         }
     }
 }
@@ -140,7 +188,3 @@ fun SearchExperienceScreenPreview() {
         SearchExperienceScreen()
     }
 }
-
-
-
-

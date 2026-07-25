@@ -139,15 +139,15 @@ private fun getContextItems(route: String, isAdmin: Boolean): List<ContextMenuIt
         items.add(ContextMenuItem("Editar Datos", Icons.Default.Edit, "edit_profile"))
     }
 
-    // Opciones base
+    // Opciones base accesibles para todos los usuarios
     items.add(ContextMenuItem("Mi Colección", Icons.Default.Favorite, "collection"))
-    if (isAdmin) {
-        items.add(ContextMenuItem("Alta de Sitio", Icons.Default.AddLocationAlt, "site_registration"))
-    }
-    items.add(ContextMenuItem("Miguel Hidalgo IA", Icons.Default.AutoAwesome, "chat_ia", enabled = isAdmin))
+    items.add(ContextMenuItem("Rutas Turísticas", Icons.Default.Map, "search_experience"))
+    items.add(ContextMenuItem("Crear Ruta", Icons.Default.AltRoute, "create_route"))
+    items.add(ContextMenuItem("Alta de Sitio", Icons.Default.AddLocationAlt, "site_registration"))
+    items.add(ContextMenuItem("Miguel Hidalgo IA", Icons.Default.AutoAwesome, "chat_ia", enabled = true))
     items.add(ContextMenuItem("Dispositivos", Icons.Default.Watch, "linked_devices"))
-    items.add(ContextMenuItem("Mi Perfil", Icons.Default.AccountCircle, "profile", enabled = isAdmin))
-    items.add(ContextMenuItem("Ajustes", Icons.Default.Settings, "settings", enabled = isAdmin))
+    items.add(ContextMenuItem("Mi Perfil", Icons.Default.AccountCircle, "profile", enabled = true))
+    items.add(ContextMenuItem("Ajustes", Icons.Default.Settings, "permissions", enabled = true))
 
     // Cerrar Sesión siempre presente
     items.add(ContextMenuItem("Cerrar Sesión", Icons.AutoMirrored.Filled.ExitToApp, "logout"))

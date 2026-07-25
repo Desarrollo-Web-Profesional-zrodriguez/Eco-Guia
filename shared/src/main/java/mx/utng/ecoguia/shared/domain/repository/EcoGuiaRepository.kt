@@ -1,8 +1,15 @@
 /**
  * Archivo: EcoGuiaRepository.kt
- * Autor: ZahirMora
- * Fecha de última actualización: 2026-07-20
+ * Autor: Zahir Andres
+ * Fecha de última actualización: 2026-07-25
  * Descripción: Interfaz que define las operaciones de acceso a datos para la aplicación Eco-Guía.
+ *
+ * Funciones destacadas:
+ * - getHistoricalSites: Obtiene todos los sitios históricos activos.
+ * - getNearbySites: Busca sitios dentro de un radio dado en metros.
+ * - getUserCollection: Recupera los elementos guardados del usuario desde user_saved_items.
+ * - saveSite / removeSavedSite / isSiteSaved: CRUD de colección personal.
+ * - login / register / updateUser: Gestión de autenticación.
  */
 
 package mx.utng.ecoguia.shared.domain.repository
@@ -87,20 +94,37 @@ interface EcoGuiaRepository {
 
     /**
      * Guarda un sitio histórico en la colección del usuario.
-     * Usa ON CONFLICT DO NOTHING para evitar duplicados.
-     * Retorna verdadero si la operación fue exitosa.
      */
     suspend fun saveSite(userId: String, siteId: String): Boolean
 
     /**
      * Elimina un sitio guardado de la colección del usuario.
-     * Retorna verdadero si se eliminó al menos un registro.
      */
     suspend fun removeSavedSite(userId: String, siteId: String): Boolean
 
     /**
      * Verifica si un sitio ya fue guardado por el usuario.
-     * Retorna verdadero si existe en user_saved_items.
      */
     suspend fun isSiteSaved(userId: String, siteId: String): Boolean
+
+    /**
+     * Obtiene la lista ordenada de paradas de una ruta turística específica.
+     */
+    suspend fun getRouteStops(routeId: String): List<RemoteRouteStop>
+
+    /**
+     * Crea una nueva ruta turística en Neon PostgreSQL junto con sus paradas ordenadas.
+     * Retorna verdadero si la operación fue exitosa.
+     */
+    suspend fun createRoute(
+        title: String,
+        description: String,
+        estimatedMinutes: Int,
+        siteIds: List<String>
+    ): Boolean
+
+    /**
+     * Elimina una ruta turística existente por su ID.
+     */
+    suspend fun deleteRoute(routeId: String): Boolean
 }

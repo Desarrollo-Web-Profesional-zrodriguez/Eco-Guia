@@ -1,120 +1,270 @@
-﻿/**
+/**
  * Archivo: CreateRouteScreen.kt
- * Autor: ZahirMora
- * Fecha de Ãºltima actualizaciÃ³n: 2026-07-21
- * DescripciÃ³n: Pantalla de creaciÃ³n de rutas personalizadas por parte del administrador.
+ * Autor: Zahir Andres
+ * Fecha de última actualización: 2026-07-25
+ * Descripción: Pantalla de administración para la creación y publicación de nuevas rutas turísticas.
+ * Utiliza el diseño unificado del sistema: cabecera en DeepBlue con la card flotante en Surface,
+ * campos EcoTextField y botones de acción en la paleta oficial (EcoGuiaColors).
+ *
+ * Funciones destacadas:
+ * - CreateRouteScreen: Formulario unificado con validaciones y selector de sitios.
+ * - SiteSelectionRow: Componente de selección estilo tarjeta unificada con checkbox en Jade.
  */
 
 package mx.utng.ecoguiawear.ui.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import mx.utng.ecoguia.shared.domain.model.RemoteHistoricalSite
 import mx.utng.ecoguiawear.ui.components.EcoButton
+import mx.utng.ecoguiawear.ui.components.EcoTextField
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
+import mx.utng.ecoguiawear.ui.viewmodel.LocationViewModel
+import mx.utng.ecoguiawear.ui.viewmodel.RouteViewModel
 
+/**
+ * Pantalla de creación de rutas estilizada acorde al formulario de alta de sitios.
+ */
 @Composable
-fun CreateRouteScreen() {
+fun CreateRouteScreen(
+    onRouteCreated: () -> Unit = {},
+    routeViewModel: RouteViewModel = viewModel(),
+    locationViewModel: LocationViewModel = viewModel(),
+    notificationViewModel: mx.utng.ecoguiawear.ui.viewmodel.NotificationViewModel = viewModel()
+) {
+    val context = LocalContext.current
+    var title by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
+    var estimatedMinutesStr by remember { mutableStateOf("45") }
+
+    val availableSites by locationViewModel.nearbySites
+    val selectedSiteIds = remember { mutableStateListOf<String>() }
+
+    val isLoading by routeViewModel.isLoading
+    val createSuccess by routeViewModel.createSuccess
+
+    LaunchedEffect(Unit) {
+        locationViewModel.startLocationUpdates(context)
+    }
+
+    LaunchedEffect(createSuccess) {
+        when (createSuccess) {
+            true -> {
+                notificationViewModel.showNotification(
+                    "¡Ruta publicada con éxito!",
+                    mx.utng.ecoguiawear.ui.viewmodel.NotificationType.SUCCESS
+                )
+                routeViewModel.resetCreateState()
+                onRouteCreated()
+            }
+            false -> {
+                notificationViewModel.showNotification(
+                    "Error al publicar la ruta en Neon.",
+                    mx.utng.ecoguiawear.ui.viewmodel.NotificationType.ERROR
+                )
+                routeViewModel.resetCreateState()
+            }
+            null -> {}
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        // Header
+        // Encabezado estándar del flujo (idéntico a SiteRegistrationScreen)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(EcoGuiaColors.DeepBlue)
-                .padding(top = 32.dp, start = 24.dp, end = 24.dp, bottom = 16.dp)
+                .padding(top = 40.dp, start = 24.dp, end = 24.dp, bottom = 16.dp)
         ) {
             Column {
-                Text("Crear ruta", color = Color.White, fontSize = 14.sp)
-                Text("Cuna-H", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text("Alta de Ruta", color = Color.White, fontSize = 14.sp)
+                Text("Diseñar Recorrido", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
             }
-            
             IconButton(
                 onClick = { },
                 modifier = Modifier.align(Alignment.TopEnd)
             ) {
-                Icon(Icons.Default.AddCircle, null, tint = EcoGuiaColors.Gold)
+                Icon(Icons.Default.AddCircle, contentDescription = null, tint = EcoGuiaColors.Gold)
             }
         }
 
-        // Map Section Placeholder
-        Box(
+        // Card superior descriptiva en Surface (Mismo diseño de alta de sitio)
+        Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(180.dp)
-                .padding(16.dp)
-                .clip(RoundedCornerShape(24.dp))
-                .background(Color(0xFFE8F5E9))
+                .padding(16.dp),
+            colors = CardDefaults.cardColors(containerColor = EcoGuiaColors.Surface),
+            shape = RoundedCornerShape(24.dp)
         ) {
-            Text("Visor de Mapa", modifier = Modifier.align(Alignment.Center), color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = if (title.isEmpty()) "Nueva Ruta Turística" else title,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "Configura el recorrido y las paradas ordenadas para los visitantes.",
+                    color = Color.White.copy(alpha = 0.7f),
+                    fontSize = 12.sp
+                )
+            }
         }
 
-        // Configuration List
-        Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-            Text("Ruta nueva", fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 12.dp))
-            
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        // Sección del Formulario usando componentes estandarizados EcoTextField
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .padding(horizontal = 16.dp)
+        ) {
+            Text(
+                text = "Detalles del recorrido",
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(vertical = 10.dp),
+                color = MaterialTheme.colorScheme.onBackground
+            )
+
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 item {
-                    ConfigStepItem(
-                        number = 1,
-                        title = "Seleccionar sitios",
-                        subtitle = "Museo, parroquia, casa"
+                    EcoTextField(
+                        value = title,
+                        onValueChange = { title = it },
+                        label = "TÍTULO DE LA RUTA",
+                        placeholder = "Ej. Ruta de los Conspiradores"
                     )
                 }
+
                 item {
-                    ConfigStepItem(
-                        number = 2,
-                        title = "Orden del recorrido",
-                        subtitle = "Arrastra y organiza"
+                    EcoTextField(
+                        value = description,
+                        onValueChange = { description = it },
+                        label = "DESCRIPCIÓN DE LA RUTA",
+                        placeholder = "Breve reseña del recorrido turístico...",
+                        singleLine = false
                     )
                 }
+
                 item {
-                    ConfigStepItem(
-                        number = 3,
-                        title = "Recompensa final",
-                        subtitle = "CÃ¡psula histÃ³rica"
+                    EcoTextField(
+                        value = estimatedMinutesStr,
+                        onValueChange = { estimatedMinutesStr = it },
+                        label = "TIEMPO ESTIMADO (MINUTOS)",
+                        placeholder = "Ej. 45"
                     )
+                }
+
+                item {
+                    Text(
+                        text = "Seleccionar paradas (${selectedSiteIds.size} seleccionadas)",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier.padding(top = 6.dp)
+                    )
+                }
+
+                if (availableSites.isEmpty()) {
+                    item {
+                        Text(
+                            text = "Cargando sitios para la ruta...",
+                            fontSize = 12.sp,
+                            color = Color.Gray
+                        )
+                    }
+                } else {
+                    items(availableSites) { site ->
+                        val isSelected = selectedSiteIds.contains(site.id)
+                        SiteSelectionRow(
+                            site = site,
+                            isSelected = isSelected,
+                            onToggle = {
+                                if (isSelected) selectedSiteIds.remove(site.id)
+                                else selectedSiteIds.add(site.id)
+                            }
+                        )
+                    }
+                }
+
+                item {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    if (isLoading) {
+                        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator(color = EcoGuiaColors.Jade)
+                        }
+                    } else {
+                        EcoButton(
+                            text = "Publicar Ruta Turística",
+                            onClick = {
+                                if (title.isBlank()) {
+                                    notificationViewModel.showNotification(
+                                        "Ingresa un título para la ruta",
+                                        mx.utng.ecoguiawear.ui.viewmodel.NotificationType.WARNING
+                                    )
+                                    return@EcoButton
+                                }
+                                if (selectedSiteIds.isEmpty()) {
+                                    notificationViewModel.showNotification(
+                                        "Selecciona al menos una parada para la ruta",
+                                        mx.utng.ecoguiawear.ui.viewmodel.NotificationType.WARNING
+                                    )
+                                    return@EcoButton
+                                }
+                                val minutes = estimatedMinutesStr.toIntOrNull() ?: 45
+                                routeViewModel.createRoute(title, description, minutes, selectedSiteIds.toList())
+                            }
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(24.dp))
                 }
             }
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            EcoButton(
-                text = "Publicar ruta",
-                onClick = { }
-            )
         }
     }
 }
 
+/**
+ * Fila de un sitio seleccionable con diseño armónico.
+ */
 @Composable
-fun ConfigStepItem(
-    number: Int,
-    title: String,
-    subtitle: String
+fun SiteSelectionRow(
+    site: RemoteHistoricalSite,
+    isSelected: Boolean,
+    onToggle: () -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onToggle() },
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSelected) EcoGuiaColors.Jade.copy(alpha = 0.12f)
+                             else MaterialTheme.colorScheme.surface
+        )
     ) {
         Row(
             modifier = Modifier.padding(12.dp),
@@ -122,24 +272,34 @@ fun ConfigStepItem(
         ) {
             Box(
                 modifier = Modifier
-                    .size(32.dp)
-                    .background(MaterialTheme.colorScheme.background, CircleShape),
+                    .size(40.dp)
+                    .background(
+                        if (isSelected) EcoGuiaColors.Jade else MaterialTheme.colorScheme.surfaceVariant,
+                        CircleShape
+                    ),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = number.toString(),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp
-                )
+                if (isSelected) {
+                    Icon(Icons.Default.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+                } else {
+                    Icon(Icons.Default.Place, contentDescription = null, tint = EcoGuiaColors.Jade, modifier = Modifier.size(20.dp))
+                }
             }
-            
-            Column(modifier = Modifier.padding(horizontal = 12.dp).weight(1f)) {
-                Text(title, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
-                Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+
+            Column(
+                modifier = Modifier
+                    .padding(horizontal = 12.dp)
+                    .weight(1f)
+            ) {
+                Text(site.name, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
+                Text(site.siteType, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            
-            RadioButton(selected = false, onClick = null)
+
+            Checkbox(
+                checked = isSelected,
+                onCheckedChange = { onToggle() },
+                colors = CheckboxDefaults.colors(checkedColor = EcoGuiaColors.Jade)
+            )
         }
     }
 }
@@ -151,7 +311,3 @@ fun CreateRouteScreenPreview() {
         CreateRouteScreen()
     }
 }
-
-
-
-

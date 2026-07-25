@@ -27,7 +27,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -48,30 +51,35 @@ fun MyCollectionScreen(
     viewModel: CollectionViewModel = viewModel()
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
-    // "Todos" + tipos reales del schema: site, photo, route
     val tabs = listOf("Todos", "Sitios", "Fotos", "Rutas")
     val tabFilters = listOf(null, "site", "photo", "route")
+
+    var searchQuery by remember { mutableStateOf("") }
+    var showSearch by remember { mutableStateOf(false) }
 
     val items by viewModel.items
     val isLoading by viewModel.isLoading
     val saveError by viewModel.saveError
 
-    // Carga inicial y cuando cambia userId
     LaunchedEffect(userId) {
         viewModel.loadCollection(userId)
     }
 
-    // Filtrar items según el tab activo
-    val filteredItems = remember(items, selectedTab) {
-        val filter = tabFilters[selectedTab]
-        if (filter == null) items else items.filter { it.type == filter }
+    // Filtro combinado: tab + búsqueda de texto
+    val filteredItems = remember(items, selectedTab, searchQuery) {
+        val typeFilter = tabFilters[selectedTab]
+        val query = searchQuery.trim().lowercase()
+        items
+            .filter { item -> typeFilter == null || item.type == typeFilter }
+            .filter { item ->
+                if (query.isEmpty()) true
+                else item.title.lowercase().contains(query) ||
+                     item.subtitle.lowercase().contains(query)
+            }
     }
 
-    // Mostrar error de operación si existe
     if (saveError != null) {
-        LaunchedEffect(saveError) {
-            viewModel.clearSaveError()
-        }
+        LaunchedEffect(saveError) { viewModel.clearSaveError() }
     }
 
     Column(
@@ -81,25 +89,63 @@ fun MyCollectionScreen(
     ) {
         EcoTopBar(
             title = "Mi Colección",
-            subtitle = "Guardados",
-            actionIcon = Icons.Default.Search,
-            onActionClick = { }
+            subtitle = if (showSearch) "" else "Guardados",
+            actionIcon = if (showSearch) Icons.Default.Close else Icons.Default.Search,
+            onActionClick = {
+                showSearch = !showSearch
+                if (!showSearch) searchQuery = ""
+            }
         )
+
+        // Campo de búsqueda expandible
+        AnimatedVisibility(visible = showSearch) {
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                placeholder = { Text("Buscar en mi colección...") },
+                leadingIcon = {
+                    Icon(
+                        Icons.Default.Search,
+                        contentDescription = null,
+                        tint = EcoGuiaColors.Jade
+                    )
+                },
+                trailingIcon = {
+                    if (searchQuery.isNotEmpty()) {
+                        IconButton(onClick = { searchQuery = "" }) {
+                            Icon(Icons.Default.Close, contentDescription = "Limpiar")
+                        }
+                    }
+                },
+                singleLine = true,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .padding(bottom = 8.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = EcoGuiaColors.Jade,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
+                )
+            )
+        }
 
         // Info Card con contador y tabs de filtro
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(horizontal = 16.dp)
+                .padding(bottom = 8.dp),
             colors = CardDefaults.cardColors(containerColor = EcoGuiaColors.Surface),
             shape = RoundedCornerShape(24.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    "${items.size} guardados en tu colección",
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold
-                )
+                // Contador adaptado a búsqueda activa
+                val countText = when {
+                    searchQuery.isNotEmpty() -> "${filteredItems.size} resultado(s) para \"$searchQuery\""
+                    else -> "${items.size} guardados en tu colección"
+                }
+                Text(countText, color = Color.White, fontWeight = FontWeight.Bold)
                 Text(
                     "Sitios históricos y cápsulas que has guardado.",
                     color = Color.White.copy(alpha = 0.7f),
@@ -144,42 +190,47 @@ fun MyCollectionScreen(
         // Lista de elementos
         Column(modifier = Modifier.padding(horizontal = 16.dp)) {
             Text(
-                text = if (selectedTab == 0) "Recientes"
-                       else "${tabs[selectedTab]} (${filteredItems.size})",
+                text = when {
+                    searchQuery.isNotEmpty() -> "Resultados (${filteredItems.size})"
+                    selectedTab == 0 -> "Recientes"
+                    else -> "${tabs[selectedTab]} (${filteredItems.size})"
+                },
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(vertical = 12.dp)
             )
 
             when {
                 isLoading -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator(color = EcoGuiaColors.Jade)
                     }
                 }
                 filteredItems.isEmpty() -> {
                     Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 32.dp),
+                        modifier = Modifier.fillMaxWidth().padding(top = 32.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("🏛️", fontSize = 40.sp)
+                            Text(
+                                text = if (searchQuery.isNotEmpty()) "🔍" else "🏛️",
+                                fontSize = 40.sp
+                            )
                             Spacer(modifier = Modifier.height(12.dp))
                             Text(
-                                text = if (selectedTab == 0) "No tienes elementos guardados."
-                                       else "Sin ${tabs[selectedTab].lowercase()} en tu colección.",
+                                text = if (searchQuery.isNotEmpty())
+                                    "Sin resultados para \"$searchQuery\""
+                                else if (selectedTab == 0) "No tienes elementos guardados."
+                                else "Sin ${tabs[selectedTab].lowercase()} en tu colección.",
                                 color = Color.Gray,
                                 fontSize = 14.sp
                             )
-                            Text(
-                                text = "Explora el mapa y presiona \"Guardar\".",
-                                color = Color.Gray.copy(alpha = 0.7f),
-                                fontSize = 12.sp
-                            )
+                            if (searchQuery.isEmpty()) {
+                                Text(
+                                    text = "Explora el mapa y presiona \"Guardar\".",
+                                    color = Color.Gray.copy(alpha = 0.7f),
+                                    fontSize = 12.sp
+                                )
+                            }
                         }
                     }
                 }
@@ -196,9 +247,8 @@ fun MyCollectionScreen(
                             ) {
                                 CollectionItemRow(
                                     item = item,
-                                    onRemove = {
-                                        viewModel.removeSite(userId, item.id)
-                                    }
+                                    searchQuery = searchQuery,
+                                    onRemove = { viewModel.removeSite(userId, item.id) }
                                 )
                             }
                         }
@@ -211,14 +261,39 @@ fun MyCollectionScreen(
 
 /**
  * Fila de un elemento guardado en la colección.
- * Muestra ícono según tipo, título, subtítulo, fecha y botón de eliminar.
+ * Resalta el texto que coincide con la búsqueda activa.
  */
 @Composable
 fun CollectionItemRow(
     item: RemoteCollectionItem,
+    searchQuery: String = "",
     onRemove: () -> Unit = {}
 ) {
     var showConfirm by remember { mutableStateOf(false) }
+
+    // Construye el título con highlight del texto buscado
+    val highlightedTitle = buildAnnotatedString {
+        val query = searchQuery.trim().lowercase()
+        val title = item.title
+        if (query.isEmpty()) {
+            append(title)
+        } else {
+            var start = 0
+            val lower = title.lowercase()
+            while (start < title.length) {
+                val idx = lower.indexOf(query, start)
+                if (idx == -1) {
+                    append(title.substring(start))
+                    break
+                }
+                append(title.substring(start, idx))
+                withStyle(SpanStyle(background = EcoGuiaColors.Jade.copy(alpha = 0.25f), color = EcoGuiaColors.Jade, fontWeight = FontWeight.Bold)) {
+                    append(title.substring(idx, idx + query.length))
+                }
+                start = idx + query.length
+            }
+        }
+    }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -229,7 +304,6 @@ fun CollectionItemRow(
             modifier = Modifier.padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Ícono según tipo
             Box(
                 modifier = Modifier
                     .size(44.dp)
@@ -253,14 +327,14 @@ fun CollectionItemRow(
                 )
             }
 
-            // Texto
             Column(
                 modifier = Modifier
                     .padding(horizontal = 12.dp)
                     .weight(1f)
             ) {
+                // Título con highlight de búsqueda
                 Text(
-                    text = item.title,
+                    text = highlightedTitle,
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp,
                     color = MaterialTheme.colorScheme.onSurface
@@ -272,7 +346,7 @@ fun CollectionItemRow(
                 )
             }
 
-            // Botón eliminar (con confirmación)
+            // Botón eliminar con confirmación en dos pasos
             if (showConfirm) {
                 TextButton(
                     onClick = {

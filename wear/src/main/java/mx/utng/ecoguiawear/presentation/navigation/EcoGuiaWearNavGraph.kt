@@ -116,16 +116,7 @@ fun EcoGuiaWearNavGraph(viewModel: RadarViewModel) {
                 }
             }
 
-            // Overlay ArrivalScreen
-            if (state.mode == RadarMode.ARRIVED) {
-                Dialog(onDismissRequest = { }) {
-                    ArrivalScreen(
-                        state = state,
-                        onOpenPhone = viewModel::openPhoneCamera,
-                        onContinue = viewModel::completeArrival
-                    )
-                }
-            }
+            // Diálogo de llegada desactivado para mantener detección automática limpia
         }
     }
 }

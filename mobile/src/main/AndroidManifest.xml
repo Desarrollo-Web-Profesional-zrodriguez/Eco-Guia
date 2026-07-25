@@ -1,9 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- Permisos de Red -->
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Permisos de Ubicación -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- Requerido para rastreo en segundo plano (minSdk=30 → Android 11+) -->
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+
+    <!-- Permisos de Servicio en Primer Plano con tipo "location" -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+
+    <!-- Notificaciones en tiempo de ejecución (API 33 / Android 13+) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- Cámara (opcional, para Geo-Drops en AR) -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
 
@@ -13,6 +27,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.NoActionBar">
 
+        <!-- Clave API de Google Maps -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyDexgWI7fqzfP8s4k_nkEvMFfYQz1qyWng" />
@@ -25,6 +40,17 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!--
+            ProximityService: ForegroundService de tipo "location".
+            Detecta sitios históricos cercanos aunque la app esté cerrada
+            y dispara notificaciones de alerta al usuario.
+        -->
+        <service
+            android:name=".data.ProximityService"
+            android:foregroundServiceType="location"
+            android:exported="false" />
+
     </application>
 
 </manifest>

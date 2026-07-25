@@ -1,9 +1,17 @@
 /**
  * Archivo: CollectionViewModel.kt
- * Autor: Zahir Rodriguez
+ * Autor: Zahir Andres
  * Fecha de última actualización: 2026-07-25
  * Descripción: Gestiona la colección personal del usuario. Soporta carga, guardado,
  * eliminación y verificación de sitios históricos en user_saved_items (Neon).
+ *
+ * Funciones destacadas:
+ * - loadCollection: Carga los elementos guardados desde Neon y sincroniza savedSiteIds.
+ * - saveSite: Guarda un sitio con optimistic update inmediato en la UI.
+ * - removeSite: Elimina un sitio con optimistic update y recarga la colección.
+ * - toggleSave: Alterna el estado guardado/no guardado de un sitio.
+ * - checkIfSaved: Verifica y actualiza el estado de un sitio concreto en savedSiteIds.
+ * - savedSiteIds: Mapa reactivo siteId → Boolean para estado inmediato en la UI.
  */
 
 package mx.utng.ecoguiawear.ui.viewmodel

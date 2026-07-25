@@ -76,7 +76,9 @@ fun MainAppContainer(activity: ComponentActivity, repository: EcoGuiaRepositoryI
     val authViewModel: AuthViewModel = viewModel()
     val notificationViewModel: NotificationViewModel = viewModel()
     val siteRegistrationViewModel: SiteRegistrationViewModel = viewModel()
-    
+    val routeViewModel: mx.utng.ecoguiawear.ui.viewmodel.RouteViewModel = viewModel()
+    val isRouteActive by routeViewModel.activeRoute.run { remember { derivedStateOf { value != null } } }
+
     // Gestión de Permisos
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -142,7 +144,8 @@ fun MainAppContainer(activity: ComponentActivity, repository: EcoGuiaRepositoryI
                     },
                     onOpenSidebar = {
                         showBottomMenu = true
-                    }
+                    },
+                    isRouteActive = isRouteActive
                 )
             }
         }
@@ -179,6 +182,7 @@ fun MainAppContainer(activity: ComponentActivity, repository: EcoGuiaRepositoryI
                 composable("exploration") {
                     ExplorationScreen(
                         onAdminClick = { navController.navigate("more_options") },
+                        onOpenRoutes = { navController.navigate("search_experience") },
                         userId = authViewModel.currentUser?.id ?: "guest"
                     )
                 }
@@ -255,16 +259,25 @@ fun MainAppContainer(activity: ComponentActivity, repository: EcoGuiaRepositoryI
                     )
                 }
                 composable("active_route") {
-                    ActiveRouteScreen()
+                    ActiveRouteScreen(
+                        onFinishRoute = { navController.popBackStack() },
+                        routeViewModel = routeViewModel
+                    )
                 }
                 composable("search_experience") {
-                    SearchExperienceScreen()
+                    SearchExperienceScreen(
+                        onSelectRoute = { navController.navigate("active_route") },
+                        routeViewModel = routeViewModel
+                    )
                 }
                 composable("permissions") {
                     PermissionsScreen()
                 }
                 composable("create_route") {
-                    CreateRouteScreen()
+                    CreateRouteScreen(
+                        onRouteCreated = { navController.popBackStack() },
+                        routeViewModel = routeViewModel
+                    )
                 }
                 composable("offline") {
                     OfflineRouteScreen()

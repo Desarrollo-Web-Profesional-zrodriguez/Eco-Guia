@@ -1,12 +1,25 @@
-﻿/**
+/**
  * Archivo: PermissionsScreen.kt
- * Autor: ZahirMora
- * Fecha de Ãºltima actualizaciÃ³n: 2026-07-21
- * DescripciÃ³n: Pantalla de gestiÃ³n de permisos necesarios para la experiencia completa de la aplicaciÃ³n.
+ * Autor: Zahir Andres
+ * Fecha de última actualización: 2026-07-25
+ * Descripción: Pantalla de gestión de permisos necesarios para la experiencia completa.
+ * Muestra el estado real de cada permiso del sistema y permite activar o desactivar
+ * el servicio de Alertas de Proximidad (ProximityService) desde la UI.
+ *
+ * Funciones destacadas:
+ * - PermissionsScreen: Composable principal. Lanza solicitudes de permisos reales
+ *   (ACCESS_BACKGROUND_LOCATION, POST_NOTIFICATIONS) y conecta el toggle al LocationViewModel.
+ * - PermissionToggleItem: Fila reutilizable que muestra ícono, título, descripción y switch.
+ * - ProximityAlertToggleItem: Variante especializada con flujo de permiso en dos pasos:
+ *   primero POST_NOTIFICATIONS (API 33+), luego ACCESS_BACKGROUND_LOCATION.
  */
 
 package mx.utng.ecoguiawear.ui.screens
 
+import android.Manifest
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -23,15 +36,45 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
+import mx.utng.ecoguiawear.ui.viewmodel.LocationViewModel
 
+/**
+ * Pantalla principal de gestión de permisos.
+ * Integra solicitudes de permisos reales del sistema y controla el [ProximityService].
+ */
 @Composable
-fun PermissionsScreen() {
+fun PermissionsScreen(
+    locationViewModel: LocationViewModel = viewModel()
+) {
+    val context = LocalContext.current
+    val isProximityActive by locationViewModel.isProximityServiceActive
+
+    // Launcher para ACCESS_BACKGROUND_LOCATION
+    val backgroundLocationLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            locationViewModel.startProximityService(context)
+        }
+    }
+
+    // Launcher para POST_NOTIFICATIONS (API 33+) → al concederse, pide background location
+    val notifLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            backgroundLocationLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -48,7 +91,6 @@ fun PermissionsScreen() {
                 Text("Permisos", color = Color.White, fontSize = 14.sp)
                 Text("Experiencia", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
             }
-            
             IconButton(
                 onClick = { },
                 modifier = Modifier.align(Alignment.TopEnd)
@@ -59,49 +101,56 @@ fun PermissionsScreen() {
 
         // Feature Card
         Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
             colors = CardDefaults.cardColors(containerColor = EcoGuiaColors.Surface),
             shape = RoundedCornerShape(24.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text("Activa la experiencia completa", color = Color.White, fontWeight = FontWeight.Bold)
                 Text(
-                    "UbicaciÃ³n, cÃ¡mara y notificaciones permiten descubrir historia de forma inmersiva.", 
-                    color = Color.White.copy(alpha = 0.7f), 
+                    "Ubicación, cámara y notificaciones permiten descubrir historia de forma inmersiva.",
+                    color = Color.White.copy(alpha = 0.7f),
                     fontSize = 12.sp
                 )
             }
         }
 
-        // Requirements List
+        // Lista de permisos
         Column(modifier = Modifier.padding(horizontal = 16.dp)) {
             Text("Requeridos", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
-            
+
             LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 item {
                     PermissionToggleItem(
-                        title = "UbicaciÃ³n precisa",
-                        subtitle = "Geo-rutas y llegadas a sitios",
+                        title = "Ubicación precisa",
+                        subtitle = "Geo-rutas y llegadas a sitios históricos",
                         icon = Icons.Default.Place,
                         initialValue = true
                     )
                 }
                 item {
                     PermissionToggleItem(
-                        title = "CÃ¡mara",
+                        title = "Cámara",
                         subtitle = "Para ver Geo-Drops en realidad aumentada",
                         icon = Icons.Default.CameraAlt,
                         initialValue = true
                     )
                 }
                 item {
-                    PermissionToggleItem(
-                        title = "Notificaciones",
-                        subtitle = "Alertas de interÃ©s en tiempo real",
-                        icon = Icons.Default.Notifications,
-                        initialValue = false
+                    // Toggle de alertas de proximidad con flujo de permisos real
+                    ProximityAlertToggleItem(
+                        isActive = isProximityActive,
+                        onActivate = {
+                            // Flujo: API 33+ pide POST_NOTIFICATIONS primero, luego background location
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                notifLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                            } else {
+                                backgroundLocationLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+                            }
+                        },
+                        onDeactivate = {
+                            locationViewModel.stopProximityService(context)
+                        }
                     )
                 }
             }
@@ -109,6 +158,84 @@ fun PermissionsScreen() {
     }
 }
 
+/**
+ * Toggle de Alertas de Proximidad.
+ * Muestra el estado activo/inactivo del [ProximityService] y gestiona la activación/desactivación
+ * con el flujo de permisos correcto para Android 11+ y Android 13+.
+ *
+ * @param isActive Si el servicio está actualmente activo.
+ * @param onActivate Callback para iniciar el flujo de solicitud de permisos y servicio.
+ * @param onDeactivate Callback para detener el servicio.
+ */
+@Composable
+fun ProximityAlertToggleItem(
+    isActive: Boolean,
+    onActivate: () -> Unit,
+    onDeactivate: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(
+                        if (isActive) EcoGuiaColors.Jade.copy(alpha = 0.15f)
+                        else MaterialTheme.colorScheme.surfaceVariant,
+                        CircleShape
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.Default.Notifications,
+                    contentDescription = null,
+                    tint = if (isActive) EcoGuiaColors.Jade else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+
+            Column(modifier = Modifier.padding(horizontal = 12.dp).weight(1f)) {
+                Text(
+                    "Alertas en segundo plano",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    if (isActive) "Activo · Monitoreando sitios históricos"
+                    else "Recibe alertas aunque la app esté cerrada",
+                    color = if (isActive) EcoGuiaColors.Jade else MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 10.sp,
+                    lineHeight = 12.sp
+                )
+            }
+
+            Switch(
+                checked = isActive,
+                onCheckedChange = { enabled ->
+                    if (enabled) onActivate() else onDeactivate()
+                },
+                colors = SwitchDefaults.colors(
+                    checkedThumbColor = Color.White,
+                    checkedTrackColor = EcoGuiaColors.Jade,
+                    uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    uncheckedTrackColor = Color.LightGray
+                )
+            )
+        }
+    }
+}
+
+/**
+ * Fila genérica de permiso con switch local de estado.
+ * Para permisos sin lógica de servicio asociada (ubicación precisa, cámara).
+ */
 @Composable
 fun PermissionToggleItem(
     title: String,
@@ -117,7 +244,7 @@ fun PermissionToggleItem(
     initialValue: Boolean
 ) {
     var isChecked by remember { mutableStateOf(initialValue) }
-    
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -133,14 +260,19 @@ fun PermissionToggleItem(
                     .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(imageVector = icon, contentDescription = null, tint = EcoGuiaColors.Jade, modifier = Modifier.size(20.dp))
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = EcoGuiaColors.Jade,
+                    modifier = Modifier.size(20.dp)
+                )
             }
-            
+
             Column(modifier = Modifier.padding(horizontal = 12.dp).weight(1f)) {
                 Text(title, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
                 Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp, lineHeight = 12.sp)
             }
-            
+
             Switch(
                 checked = isChecked,
                 onCheckedChange = { isChecked = it },
@@ -162,7 +294,3 @@ fun PermissionsScreenPreview() {
         PermissionsScreen()
     }
 }
-
-
-
-

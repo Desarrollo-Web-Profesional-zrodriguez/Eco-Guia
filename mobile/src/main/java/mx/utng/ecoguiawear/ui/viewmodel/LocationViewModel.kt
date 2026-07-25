@@ -1,20 +1,26 @@
 /**
  * Archivo: LocationViewModel.kt
- * Autor: Zahir Rodriguez
- * Fecha de última actualización: 2026-07-24
- * Descripción: Gestiona la ubicación del usuario en tiempo real, carga sitios históricos cercanos 
+ * Autor: Zahir Andres
+ * Fecha de última actualización: 2026-07-25
+ * Descripción: Gestiona la ubicación del usuario en tiempo real, carga sitios históricos cercanos
  * utilizando geofencing lógico y dispara alertas de proximidad para interactuar con el entorno.
- * 
+ * También controla el ciclo de vida del ProximityService (Opción C).
+ *
  * Funciones destacadas:
- * - startLocationUpdates: Inicia el rastreo GPS con alta precisión.
- * - fetchNearbySites: Consulta la base de datos remota para obtener sitios en un radio de 1km y calcula distancias.
+ * - startLocationUpdates: Inicia el rastreo GPS con alta precisión (foreground).
+ * - fetchNearbySites: Consulta Neon para obtener sitios en un radio de 50km y calcula distancias.
+ * - syncTargetWithWatch: Envía el sitio objetivo al reloj Wear OS.
+ * - startProximityService: Inicia el ForegroundService de geofencing en segundo plano.
+ * - stopProximityService: Detiene el ForegroundService de geofencing.
  */
 
 package mx.utng.ecoguiawear.ui.viewmodel
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.Intent
 import android.location.Location
+import android.os.Build
 import android.os.Looper
 import android.util.Log
 import androidx.compose.runtime.State
@@ -26,6 +32,7 @@ import kotlinx.coroutines.launch
 import mx.utng.ecoguia.shared.data.repository.EcoGuiaRepositoryImpl
 import mx.utng.ecoguia.shared.domain.model.RemoteHistoricalSite
 import mx.utng.ecoguia.shared.domain.repository.EcoGuiaRepository
+import mx.utng.ecoguiawear.data.ProximityService
 import mx.utng.ecoguiawear.data.wear.WearMessageClient
 
 class LocationViewModel(
@@ -39,9 +46,13 @@ class LocationViewModel(
 
     private val _nearbySites = mutableStateOf<List<RemoteHistoricalSite>>(emptyList())
     val nearbySites: State<List<RemoteHistoricalSite>> = _nearbySites
-    
+
     private val _closestSite = mutableStateOf<RemoteHistoricalSite?>(null)
     val closestSite: State<RemoteHistoricalSite?> = _closestSite
+
+    /** Estado observable del ProximityService para que la UI pueda mostrar el toggle. */
+    private val _isProximityServiceActive = mutableStateOf(false)
+    val isProximityServiceActive: State<Boolean> = _isProximityServiceActive
 
     private var fusedLocationClient: FusedLocationProviderClient? = null
     private var locationCallback: LocationCallback? = null
@@ -135,6 +146,35 @@ class LocationViewModel(
             val siteLng = site.longitude ?: return@launch
             wearMessageClient?.syncTarget(site.id, site.name, siteLat, siteLng)
         }
+    }
+
+    /**
+     * Inicia el [ProximityService] como ForegroundService de tipo location.
+     * Debe llamarse después de confirmar que el usuario concedió ACCESS_BACKGROUND_LOCATION
+     * y POST_NOTIFICATIONS (API 33+).
+     * @param context Contexto de la aplicación o actividad.
+     */
+    fun startProximityService(context: Context) {
+        if (_isProximityServiceActive.value) return
+        val intent = Intent(context, ProximityService::class.java)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            context.startForegroundService(intent)
+        } else {
+            context.startService(intent)
+        }
+        _isProximityServiceActive.value = true
+        Log.d("LocationViewModel", "ProximityService iniciado.")
+    }
+
+    /**
+     * Detiene el [ProximityService] y actualiza el estado observable.
+     * @param context Contexto de la aplicación o actividad.
+     */
+    fun stopProximityService(context: Context) {
+        if (!_isProximityServiceActive.value) return
+        context.stopService(Intent(context, ProximityService::class.java))
+        _isProximityServiceActive.value = false
+        Log.d("LocationViewModel", "ProximityService detenido.")
     }
 
     override fun onCleared() {

@@ -1,3 +1,18 @@
+/**
+ * Archivo: DemoRadarRepository.kt
+ * Autor: Zahir Andres
+ * Fecha de última actualización: 2026-07-25
+ * Descripción: Repositorio principal de datos para la aplicación Wear OS. Gestiona el estado
+ * del radar de proximidad, sincronización de rutas desde la base de datos Neon PostgreSQL y móvil,
+ * alertas de geofencing pasivas (cada 30 min) y actualización de sensores GPS y compás.
+ *
+ * Funciones destacadas:
+ * - setSyncRoute: Recibe la ruta activa transmitida desde el móvil y actualiza los waypoints.
+ * - clearActiveRoute: Restablece el radar al estado libre de detección automática de Geo-Drops.
+ * - performAutoSearch: Consulta Neon para detectar sitios históricos a 50km con throttle de 30 min.
+ * - updateCurrentLocation: Recalcula distancias geodésicas y rumbo hacia la parada activa.
+ */
+
 package mx.utng.ecoguiawear.data.repository
 
 import android.content.Context
@@ -30,14 +45,19 @@ class DemoRadarRepository(context: Context) : RadarRepository {
     private var lastAutoSearchTime: Long = 0
     private val AUTO_SEARCH_INTERVAL_MS = 30000 // 30 segundos
 
+    /** Registro de última alerta sonora/vibración emitida por sitio (throttle de 30 minutos). */
+    private val lastAlertPerSiteTime = mutableMapOf<String, Long>()
+    private val THIRTY_MINUTES_MS = 30 * 60 * 1000L
+
     init {
-        // Cargar estado inicial desde DB
+        // Cargar configuración de sigilo desde DB local
         scope.launch {
             dao.getConfigFlow("stealth_mode").collect { config ->
                 val isStealth = config?.value == "1"
                 _radarState.update { it.copy(isStealthMode = isStealth) }
             }
         }
+        // Cargar historial de alertas locales
         scope.launch {
             dao.getAllAlerts().collect { alerts ->
                 val domainAlerts = alerts.map { 
@@ -57,7 +77,7 @@ class DemoRadarRepository(context: Context) : RadarRepository {
         _radarState.update {
             it.copy(
                 isLinkedToPhone = linked,
-                lastAlert = if (linked) "Telefono vinculado" else "Sin telefono"
+                lastAlert = if (linked) "Teléfono vinculado" else "Sin teléfono"
             )
         }
     }
@@ -179,7 +199,7 @@ class DemoRadarRepository(context: Context) : RadarRepository {
         _radarState.update {
             it.copy(
                 hapticSettings = it.hapticSettings.copy(enabled = enabled, strength = strength),
-                lastAlert = if (enabled) "Vibracion activa" else "Vibracion apagada"
+                lastAlert = if (enabled) "Vibración activa" else "Vibración apagada"
             )
         }
     }
@@ -249,6 +269,36 @@ class DemoRadarRepository(context: Context) : RadarRepository {
         updateTargetFromRoute()
     }
 
+    override fun clearActiveRoute() {
+        android.util.Log.d("RadarRepo", "Cancelando ruta activa en el reloj.")
+        _radarState.update {
+            it.copy(
+                mode = RadarMode.SCANNING,
+                target = RadarTarget(
+                    id = "none",
+                    title = "Esperando objetivo",
+                    subtitle = "Detección automática (50km)",
+                    type = TargetType.HISTORIC_SITE,
+                    distanceMeters = 0,
+                    bearingDegrees = 0f,
+                    isAutoTarget = true
+                ),
+                routeSummary = RouteSummary(
+                    title = "Sin ruta activa",
+                    visitedStops = 0,
+                    totalStops = 0,
+                    nextStop = "Detección de Geo-Drops activa",
+                    estimatedMinutes = 0,
+                    waypoints = emptyList()
+                ),
+                lastAlert = "Ruta finalizada"
+            )
+        }
+        if (currentLat != 0.0) {
+            performAutoSearch(currentLat, currentLng)
+        }
+    }
+
     override fun updateCurrentLocation(lat: Double, lng: Double) {
         currentLat = lat
         currentLng = lng
@@ -274,7 +324,6 @@ class DemoRadarRepository(context: Context) : RadarRepository {
                 android.util.Log.d("RadarRepo", "Iniciando búsqueda automática de sitios (50km)...")
                 val nearbySites = remoteRepository.getNearbySites(lat, lng, 50000)
                 if (nearbySites.isNotEmpty()) {
-                    // Encontrar el más cercano
                     val closest = nearbySites.minByOrNull { site ->
                         val results = FloatArray(1)
                         android.location.Location.distanceBetween(lat, lng, site.latitude ?: 0.0, site.longitude ?: 0.0, results)
@@ -282,12 +331,21 @@ class DemoRadarRepository(context: Context) : RadarRepository {
                     }
 
                     closest?.let { site ->
+                        val now = System.currentTimeMillis()
+                        val lastAlertTime = lastAlertPerSiteTime[site.id] ?: 0L
+                        val shouldNotifyHaptics = (now - lastAlertTime) > THIRTY_MINUTES_MS
+
+                        if (shouldNotifyHaptics) {
+                            lastAlertPerSiteTime[site.id] = now
+                            android.util.Log.d("RadarRepo", "Emitiendo alerta de proximidad de 30 min para ${site.name}")
+                        }
+
                         _radarState.update { 
                             it.copy(
                                 target = RadarTarget(
                                     id = site.id,
                                     title = site.name,
-                                    subtitle = "Detección automática",
+                                    subtitle = "Detección automática (50km)",
                                     type = TargetType.HISTORIC_SITE,
                                     distanceMeters = 0,
                                     bearingDegrees = 0f,
@@ -295,7 +353,7 @@ class DemoRadarRepository(context: Context) : RadarRepository {
                                     longitude = site.longitude,
                                     isAutoTarget = true
                                 ),
-                                lastAlert = "Sitio cercano detectado"
+                                lastAlert = if (shouldNotifyHaptics) "📍 Nuevo sitio en radio: ${site.name}" else it.lastAlert
                             )
                         }
                     }
@@ -332,14 +390,14 @@ class DemoRadarRepository(context: Context) : RadarRepository {
             android.util.Log.d("RadarRepo", "Recalculando para ${target.title}: Distancia=$distance m, Rumbo=$bearing")
 
             val nextMode = when {
-                distance <= 5 -> RadarMode.ARRIVED
-                distance <= 20 -> RadarMode.FOLLOWING_ARROW
+                target.isAutoTarget -> RadarMode.SCANNING // En detección automática NO forzamos modo ARRIVED
+                distance <= 50 -> RadarMode.ARRIVED // 50m coincide con el umbral del móvil
                 else -> RadarMode.SCANNING
             }
 
-            // Auto-progresión de ruta si llegamos
+            // Auto-progresión de ruta si llegamos en una ruta manual activa
             var shouldUpdateRoute = false
-            if (nextMode == RadarMode.ARRIVED && state.routeSummary.waypoints.isNotEmpty()) {
+            if (nextMode == RadarMode.ARRIVED && state.routeSummary.waypoints.isNotEmpty() && !target.isAutoTarget) {
                 shouldUpdateRoute = true
             }
 
@@ -350,9 +408,10 @@ class DemoRadarRepository(context: Context) : RadarRepository {
                     bearingDegrees = bearing
                 ),
                 lastAlert = when {
-                    nextMode == RadarMode.ARRIVED -> "¡Llegaste!"
+                    target.isAutoTarget && distance <= 50 -> "📍 Sitio cercano (${distance}m) · Toca para Geo-Drop"
+                    nextMode == RadarMode.ARRIVED -> "¡Llegaste a la parada!"
                     nextMode == RadarMode.FOLLOWING_ARROW -> "Sigue la flecha"
-                    state.target.isAutoTarget -> "Auto-detección activa"
+                    target.isAutoTarget -> "⊙ Detección automática (50km)"
                     else -> "Caminando..."
                 }
             )
@@ -410,15 +469,12 @@ class DemoRadarRepository(context: Context) : RadarRepository {
             current.copy(
                 distanceMeters = 0,
                 title = "Museo alcanzado",
-                subtitle = "Abre el celular para ver la capsula",
+                subtitle = "Abre el celular para ver la cápsula",
                 type = TargetType.HISTORIC_SITE,
                 bearingDegrees = 0f
             )
         } else {
-            current.copy(
-                distanceMeters = distance,
-                bearingDegrees = (current.bearingDegrees + 18f) % 360f
-            )
+            current.copy(distanceMeters = distance)
         }
     }
 }

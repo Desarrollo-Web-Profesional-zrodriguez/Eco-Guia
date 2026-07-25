@@ -1,13 +1,18 @@
 /**
  * Archivo: EcoGuiaRepositoryImpl.kt
- * Autor: Zahir Rodriguez
- * Fecha de última actualización: 2026-07-24
+ * Autor: Zahir Andres
+ * Fecha de última actualización: 2026-07-25
  * Descripción: Implementación del repositorio de datos que utiliza Neon HTTP API para PostgreSQL.
- * Gestiona consultas espaciales complejas para detectar sitios históricos y Geo-Drops.
- * 
+ * Gestiona consultas espaciales complejas para detectar sitios históricos y Geo-Drops,
+ * y la persistencia real de la colección personal del usuario en user_saved_items.
+ *
  * Funciones destacadas:
  * - getNearbySites: Utiliza PostGIS (ST_DWithin) para encontrar sitios en un radio geográfico.
- * - getHistoricalSites: Recupera sitios con sus coordenadas extraídas mediante ST_X y ST_Y.
+ * - getHistoricalSites: Recupera sitios con sus coordenadas mediante ST_X y ST_Y.
+ * - getUserCollection: Consulta user_saved_items JOIN historical_sites, devuelve site_id como id.
+ * - saveSite: INSERT con ON CONFLICT DO NOTHING para evitar duplicados en user_saved_items.
+ * - removeSavedSite: DELETE por user_id + site_id de user_saved_items.
+ * - isSiteSaved: COUNT para verificar si un sitio ya está guardado por el usuario.
  */
 
 package mx.utng.ecoguia.shared.data.repository
@@ -220,6 +225,7 @@ class EcoGuiaRepositoryImpl(
             count > 0L
         } catch (e: Exception) {
             android.util.Log.e("EcoGuiaRepo", "Error al verificar guardado: ${e.message}", e)
+            android.util.Log.e("EcoGuiaRepo", "Error al eliminar ruta: ${e.message}", e)
             false
         }
     }
@@ -269,6 +275,89 @@ class EcoGuiaRepositoryImpl(
             rowsAffected > 0
         } catch (e: Exception) {
             android.util.Log.e("EcoGuiaRepo", "Error al crear sitio: ${e.message}", e)
+            false
+        }
+    }
+
+    /**
+     * Obtiene las paradas ordenadas de una ruta turística, incluyendo nombre y coordenadas del sitio histórico.
+     */
+    override suspend fun getRouteStops(routeId: String): List<mx.utng.ecoguia.shared.domain.model.RemoteRouteStop> {
+        val query = """
+            SELECT
+                rs.id::text           AS id,
+                rs.route_id::text     AS route_id,
+                rs.site_id::text      AS site_id,
+                rs.stop_order         AS stop_order,
+                rs.instruction        AS instruction,
+                hs.name               AS site_name,
+                ST_Y(hs.location::geometry) AS latitude,
+                ST_X(hs.location::geometry) AS longitude
+            FROM route_stops rs
+            JOIN historical_sites hs ON hs.id = rs.site_id
+            WHERE rs.route_id = $1::uuid
+            ORDER BY rs.stop_order ASC
+        """.trimIndent()
+        return try {
+            neonClient.executeQuery<mx.utng.ecoguia.shared.domain.model.RemoteRouteStop>(query, listOf(routeId))
+        } catch (e: Exception) {
+            android.util.Log.e("EcoGuiaRepo", "Error al obtener paradas de ruta: ${e.message}", e)
+            emptyList()
+        }
+    }
+
+    /**
+     * Crea una ruta turística nueva e inserta sus paradas ordenadas en Neon PostgreSQL.
+     */
+    override suspend fun createRoute(
+        title: String,
+        description: String,
+        estimatedMinutes: Int,
+        siteIds: List<String>
+    ): Boolean {
+        return try {
+            val slug = title.lowercase().trim().replace(" ", "-").replace(Regex("[^a-z0-9-]"), "") + "-" + (System.currentTimeMillis() % 10000)
+            val routeQuery = """
+                INSERT INTO routes (title, slug, description, estimated_minutes)
+                VALUES ($1, $2, $3, $4::integer)
+                RETURNING id::text
+            """.trimIndent()
+
+            val routeResult = neonClient.executeQuery<kotlinx.serialization.json.JsonObject>(
+                routeQuery,
+                listOf(title, slug, description, estimatedMinutes.toString())
+            )
+
+            val routeId = routeResult.firstOrNull()?.get("id")?.toString()?.trim('"')
+                ?: return false
+
+            siteIds.forEachIndexed { index, siteId ->
+                val stopQuery = """
+                    INSERT INTO route_stops (route_id, site_id, stop_order)
+                    VALUES ($1::uuid, $2::uuid, $3::integer)
+                    ON CONFLICT DO NOTHING
+                """.trimIndent()
+                neonClient.executeCommand(stopQuery, listOf(routeId, siteId, (index + 1).toString()))
+            }
+
+            android.util.Log.d("EcoGuiaRepo", "Ruta creada con éxito: $routeId")
+            true
+        } catch (e: Exception) {
+            android.util.Log.e("EcoGuiaRepo", "Error al crear ruta: ${e.message}", e)
+            false
+        }
+    }
+
+    /**
+     * Elimina una ruta existente por su ID.
+     */
+    override suspend fun deleteRoute(routeId: String): Boolean {
+        val query = "DELETE FROM routes WHERE id = $1::uuid"
+        return try {
+            val rows = neonClient.executeCommand(query, listOf(routeId))
+            rows > 0
+        } catch (e: Exception) {
+            android.util.Log.e("EcoGuiaRepo", "Error al eliminar ruta: ${e.message}", e)
             false
         }
     }

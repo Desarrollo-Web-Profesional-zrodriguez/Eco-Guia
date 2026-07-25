@@ -76,11 +76,12 @@ data class RadarUiState(
         bearingDegrees = 0f
     ),
     val routeSummary: RouteSummary = RouteSummary(
-        title = "Ruta Independencia",
+        title = "Sin ruta activa",
         visitedStops = 0,
-        totalStops = 3,
-        nextStop = "Punto 1",
-        estimatedMinutes = 15
+        totalStops = 0,
+        nextStop = "Esperando ruta desde móvil",
+        estimatedMinutes = 0,
+        waypoints = emptyList()
     ),
     val hapticSettings: HapticSettings = HapticSettings(),
     val lastAlert: String = "Radar listo"

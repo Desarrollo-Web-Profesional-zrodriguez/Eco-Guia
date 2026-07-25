@@ -24,6 +24,7 @@ interface RadarRepository {
     fun refreshNearbyTargets()
     fun setSyncTarget(id: String, name: String, lat: Double, lng: Double)
     fun setSyncRoute(title: String, waypoints: List<Waypoint>)
+    fun clearActiveRoute()
     fun updateCurrentLocation(lat: Double, lng: Double)
     fun updateHeading(heading: Float)
 }
