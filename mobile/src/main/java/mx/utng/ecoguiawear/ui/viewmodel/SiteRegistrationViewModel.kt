@@ -66,13 +66,16 @@ class SiteRegistrationViewModel(
         loadCategories()
     }
 
-    private fun loadCategories() {
+    fun loadCategories() {
         viewModelScope.launch {
             _isLoadingCategories.value = true
+            android.util.Log.d("SiteRegVM", "Iniciando carga de categorías...")
             try {
-                android.util.Log.d("SiteRegVM", "Cargando categorías desde el repositorio...")
                 val result = repository.getSiteCategories()
                 android.util.Log.d("SiteRegVM", "Categorías obtenidas: ${result.size}")
+                if (result.isEmpty()) {
+                    android.util.Log.w("SiteRegVM", "La lista de categorías regresó vacía desde el servidor.")
+                }
                 _categories.value = result
             } catch (e: Exception) {
                 android.util.Log.e("SiteRegVM", "Error al cargar categorías: ${e.message}", e)

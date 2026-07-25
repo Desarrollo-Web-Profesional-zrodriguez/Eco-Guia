@@ -43,9 +43,13 @@ class NeonClient(
 
         if (!httpResponse.status.isSuccess()) {
             val errorBody = httpResponse.bodyAsText()
+            android.util.Log.e("NeonClient", "Error en Neon API: $errorBody")
             throw Exception("Neon API Error (${httpResponse.status}): $errorBody")
         }
 
+        val responseBody = httpResponse.bodyAsText()
+        android.util.Log.d("NeonClient", "Respuesta recibida: $responseBody")
+        
         val response: NeonSqlResponse = httpResponse.body()
         val json = Json { ignoreUnknownKeys = true }
         return response.rows.map { json.decodeFromJsonElement<T>(it) }

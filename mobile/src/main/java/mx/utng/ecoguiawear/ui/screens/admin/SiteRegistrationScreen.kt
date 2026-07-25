@@ -48,6 +48,13 @@ fun SiteRegistrationScreen(
     
     var expanded by remember { mutableStateOf(false) }
 
+    // Reintentar carga si está vacío al entrar
+    LaunchedEffect(Unit) {
+        if (categories.isEmpty()) {
+            viewModel.loadCategories()
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -116,8 +123,19 @@ fun SiteRegistrationScreen(
                             onValueChange = {},
                             label = "CATEGORÍA",
                             placeholder = "Selecciona una opción",
-                            readOnly = true,
-                            modifier = Modifier.clickable { if (!isLoadingCategories) expanded = true }
+                            readOnly = true
+                        )
+                        
+                        // Caja invisible para capturar el clic y evitar conflicto con el foco del TextField
+                        Box(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .clickable { 
+                                    if (!isLoadingCategories) {
+                                        android.util.Log.d("SiteRegScreen", "Click en categoría - Expandiendo menú")
+                                        expanded = true 
+                                    }
+                                }
                         )
                         
                         DropdownMenu(
@@ -137,6 +155,7 @@ fun SiteRegistrationScreen(
                                 DropdownMenuItem(
                                     text = { Text(cat.name, color = Color.White) },
                                     onClick = {
+                                        android.util.Log.d("SiteRegScreen", "Categoría seleccionada: ${cat.name}")
                                         category = cat.name
                                         expanded = false
                                     }
