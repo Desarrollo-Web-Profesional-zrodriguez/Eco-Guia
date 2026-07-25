@@ -177,7 +177,10 @@ fun MainAppContainer(activity: ComponentActivity, repository: EcoGuiaRepositoryI
                 
                 // Rutas de Aplicación Principal
                 composable("exploration") {
-                    ExplorationScreen(onAdminClick = { navController.navigate("more_options") })
+                    ExplorationScreen(
+                        onAdminClick = { navController.navigate("more_options") },
+                        userId = authViewModel.currentUser?.id ?: "guest"
+                    )
                 }
                 composable("collection") {
                     MyCollectionScreen(userId = authViewModel.currentUser?.id ?: "guest")

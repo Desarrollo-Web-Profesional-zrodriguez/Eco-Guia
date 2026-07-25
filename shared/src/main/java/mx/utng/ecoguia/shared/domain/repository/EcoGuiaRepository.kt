@@ -81,7 +81,26 @@ interface EcoGuiaRepository {
     suspend fun testConnection(): String
 
     /**
-     * Obtiene los elementos guardados por un usuario.
+     * Obtiene los elementos guardados por un usuario desde user_saved_items.
      */
     suspend fun getUserCollection(userId: String): List<RemoteCollectionItem>
+
+    /**
+     * Guarda un sitio histórico en la colección del usuario.
+     * Usa ON CONFLICT DO NOTHING para evitar duplicados.
+     * Retorna verdadero si la operación fue exitosa.
+     */
+    suspend fun saveSite(userId: String, siteId: String): Boolean
+
+    /**
+     * Elimina un sitio guardado de la colección del usuario.
+     * Retorna verdadero si se eliminó al menos un registro.
+     */
+    suspend fun removeSavedSite(userId: String, siteId: String): Boolean
+
+    /**
+     * Verifica si un sitio ya fue guardado por el usuario.
+     * Retorna verdadero si existe en user_saved_items.
+     */
+    suspend fun isSiteSaved(userId: String, siteId: String): Boolean
 }

@@ -1,18 +1,25 @@
 /**
  * Archivo: MyCollectionScreen.kt
  * Autor: ZahirMora
- * Fecha de última actualización: 2026-07-21
- * Descripción: Pantalla de colección personal del usuario. Muestra elementos guardados como fotos, rutas y audios.
+ * Fecha de última actualización: 2026-07-25
+ * Descripción: Pantalla de colección personal del usuario. Muestra elementos guardados desde
+ * user_saved_items en Neon. Soporta filtros por tipo y eliminación individual con swipe o botón.
  */
 
 package mx.utng.ecoguiawear.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -33,6 +40,7 @@ import mx.utng.ecoguiawear.ui.viewmodel.CollectionViewModel
 
 /**
  * Composable que representa la pantalla "Mi Colección".
+ * @param userId ID del usuario autenticado para cargar y eliminar sus elementos.
  */
 @Composable
 fun MyCollectionScreen(
@@ -40,13 +48,30 @@ fun MyCollectionScreen(
     viewModel: CollectionViewModel = viewModel()
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
-    val tabs = listOf("Todos", "Fotos", "Rutas", "Audio")
-    
+    // "Todos" + tipos reales del schema: site, photo, route
+    val tabs = listOf("Todos", "Sitios", "Fotos", "Rutas")
+    val tabFilters = listOf(null, "site", "photo", "route")
+
     val items by viewModel.items
     val isLoading by viewModel.isLoading
+    val saveError by viewModel.saveError
 
+    // Carga inicial y cuando cambia userId
     LaunchedEffect(userId) {
         viewModel.loadCollection(userId)
+    }
+
+    // Filtrar items según el tab activo
+    val filteredItems = remember(items, selectedTab) {
+        val filter = tabFilters[selectedTab]
+        if (filter == null) items else items.filter { it.type == filter }
+    }
+
+    // Mostrar error de operación si existe
+    if (saveError != null) {
+        LaunchedEffect(saveError) {
+            viewModel.clearSaveError()
+        }
     }
 
     Column(
@@ -61,7 +86,7 @@ fun MyCollectionScreen(
             onActionClick = { }
         )
 
-        // Info Card
+        // Info Card con contador y tabs de filtro
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -70,12 +95,20 @@ fun MyCollectionScreen(
             shape = RoundedCornerShape(24.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text("${items.size} guardados en tu colección", color = Color.White, fontWeight = FontWeight.Bold)
-                Text("Fotos, rutas y cápsulas que has guardado durante tus viajes.", color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp)
-                
+                Text(
+                    "${items.size} guardados en tu colección",
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    "Sitios históricos y cápsulas que has guardado.",
+                    color = Color.White.copy(alpha = 0.7f),
+                    fontSize = 12.sp
+                )
+
                 Spacer(modifier = Modifier.height(16.dp))
-                
-                // Tabs
+
+                // Tabs de filtro
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -88,13 +121,17 @@ fun MyCollectionScreen(
                                 .weight(1f)
                                 .height(40.dp)
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(if (selectedTab == index) EcoGuiaColors.Jade else Color.Transparent)
+                                .background(
+                                    if (selectedTab == index) EcoGuiaColors.Jade
+                                    else Color.Transparent
+                                )
                                 .clickable { selectedTab = index },
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 title,
-                                color = if (selectedTab == index) Color.White else Color.White.copy(alpha = 0.5f),
+                                color = if (selectedTab == index) Color.White
+                                        else Color.White.copy(alpha = 0.5f),
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 11.sp
                             )
@@ -104,22 +141,67 @@ fun MyCollectionScreen(
             }
         }
 
-        // Lista de Recientes
+        // Lista de elementos
         Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-            Text("Recientes", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
-            
-            if (isLoading) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = EcoGuiaColors.Jade)
+            Text(
+                text = if (selectedTab == 0) "Recientes"
+                       else "${tabs[selectedTab]} (${filteredItems.size})",
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(vertical = 12.dp)
+            )
+
+            when {
+                isLoading -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(color = EcoGuiaColors.Jade)
+                    }
                 }
-            } else if (items.isEmpty()) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("No tienes elementos guardados.", color = Color.Gray)
+                filteredItems.isEmpty() -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("🏛️", fontSize = 40.sp)
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text(
+                                text = if (selectedTab == 0) "No tienes elementos guardados."
+                                       else "Sin ${tabs[selectedTab].lowercase()} en tu colección.",
+                                color = Color.Gray,
+                                fontSize = 14.sp
+                            )
+                            Text(
+                                text = "Explora el mapa y presiona \"Guardar\".",
+                                color = Color.Gray.copy(alpha = 0.7f),
+                                fontSize = 12.sp
+                            )
+                        }
+                    }
                 }
-            } else {
-                LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    items(items.size) { index ->
-                        CollectionItemRow(items[index])
+                else -> {
+                    LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        itemsIndexed(
+                            items = filteredItems,
+                            key = { _, item -> item.id }
+                        ) { _, item ->
+                            AnimatedVisibility(
+                                visible = true,
+                                enter = fadeIn() + slideInVertically(),
+                                exit = fadeOut()
+                            ) {
+                                CollectionItemRow(
+                                    item = item,
+                                    onRemove = {
+                                        viewModel.removeSite(userId, item.id)
+                                    }
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -127,8 +209,17 @@ fun MyCollectionScreen(
     }
 }
 
+/**
+ * Fila de un elemento guardado en la colección.
+ * Muestra ícono según tipo, título, subtítulo, fecha y botón de eliminar.
+ */
 @Composable
-fun CollectionItemRow(item: RemoteCollectionItem) {
+fun CollectionItemRow(
+    item: RemoteCollectionItem,
+    onRemove: () -> Unit = {}
+) {
+    var showConfirm by remember { mutableStateOf(false) }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -138,18 +229,35 @@ fun CollectionItemRow(item: RemoteCollectionItem) {
             modifier = Modifier.padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // Ícono según tipo
             Box(
                 modifier = Modifier
-                    .size(40.dp)
-                    .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp)),
+                    .size(44.dp)
+                    .background(
+                        when (item.type) {
+                            "site" -> EcoGuiaColors.Jade.copy(alpha = 0.12f)
+                            "photo" -> EcoGuiaColors.Gold.copy(alpha = 0.12f)
+                            else -> MaterialTheme.colorScheme.surfaceVariant
+                        },
+                        RoundedCornerShape(14.dp)
+                    ),
                 contentAlignment = Alignment.Center
             ) {
-                Text(if (item.type == "site") "🏛️" else if (item.type == "photo") "📸" else "🗺️")
+                Text(
+                    text = when (item.type) {
+                        "site" -> "🏛️"
+                        "photo" -> "📸"
+                        else -> "🗺️"
+                    },
+                    fontSize = 20.sp
+                )
             }
 
-            Column(modifier = Modifier
-                .padding(horizontal = 12.dp)
-                .weight(1f)
+            // Texto
+            Column(
+                modifier = Modifier
+                    .padding(horizontal = 12.dp)
+                    .weight(1f)
             ) {
                 Text(
                     text = item.title,
@@ -158,13 +266,36 @@ fun CollectionItemRow(item: RemoteCollectionItem) {
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
-                    text = "${item.subtitle} - ${item.createdAt?.take(10)}",
+                    text = "${item.subtitle} · ${item.createdAt?.take(10) ?: ""}",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp
                 )
             }
 
-            Text("Ver", color = EcoGuiaColors.Jade, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+            // Botón eliminar (con confirmación)
+            if (showConfirm) {
+                TextButton(
+                    onClick = {
+                        showConfirm = false
+                        onRemove()
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("Eliminar", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                }
+            } else {
+                IconButton(
+                    onClick = { showConfirm = true },
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Eliminar de colección",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
         }
     }
 }

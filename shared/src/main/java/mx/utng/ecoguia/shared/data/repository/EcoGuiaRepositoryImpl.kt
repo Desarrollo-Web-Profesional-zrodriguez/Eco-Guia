@@ -141,22 +141,86 @@ class EcoGuiaRepositoryImpl(
     }
 
     /**
-     * Recupera la colección del usuario. Por ahora simula datos si la tabla no existe.
+     * Recupera la colección real del usuario consultando user_saved_items unida con historical_sites.
+     * IMPORTANTE: Selecciona usi.site_id como id (no usi.id) para que RemoteCollectionItem.id
+     * coincida con el historical_site UUID usado en savedSiteIds y removeSavedSite.
      */
     override suspend fun getUserCollection(userId: String): List<RemoteCollectionItem> {
+        val query = """
+            SELECT
+                usi.site_id::text  AS id,
+                hs.name            AS title,
+                hs.site_type       AS subtitle,
+                'site'             AS type,
+                usi.created_at
+            FROM user_saved_items usi
+            JOIN historical_sites hs ON hs.id = usi.site_id
+            WHERE usi.user_id = $1::uuid
+              AND usi.site_id IS NOT NULL
+            ORDER BY usi.created_at DESC
+        """.trimIndent()
         return try {
-            // Intentamos obtener datos reales (suponiendo que existe la tabla)
-            neonClient.executeQuery<RemoteCollectionItem>(
-                "SELECT id, title, subtitle, type, created_at FROM user_collections WHERE user_id = $1 ORDER BY created_at DESC",
-                listOf(userId)
-            )
+            neonClient.executeQuery<RemoteCollectionItem>(query, listOf(userId))
         } catch (e: Exception) {
-            // Fallback a datos simulados para no romper la UI durante el desarrollo
-            listOf(
-                RemoteCollectionItem("1", "Parroquia de Dolores", "Sitio Histórico", "site", "2026-07-24"),
-                RemoteCollectionItem("2", "Mural de la Independencia", "Foto Guardada", "photo", "2026-07-23"),
-                RemoteCollectionItem("3", "Ruta de los Conspiradores", "Ruta Turística", "route", "2026-07-22")
-            )
+            android.util.Log.e("EcoGuiaRepo", "Error al cargar colección: ${e.message}", e)
+            emptyList()
+        }
+    }
+
+    /**
+     * Guarda un sitio en la colección del usuario en user_saved_items.
+     * ON CONFLICT DO NOTHING garantiza que no haya duplicados.
+     */
+    override suspend fun saveSite(userId: String, siteId: String): Boolean {
+        val query = """
+            INSERT INTO user_saved_items (user_id, site_id)
+            VALUES ($1::uuid, $2::uuid)
+            ON CONFLICT DO NOTHING
+        """.trimIndent()
+        return try {
+            val rows = neonClient.executeCommand(query, listOf(userId, siteId))
+            android.util.Log.d("EcoGuiaRepo", "Sitio guardado: $siteId para usuario $userId ($rows filas)")
+            true // ON CONFLICT devuelve 0 filas pero no es un error
+        } catch (e: Exception) {
+            android.util.Log.e("EcoGuiaRepo", "Error al guardar sitio: ${e.message}", e)
+            false
+        }
+    }
+
+    /**
+     * Elimina un sitio de la colección del usuario en user_saved_items.
+     */
+    override suspend fun removeSavedSite(userId: String, siteId: String): Boolean {
+        val query = """
+            DELETE FROM user_saved_items
+            WHERE user_id = $1::uuid AND site_id = $2::uuid
+        """.trimIndent()
+        return try {
+            val rows = neonClient.executeCommand(query, listOf(userId, siteId))
+            android.util.Log.d("EcoGuiaRepo", "Sitio eliminado de colección: $siteId ($rows filas)")
+            rows > 0
+        } catch (e: Exception) {
+            android.util.Log.e("EcoGuiaRepo", "Error al eliminar sitio: ${e.message}", e)
+            false
+        }
+    }
+
+    /**
+     * Verifica si un sitio ya está guardado por el usuario en user_saved_items.
+     */
+    override suspend fun isSiteSaved(userId: String, siteId: String): Boolean {
+        val query = """
+            SELECT COUNT(*) AS count
+            FROM user_saved_items
+            WHERE user_id = $1::uuid AND site_id = $2::uuid
+        """.trimIndent()
+        return try {
+            val result = neonClient.executeQuery<kotlinx.serialization.json.JsonObject>(query, listOf(userId, siteId))
+            val count = result.firstOrNull()?.get("count")?.toString()?.trim('"')?.toLongOrNull() ?: 0L
+            count > 0L
+        } catch (e: Exception) {
+            android.util.Log.e("EcoGuiaRepo", "Error al verificar guardado: ${e.message}", e)
+            false
         }
     }
 

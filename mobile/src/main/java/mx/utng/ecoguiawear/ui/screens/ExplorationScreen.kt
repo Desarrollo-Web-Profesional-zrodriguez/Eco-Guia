@@ -1,17 +1,20 @@
-﻿/**
+/**
  * Archivo: ExplorationScreen.kt
  * Autor: Zahir Rodriguez
- * Fecha de última actualización: 2026-07-24
+ * Fecha de última actualización: 2026-07-25
  * Descripción: Pantalla principal de exploración cultural. Integra un mapa de Google interactivo,
  * visualización de marcadores de sitios históricos y una lista reactiva de lugares cercanos.
- * 
+ * Incluye un BottomSheet de detalle de sitio con botón "Guardar en Colección".
+ *
  * Funciones destacadas:
- * - ExplorationScreen: Composable principal que coordina el mapa y la lista de recomendaciones.
- * - GoogleMap: Integración con la API de Google Maps para visualización geoespacial.
+ * - ExplorationScreen: Composable principal que coordina el mapa, la lista y el guardado.
+ * - SiteDetailSheet: BottomSheet con info del sitio y acciones (guardar / navegar).
  */
 
 package mx.utng.ecoguiawear.ui.screens
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -41,27 +44,37 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
+import mx.utng.ecoguia.shared.domain.model.RemoteHistoricalSite
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.ui.components.EcoTopBar
 import androidx.compose.ui.tooling.preview.Preview
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
+import mx.utng.ecoguiawear.ui.viewmodel.CollectionViewModel
 import mx.utng.ecoguiawear.ui.viewmodel.LocationViewModel
 
 /**
  * Composable que representa la pantalla de exploración.
+ * @param userId ID del usuario autenticado. Requerido para guardar sitios en la colección.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExplorationScreen(
     onAdminClick: () -> Unit,
-    locationViewModel: LocationViewModel = viewModel()
+    userId: String = "guest",
+    locationViewModel: LocationViewModel = viewModel(),
+    collectionViewModel: CollectionViewModel = viewModel()
 ) {
     val context = LocalContext.current
     val currentLocation by locationViewModel.currentLocation
     val nearbySites by locationViewModel.nearbySites
     val closestSite by locationViewModel.closestSite
     val scope = rememberCoroutineScope()
-    
+
     var isFollowingUser by remember { mutableStateOf(true) }
+
+    // BottomSheet state — sitio seleccionado para ver detalle
+    var selectedSite by remember { mutableStateOf<RemoteHistoricalSite?>(null) }
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     // Iniciar actualizaciones de ubicación al entrar
     LaunchedEffect(Unit) {
@@ -90,6 +103,15 @@ fun ExplorationScreen(
         }
     }
 
+    // Precargar estado de guardado cuando se carga la pantalla con userId real
+    LaunchedEffect(userId, nearbySites) {
+        if (userId != "guest") {
+            nearbySites.forEach { site ->
+                collectionViewModel.checkIfSaved(userId, site.id)
+            }
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -101,7 +123,7 @@ fun ExplorationScreen(
             actionIcon = Icons.Default.AddCircle,
             onActionClick = onAdminClick
         )
-        
+
         // Mapa Real
         Box(
             modifier = Modifier
@@ -117,8 +139,8 @@ fun ExplorationScreen(
                 cameraPositionState = cameraPositionState,
                 properties = MapProperties(isMyLocationEnabled = currentLocation != null),
                 uiSettings = MapUiSettings(
-                    myLocationButtonEnabled = false, 
-                    zoomControlsEnabled = false // Desactivamos los nativos para usar los personalizados
+                    myLocationButtonEnabled = false,
+                    zoomControlsEnabled = false
                 )
             ) {
                 nearbySites.forEach { site ->
@@ -155,12 +177,9 @@ fun ExplorationScreen(
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Zoom In (+)
                 IconButton(
-                    onClick = { 
-                        scope.launch {
-                            cameraPositionState.animate(CameraUpdateFactory.zoomIn())
-                        }
+                    onClick = {
+                        scope.launch { cameraPositionState.animate(CameraUpdateFactory.zoomIn()) }
                     },
                     modifier = Modifier
                         .background(EcoGuiaColors.Jade, CircleShape)
@@ -168,13 +187,9 @@ fun ExplorationScreen(
                 ) {
                     Icon(Icons.Default.Add, "Zoom In", tint = Color.White)
                 }
-
-                // Zoom Out (-)
                 IconButton(
-                    onClick = { 
-                        scope.launch {
-                            cameraPositionState.animate(CameraUpdateFactory.zoomOut())
-                        }
+                    onClick = {
+                        scope.launch { cameraPositionState.animate(CameraUpdateFactory.zoomOut()) }
                     },
                     modifier = Modifier
                         .background(EcoGuiaColors.Jade, CircleShape)
@@ -184,7 +199,7 @@ fun ExplorationScreen(
                 }
             }
         }
-        
+
         // Lista de Sitios
         Column(modifier = Modifier.padding(horizontal = 16.dp)) {
             Row(
@@ -197,7 +212,7 @@ fun ExplorationScreen(
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
-                
+
                 TextButton(onClick = {
                     android.util.Log.d("ExplorationScreen", "Botón 'Probar Ruta' presionado.")
                     scope.launch {
@@ -212,7 +227,7 @@ fun ExplorationScreen(
                     Text("Probar Ruta", color = EcoGuiaColors.Gold)
                 }
             }
-            
+
             LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 items(nearbySites.size) { index ->
                     val site = nearbySites[index]
@@ -222,24 +237,223 @@ fun ExplorationScreen(
                         icon = Icons.Default.Place,
                         trailing = "Ver",
                         onVerClick = {
-                            isFollowingUser = false // Desactivar seguimiento al ver un sitio
-                            
-                            // Sincronizar con el reloj
-                            locationViewModel.syncTargetWithWatch(site)
-                            
-                            val siteLat = site.latitude
-                            val siteLng = site.longitude
-                            if (siteLat != null && siteLng != null) {
-                                scope.launch {
-                                    cameraPositionState.animate(
-                                        CameraUpdateFactory.newLatLngZoom(LatLng(siteLat, siteLng), 17f)
-                                    )
-                                }
+                            isFollowingUser = false
+                            selectedSite = site
+                            // Precargar estado de guardado para este sitio específico
+                            if (userId != "guest") {
+                                collectionViewModel.checkIfSaved(userId, site.id)
                             }
                         }
                     )
                 }
             }
+        }
+    }
+
+    // BottomSheet de detalle del sitio seleccionado
+    selectedSite?.let { site ->
+        ModalBottomSheet(
+            onDismissRequest = { selectedSite = null },
+            sheetState = sheetState,
+            containerColor = MaterialTheme.colorScheme.surface,
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+        ) {
+            SiteDetailSheet(
+                site = site,
+                userId = userId,
+                collectionViewModel = collectionViewModel,
+                onNavigate = {
+                    // Sincronizar con el reloj y centrar mapa
+                    locationViewModel.syncTargetWithWatch(site)
+                    val siteLat = site.latitude
+                    val siteLng = site.longitude
+                    if (siteLat != null && siteLng != null) {
+                        scope.launch {
+                            cameraPositionState.animate(
+                                CameraUpdateFactory.newLatLngZoom(LatLng(siteLat, siteLng), 17f)
+                            )
+                        }
+                    }
+                    selectedSite = null
+                },
+                onDismiss = { selectedSite = null }
+            )
+        }
+    }
+}
+
+/**
+ * Contenido del BottomSheet de detalle de un sitio histórico.
+ * Muestra información del sitio y permite guardarlo en la colección o navegar hacia él.
+ */
+@Composable
+fun SiteDetailSheet(
+    site: RemoteHistoricalSite,
+    userId: String,
+    collectionViewModel: CollectionViewModel,
+    onNavigate: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    val isSaved = collectionViewModel.savedSiteIds[site.id] == true
+
+    val saveButtonColor by animateColorAsState(
+        targetValue = if (isSaved) EcoGuiaColors.Jade else EcoGuiaColors.Surface,
+        animationSpec = tween(300),
+        label = "save_color"
+    )
+    val saveButtonTextColor by animateColorAsState(
+        targetValue = if (isSaved) Color.White else EcoGuiaColors.Jade,
+        animationSpec = tween(300),
+        label = "save_text_color"
+    )
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp)
+            .padding(bottom = 32.dp)
+    ) {
+        // Handle visual
+        Box(
+            modifier = Modifier
+                .width(40.dp)
+                .height(4.dp)
+                .clip(RoundedCornerShape(2.dp))
+                .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f))
+                .align(Alignment.CenterHorizontally)
+        )
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        // Ícono + nombre del sitio
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .background(EcoGuiaColors.Jade.copy(alpha = 0.12f), RoundedCornerShape(16.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("🏛️", fontSize = 24.sp)
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            Column {
+                Text(
+                    text = site.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = site.siteType,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = EcoGuiaColors.Jade
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Dirección
+        val address = site.address.orEmpty()
+        if (address.isNotBlank()) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Default.Place,
+                    contentDescription = null,
+                    tint = EcoGuiaColors.Jade,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = address,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+
+        // Descripción corta
+        val shortDesc = site.shortDescription.orEmpty()
+        if (shortDesc.isNotBlank()) {
+            Text(
+                text = shortDesc,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                lineHeight = 20.sp
+            )
+            Spacer(modifier = Modifier.height(20.dp))
+        }
+
+        HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Botones de acción
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // Botón Guardar / Guardado (toggle)
+            Button(
+                onClick = {
+                    if (userId != "guest") {
+                        collectionViewModel.toggleSave(userId, site.id)
+                    }
+                },
+                modifier = Modifier.weight(1f),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = saveButtonColor,
+                    contentColor = saveButtonTextColor
+                ),
+                shape = RoundedCornerShape(16.dp),
+                border = if (!isSaved) ButtonDefaults.outlinedButtonBorder else null
+            ) {
+                Icon(
+                    imageVector = if (isSaved) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = if (isSaved) "Guardado" else "Guardar",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 13.sp
+                )
+            }
+
+            // Botón Navegar (sincroniza con el reloj)
+            Button(
+                onClick = onNavigate,
+                modifier = Modifier.weight(1f),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = EcoGuiaColors.Gold,
+                    contentColor = EcoGuiaColors.DeepBlue
+                ),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Navigation,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = "Navegar",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 13.sp
+                )
+            }
+        }
+
+        // Aviso si no está autenticado
+        if (userId == "guest") {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Inicia sesión para guardar en tu colección",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            )
         }
     }
 }
@@ -274,9 +488,10 @@ fun RecommendedSiteItem(
                 Icon(imageVector = icon, contentDescription = null, tint = EcoGuiaColors.Jade, modifier = Modifier.size(20.dp))
             }
 
-            Column(modifier = Modifier
-                .padding(horizontal = 12.dp)
-                .weight(1f)
+            Column(
+                modifier = Modifier
+                    .padding(horizontal = 12.dp)
+                    .weight(1f)
             ) {
                 Text(
                     text = title,
@@ -315,4 +530,3 @@ fun ExplorationScreenPreview() {
         ExplorationScreen({})
     }
 }
-
