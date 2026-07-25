@@ -1,9 +1,21 @@
 package mx.utng.ecoguiawear.presentation.screens
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Devices
@@ -75,6 +87,49 @@ fun RadarScreen(
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
             )
+        }
+        // Subtítulo del objetivo (ej: "Detección automática" o "Sincronizado desde móvil")
+        if (target.subtitle.isNotBlank()) {
+            item {
+                if (target.isAutoTarget) {
+                    // Badge parpadeante para detección automática por radar de proximidad
+                    val infiniteTransition = rememberInfiniteTransition(label = "auto_pulse")
+                    val pulseAlpha by infiniteTransition.animateFloat(
+                        initialValue = 0.5f,
+                        targetValue = 1f,
+                        animationSpec = infiniteRepeatable(
+                            animation = tween(900, easing = FastOutSlowInEasing),
+                            repeatMode = RepeatMode.Reverse
+                        ),
+                        label = "auto_alpha"
+                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 2.dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "⊙ Detección automática",
+                            color = EcoGuiaColors.Jade,
+                            style = MaterialTheme.typography.bodySmall,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.alpha(pulseAlpha)
+                        )
+                    }
+                } else {
+                    Text(
+                        text = target.subtitle,
+                        color = EcoGuiaColors.Muted,
+                        style = MaterialTheme.typography.bodySmall,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 2.dp)
+                    )
+                }
+            }
         }
         item {
             Text(

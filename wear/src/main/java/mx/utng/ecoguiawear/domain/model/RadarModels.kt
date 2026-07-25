@@ -26,7 +26,8 @@ data class RadarTarget(
     val distanceMeters: Int,
     val bearingDegrees: Float,
     val latitude: Double? = null,
-    val longitude: Double? = null
+    val longitude: Double? = null,
+    val isAutoTarget: Boolean = false
 )
 
 data class RouteSummary(

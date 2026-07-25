@@ -1,44 +1,33 @@
-# EcoGuia: Sincronización Real con Wear OS y Cambio de Nombre
+# EcoGuia: Radar de Detección Automática (50km)
 
-Este plan implementa la sincronización real entre el dispositivo móvil y el reloj inteligente, permitiendo que el radar del reloj apunte a un sitio histórico seleccionado en el móvil. Además, se renombrará la aplicación a "EcoGuia".
+Este plan implementa la capacidad del reloj para buscar y apuntar automáticamente al sitio histórico más cercano dentro de un radio de 50 km, siempre que no haya un objetivo manual seleccionado o una ruta activa.
 
 ## Proposed Changes
 
-### Renombrado de la Aplicación
-
-#### [MODIFY] [AndroidManifest.xml](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/AndroidManifest.xml)
-- Cambiar `android:label="Eco-Guía Control"` a `android:label="EcoGuia"`.
-
-#### [MODIFY] [strings.xml](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/wear/src/main/res/values/strings.xml)
-- Cambiar `<string name="app_name">Eco-Guia Wear</string>` a `<string name="app_name">EcoGuia</string>`.
-
-### Sincronización Wear OS (Real-Time Radar)
-
-#### [NEW] [WearMessageClient.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/data/wear/WearMessageClient.kt)
-- Implementar un cliente en el módulo móvil para enviar mensajes al reloj usando `Wearable.getMessageClient`.
-- Definir la ruta `/eco-guia/sync/target` para enviar datos de sitios.
-
-#### [MODIFY] [LocationViewModel.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/viewmodel/LocationViewModel.kt)
-- Añadir método `syncTargetWithWatch(site: RemoteHistoricalSite)` que use el `WearMessageClient`.
-- Este método enviará el ID, nombre y coordenadas del sitio al reloj.
-
-#### [MODIFY] [ExplorationScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/ExplorationScreen.kt)
-- Llamar a `locationViewModel.syncTargetWithWatch(site)` cuando el usuario presione "Ver" en un sitio recomendado.
-
-#### [MODIFY] [RadarRepository.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/wear/src/main/java/mx/utng/ecoguiawear/domain/repository/RadarRepository.kt)
-- Añadir `setSyncTarget(id: String, name: String, lat: Double, lng: Double)` a la interfaz.
+### Lógica de Navegación (Wear OS)
 
 #### [MODIFY] [DemoRadarRepository.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/wear/src/main/java/mx/utng/ecoguiawear/data/repository/DemoRadarRepository.kt)
-- Implementar `setSyncTarget` para actualizar el `RadarTarget` en el `RadarUiState`.
-- Cambiar el modo a `SCANNING` automáticamente al recibir un nuevo objetivo.
+- **Búsqueda Automática de Proximidad:**
+    - Al recibir una actualización de ubicación GPS, si el objetivo actual es `"none"`, el repositorio disparará una consulta a la base de datos Neon.
+    - Utilizará `getNearbySites(lat, lng, 50000)` para encontrar todos los sitios en un rango de 50 km.
+    - Seleccionará el sitio con la menor distancia calculada como el nuevo objetivo del radar.
+- **Control de Frecuencia:**
+    - Se implementará un mecanismo para evitar consultas excesivas a la red (ej: buscar cada 30 segundos o solo cuando el desplazamiento sea significativo).
+- **Prioridad:**
+    - Las rutas enviadas desde el móvil y los sitios seleccionados manualmente ("Ver") siempre tendrán prioridad sobre el radar automático. Si llega un comando del móvil, el radar automático se desactivará para ese objetivo.
 
-#### [MODIFY] [WearMessageListener.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/wear/src/main/java/mx/utng/ecoguiawear/data/wear/WearMessageListener.kt)
-- Manejar la ruta `/eco-guia/sync/target` y llamar a `repository.setSyncTarget`.
+### Interfaz de Usuario (Wear OS)
+
+#### [MODIFY] [RadarModels.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/wear/src/main/java/mx/utng/ecoguiawear/domain/model/RadarModels.kt)
+- Añadir un estado `isAutoTarget` al `RadarTarget` o `RadarUiState` para indicar visualmente que el objetivo fue detectado automáticamente por proximidad.
+
+#### [MODIFY] [RadarScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/wear/src/main/java/mx/utng/ecoguiawear/presentation/screens/RadarScreen.kt)
+- Mostrar un subtítulo sutil como "Detección automática" cuando el radar esté en este modo.
 
 ## Verification Plan
 
 ### Manual Verification
-1. Abrir la app en el móvil y en el reloj (simulador o físico).
-2. Verificar que el nombre en el lanzador de apps sea "EcoGuia".
-3. En el móvil, ir a **Exploración** y presionar "Ver" en cualquier sitio.
-4. El reloj debería actualizar su pantalla de Radar inmediatamente mostrando el nombre del sitio seleccionado y apuntando hacia él (la flecha se moverá según la ubicación).
+1. Abrir **EcoGuia** en el reloj (asegurando que no se haya enviado ninguna ruta desde el móvil).
+2. Esperar a que el GPS obtenga señal.
+3. **Resultado:** El radar debería dejar de decir "Esperando objetivo" y cambiar automáticamente al nombre del sitio más cercano en un radio de 50 km (ej: "Parroquia de Dolores"), moviendo la flecha hacia esa dirección.
+4. Enviar una ruta desde el móvil y verificar que el radar automático se detenga para seguir la ruta indicada.

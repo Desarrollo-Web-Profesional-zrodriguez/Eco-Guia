@@ -27,6 +27,8 @@ class DemoRadarRepository(context: Context) : RadarRepository {
 
     private var currentLat: Double = 0.0
     private var currentLng: Double = 0.0
+    private var lastAutoSearchTime: Long = 0
+    private val AUTO_SEARCH_INTERVAL_MS = 30000 // 30 segundos
 
     init {
         // Cargar estado inicial desde DB
@@ -219,7 +221,8 @@ class DemoRadarRepository(context: Context) : RadarRepository {
                     distanceMeters = 50,
                     bearingDegrees = 0f,
                     latitude = lat,
-                    longitude = lng
+                    longitude = lng,
+                    isAutoTarget = false
                 ),
                 lastAlert = "Nuevo objetivo: $name"
             )
@@ -249,9 +252,58 @@ class DemoRadarRepository(context: Context) : RadarRepository {
     override fun updateCurrentLocation(lat: Double, lng: Double) {
         currentLat = lat
         currentLng = lng
-        val targetName = _radarState.value.target.title
-        android.util.Log.d("RadarRepo", "Ubicación: $lat, $lng. Objetivo actual: $targetName")
+        val currentState = _radarState.value
+        android.util.Log.d("RadarRepo", "GPS: $lat, $lng. Objetivo: ${currentState.target.title}")
+        
+        // Si no hay objetivo manual ni ruta, buscar automáticamente cada 30 segundos
+        if ((currentState.target.id == "none" || currentState.target.isAutoTarget) && 
+            currentState.routeSummary.waypoints.isEmpty()) {
+            val now = System.currentTimeMillis()
+            if (now - lastAutoSearchTime > AUTO_SEARCH_INTERVAL_MS) {
+                lastAutoSearchTime = now
+                performAutoSearch(lat, lng)
+            }
+        }
+        
         recalculateRadar()
+    }
+
+    private fun performAutoSearch(lat: Double, lng: Double) {
+        scope.launch {
+            try {
+                android.util.Log.d("RadarRepo", "Iniciando búsqueda automática de sitios (50km)...")
+                val nearbySites = remoteRepository.getNearbySites(lat, lng, 50000)
+                if (nearbySites.isNotEmpty()) {
+                    // Encontrar el más cercano
+                    val closest = nearbySites.minByOrNull { site ->
+                        val results = FloatArray(1)
+                        android.location.Location.distanceBetween(lat, lng, site.latitude ?: 0.0, site.longitude ?: 0.0, results)
+                        results[0]
+                    }
+
+                    closest?.let { site ->
+                        _radarState.update { 
+                            it.copy(
+                                target = RadarTarget(
+                                    id = site.id,
+                                    title = site.name,
+                                    subtitle = "Detección automática",
+                                    type = TargetType.HISTORIC_SITE,
+                                    distanceMeters = 0,
+                                    bearingDegrees = 0f,
+                                    latitude = site.latitude,
+                                    longitude = site.longitude,
+                                    isAutoTarget = true
+                                ),
+                                lastAlert = "Sitio cercano detectado"
+                            )
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("RadarRepo", "Error en búsqueda automática: ${e.message}")
+            }
+        }
     }
 
     override fun updateHeading(heading: Float) {
@@ -265,14 +317,10 @@ class DemoRadarRepository(context: Context) : RadarRepository {
             val targetLng = target.longitude
 
             if (targetLat == null || targetLng == null) {
-                android.util.Log.w("RadarRepo", "No hay coordenadas en el objetivo actual (${target.title}).")
                 return@update state
             }
 
-            if (currentLat == 0.0) {
-                android.util.Log.w("RadarRepo", "Sin ubicación GPS aún para calcular rumbo.")
-                return@update state
-            }
+            if (currentLat == 0.0) return@update state
 
             val bearing = mx.utng.ecoguiawear.data.wear.LocationHelper.calculateBearing(
                 currentLat, currentLng, targetLat, targetLng
@@ -301,9 +349,10 @@ class DemoRadarRepository(context: Context) : RadarRepository {
                     distanceMeters = distance,
                     bearingDegrees = bearing
                 ),
-                lastAlert = when(nextMode) {
-                    RadarMode.ARRIVED -> "¡Llegaste!"
-                    RadarMode.FOLLOWING_ARROW -> "Sigue la flecha"
+                lastAlert = when {
+                    nextMode == RadarMode.ARRIVED -> "¡Llegaste!"
+                    nextMode == RadarMode.FOLLOWING_ARROW -> "Sigue la flecha"
+                    state.target.isAutoTarget -> "Auto-detección activa"
                     else -> "Caminando..."
                 }
             )
@@ -316,7 +365,6 @@ class DemoRadarRepository(context: Context) : RadarRepository {
                     if (updatedWaypoints.any { !it.isReached }) {
                         setSyncRoute(state.routeSummary.title, updatedWaypoints)
                     } else {
-                        // Fin de la ruta
                         _radarState.update { it.copy(lastAlert = "Ruta completada 🏁") }
                     }
                 }
@@ -342,7 +390,8 @@ class DemoRadarRepository(context: Context) : RadarRepository {
                         distanceMeters = 0,
                         bearingDegrees = 0f,
                         latitude = nextWaypoint.latitude,
-                        longitude = nextWaypoint.longitude
+                        longitude = nextWaypoint.longitude,
+                        isAutoTarget = false
                     ),
                     routeSummary = state.routeSummary.copy(
                         nextStop = nextWaypoint.title,
@@ -350,7 +399,6 @@ class DemoRadarRepository(context: Context) : RadarRepository {
                     )
                 )
             } else {
-                android.util.Log.w("RadarRepo", "No hay más waypoints pendientes en la ruta.")
                 state
             }
         }
