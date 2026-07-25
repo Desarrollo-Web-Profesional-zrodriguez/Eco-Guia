@@ -117,7 +117,7 @@ fun EcoGuiaWearNavGraph(viewModel: RadarViewModel) {
             }
 
             // Diálogo emergente de llegada: se activa únicamente si hay una RUTA ACTIVA
-            if (state.mode == RadarMode.ARRIVED && isRouteActive) {
+            if (state.mode == RadarMode.ARRIVED && state.routeSummary.waypoints.isNotEmpty()) {
                 Dialog(onDismissRequest = { }) {
                     ArrivalScreen(
                         state = state,
