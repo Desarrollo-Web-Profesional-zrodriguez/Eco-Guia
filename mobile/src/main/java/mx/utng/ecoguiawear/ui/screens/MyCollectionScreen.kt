@@ -239,16 +239,33 @@ fun MyCollectionScreen(
                     }
                 }
                 else -> {
-                    LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        itemsIndexed(
-                            items = filteredItems,
-                            key = { _, item -> item.id }
-                        ) { _, item ->
-                            AnimatedVisibility(
-                                visible = true,
-                                enter = fadeIn() + slideInVertically(),
-                                exit = fadeOut()
-                            ) {
+                    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+                    val isLandscape = configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
+
+                    if (isLandscape) {
+                        androidx.compose.foundation.lazy.grid.LazyVerticalGrid(
+                            columns = androidx.compose.foundation.lazy.grid.GridCells.Fixed(2),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            items(
+                                count = filteredItems.size,
+                                key = { index -> filteredItems[index].id }
+                            ) { index ->
+                                val item = filteredItems[index]
+                                CollectionItemRow(
+                                    item = item,
+                                    searchQuery = searchQuery,
+                                    onRemove = { viewModel.removeSite(userId, item.id) }
+                                )
+                            }
+                        }
+                    } else {
+                        LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            itemsIndexed(
+                                items = filteredItems,
+                                key = { _, item -> item.id }
+                            ) { _, item ->
                                 CollectionItemRow(
                                     item = item,
                                     searchQuery = searchQuery,

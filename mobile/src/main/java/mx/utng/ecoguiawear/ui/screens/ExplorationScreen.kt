@@ -138,6 +138,9 @@ fun ExplorationScreen(
 
     val visibleSites = sortedSites.take(displayLimit)
 
+    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+    val isLandscape = configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -150,211 +153,226 @@ fun ExplorationScreen(
             onActionClick = onAdminClick
         )
 
-        // Mapa Real
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(300.dp)
-                .padding(horizontal = 16.dp)
-                .offset(y = (-20).dp)
-                .clip(RoundedCornerShape(24.dp))
-                .background(Color(0xFFE8F5E9))
-        ) {
-            val isSystemInDark = isSystemInDarkTheme()
-            val mapStyleOptions = remember(isSystemInDark) {
-                if (isSystemInDark) {
-                    com.google.android.gms.maps.model.MapStyleOptions(
-                        """[{"elementType":"geometry","stylers":[{"color":"#242f3e"}]},{"elementType":"labels.text.fill","stylers":[{"color":"#746855"}]},{"elementType":"labels.text.stroke","stylers":[{"color":"#242f3e"}]},{"featureType":"administrative.locality","elementType":"labels.text.fill","stylers":[{"color":"#d59563"}]},{"featureType":"poi","elementType":"labels.text.fill","stylers":[{"color":"#d59563"}]},{"featureType":"poi.park","elementType":"geometry","stylers":[{"color":"#263c3f"}]},{"featureType":"poi.park","elementType":"labels.text.fill","stylers":[{"color":"#6b9a76"}]},{"featureType":"road","elementType":"geometry","stylers":[{"color":"#38414e"}]},{"featureType":"road","elementType":"geometry.stroke","stylers":[{"color":"#212a37"}]},{"featureType":"road","elementType":"labels.text.fill","stylers":[{"color":"#9ca5b3"}]},{"featureType":"road.highway","elementType":"geometry","stylers":[{"color":"#746855"}]},{"featureType":"road.highway","elementType":"geometry.stroke","stylers":[{"color":"#1f2835"}]},{"featureType":"road.highway","elementType":"labels.text.fill","stylers":[{"color":"#f3d19c"}]},{"featureType":"transit","elementType":"geometry","stylers":[{"color":"#2f3948"}]},{"featureType":"transit.station","elementType":"labels.text.fill","stylers":[{"color":"#d59563"}]},{"featureType":"water","elementType":"geometry","stylers":[{"color":"#17263c"}]},{"featureType":"water","elementType":"labels.text.fill","stylers":[{"color":"#515c6d"}]},{"featureType":"water","elementType":"labels.text.stroke","stylers":[{"color":"#17263c"}]}]"""
-                    )
-                } else null
-            }
-
-            GoogleMap(
-                modifier = Modifier.fillMaxSize(),
-                cameraPositionState = cameraPositionState,
-                properties = MapProperties(
-                    isMyLocationEnabled = currentLocation != null,
-                    mapStyleOptions = mapStyleOptions
-                ),
-                uiSettings = MapUiSettings(
-                    myLocationButtonEnabled = false,
-                    zoomControlsEnabled = false
-                )
+        val mapContent: @Composable (Modifier) -> Unit = { modifier ->
+            Box(
+                modifier = modifier
+                    .padding(horizontal = 16.dp, vertical = 4.dp)
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(Color(0xFFE8F5E9))
             ) {
-                nearbySites.forEach { site ->
-                    val siteLat = site.latitude ?: return@forEach
-                    val siteLng = site.longitude ?: return@forEach
-                    val sitePos = LatLng(siteLat, siteLng)
-                    val customIcon = remember(site.siteType) {
-                        getCustomCategoryMarkerIcon(context, site.siteType)
+                val isSystemInDark = isSystemInDarkTheme()
+                val mapStyleOptions = remember(isSystemInDark) {
+                    if (isSystemInDark) {
+                        com.google.android.gms.maps.model.MapStyleOptions(
+                            """[{"elementType":"geometry","stylers":[{"color":"#242f3e"}]},{"elementType":"labels.text.fill","stylers":[{"color":"#746855"}]},{"elementType":"labels.text.stroke","stylers":[{"color":"#242f3e"}]},{"featureType":"administrative.locality","elementType":"labels.text.fill","stylers":[{"color":"#d59563"}]},{"featureType":"poi","elementType":"labels.text.fill","stylers":[{"color":"#d59563"}]},{"featureType":"poi.park","elementType":"geometry","stylers":[{"color":"#263c3f"}]},{"featureType":"poi.park","elementType":"labels.text.fill","stylers":[{"color":"#6b9a76"}]},{"featureType":"road","elementType":"geometry","stylers":[{"color":"#38414e"}]},{"featureType":"road","elementType":"geometry.stroke","stylers":[{"color":"#212a37"}]},{"featureType":"road","elementType":"labels.text.fill","stylers":[{"color":"#9ca5b3"}]},{"featureType":"road.highway","elementType":"geometry","stylers":[{"color":"#746855"}]},{"featureType":"road.highway","elementType":"geometry.stroke","stylers":[{"color":"#1f2835"}]},{"featureType":"road.highway","elementType":"labels.text.fill","stylers":[{"color":"#f3d19c"}]},{"featureType":"transit","elementType":"geometry","stylers":[{"color":"#2f3948"}]},{"featureType":"transit.station","elementType":"labels.text.fill","stylers":[{"color":"#d59563"}]},{"featureType":"water","elementType":"geometry","stylers":[{"color":"#17263c"}]},{"featureType":"water","elementType":"labels.text.fill","stylers":[{"color":"#515c6d"}]},{"featureType":"water","elementType":"labels.text.stroke","stylers":[{"color":"#17263c"}]}]"""
+                        )
+                    } else null
+                }
+
+                GoogleMap(
+                    modifier = Modifier.fillMaxSize(),
+                    cameraPositionState = cameraPositionState,
+                    properties = MapProperties(
+                        isMyLocationEnabled = currentLocation != null,
+                        mapStyleOptions = mapStyleOptions
+                    ),
+                    uiSettings = MapUiSettings(
+                        myLocationButtonEnabled = false,
+                        zoomControlsEnabled = false
+                    )
+                ) {
+                    nearbySites.forEach { site ->
+                        val siteLat = site.latitude ?: return@forEach
+                        val siteLng = site.longitude ?: return@forEach
+                        val sitePos = LatLng(siteLat, siteLng)
+                        val customIcon = remember(site.siteType) {
+                            getCustomCategoryMarkerIcon(context, site.siteType)
+                        }
+
+                        Circle(
+                            center = sitePos,
+                            radius = site.detectionRadiusM.toDouble(),
+                            strokeColor = EcoGuiaColors.Jade,
+                            strokeWidth = 3f,
+                            fillColor = EcoGuiaColors.Jade.copy(alpha = 0.15f)
+                        )
+
+                        Marker(
+                            state = MarkerState(position = sitePos),
+                            title = site.name,
+                            snippet = site.shortDescription,
+                            icon = customIcon
+                        )
                     }
-
-                    // Área del radio de detección geográfica registrado en la base de datos (detection_radius_m)
-                    Circle(
-                        center = sitePos,
-                        radius = site.detectionRadiusM.toDouble(),
-                        strokeColor = EcoGuiaColors.Jade,
-                        strokeWidth = 3f,
-                        fillColor = EcoGuiaColors.Jade.copy(alpha = 0.15f)
-                    )
-
-                    Marker(
-                        state = MarkerState(position = sitePos),
-                        title = site.name,
-                        snippet = site.shortDescription,
-                        icon = customIcon
-                    )
                 }
-            }
 
-            // Botón de Mira (Ubicación) - Superior Derecha
-            IconButton(
-                onClick = { isFollowingUser = true },
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(16.dp)
-                    .background(if (isFollowingUser) EcoGuiaColors.Jade else Color.White, CircleShape)
-                    .size(40.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.MyLocation,
-                    contentDescription = "Mi ubicación",
-                    tint = if (isFollowingUser) Color.White else EcoGuiaColors.DeepBlue
-                )
-            }
-
-            // Controles de Zoom Personalizados - Inferior Derecha
-            Column(
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
+                // Botón de Mira (Ubicación) - Superior Derecha
                 IconButton(
                     onClick = {
-                        scope.launch { cameraPositionState.animate(CameraUpdateFactory.zoomIn()) }
+                        isFollowingUser = true
+                        currentLocation?.let { loc ->
+                            scope.launch {
+                                cameraPositionState.animate(
+                                    CameraUpdateFactory.newLatLngZoom(LatLng(loc.latitude, loc.longitude), 17f)
+                                )
+                            }
+                        }
                     },
                     modifier = Modifier
-                        .background(EcoGuiaColors.Jade, CircleShape)
-                        .size(40.dp)
+                        .align(Alignment.TopEnd)
+                        .padding(12.dp)
+                        .background(if (isFollowingUser) EcoGuiaColors.Jade else Color.White, CircleShape)
+                        .size(36.dp)
                 ) {
-                    Icon(Icons.Default.Add, "Zoom In", tint = Color.White)
+                    Icon(
+                        imageVector = Icons.Default.MyLocation,
+                        contentDescription = "Mi ubicación",
+                        tint = if (isFollowingUser) Color.White else EcoGuiaColors.DeepBlue
+                    )
                 }
-                IconButton(
-                    onClick = {
-                        scope.launch { cameraPositionState.animate(CameraUpdateFactory.zoomOut()) }
-                    },
+
+                // Controles de Zoom Personalizados - Inferior Derecha
+                Column(
                     modifier = Modifier
-                        .background(EcoGuiaColors.Jade, CircleShape)
-                        .size(40.dp)
+                        .align(Alignment.BottomEnd)
+                        .padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    Icon(Icons.Default.Remove, "Zoom Out", tint = Color.White)
+                    IconButton(
+                        onClick = {
+                            scope.launch { cameraPositionState.animate(CameraUpdateFactory.zoomIn()) }
+                        },
+                        modifier = Modifier
+                            .background(EcoGuiaColors.Jade, CircleShape)
+                            .size(36.dp)
+                    ) {
+                        Icon(Icons.Default.Add, "Zoom In", tint = Color.White)
+                    }
+                    IconButton(
+                        onClick = {
+                            scope.launch { cameraPositionState.animate(CameraUpdateFactory.zoomOut()) }
+                        },
+                        modifier = Modifier
+                            .background(EcoGuiaColors.Jade, CircleShape)
+                            .size(36.dp)
+                    ) {
+                        Icon(Icons.Default.Remove, "Zoom Out", tint = Color.White)
+                    }
                 }
             }
         }
 
-        // Lista de Sitios
-        Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    if (nearbySites.isEmpty()) "Buscando sitios..." else "Sitios recomendados (${visibleSites.size}/${sortedSites.size})",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
+        val listContent: @Composable (Modifier) -> Unit = { modifier ->
+            Column(modifier = modifier.padding(horizontal = 16.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        if (nearbySites.isEmpty()) "Buscando sitios..." else "Sitios recomendados (${visibleSites.size}/${sortedSites.size})",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
 
-                TextButton(onClick = {
-                    onOpenRoutes()
-                }) {
-                    Text("Ver Rutas", color = EcoGuiaColors.Gold, fontWeight = FontWeight.Bold)
+                    TextButton(onClick = {
+                        onOpenRoutes()
+                    }) {
+                        Text("Ver Rutas", color = EcoGuiaColors.Gold, fontWeight = FontWeight.Bold)
+                    }
                 }
-            }
 
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                items(
-                    count = visibleSites.size,
-                    key = { index -> visibleSites[index].id }
-                ) { index ->
-                    val site = visibleSites[index]
-                    val isFavorite = collectionViewModel.savedSiteIds[site.id] == true
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(
+                        count = visibleSites.size,
+                        key = { index -> visibleSites[index].id }
+                    ) { index ->
+                        val site = visibleSites[index]
+                        val isFavorite = collectionViewModel.savedSiteIds[site.id] == true
 
-                    val dismissState = key(site.id, isFavorite) {
-                        rememberSwipeToDismissBoxState(
-                            confirmValueChange = { value ->
-                                if (value == SwipeToDismissBoxValue.EndToStart && userId != "guest") {
-                                    if (isFavorite) {
-                                        collectionViewModel.removeSite(userId, site.id)
-                                    } else {
-                                        collectionViewModel.saveSite(userId, site.id)
+                        val dismissState = key(site.id, isFavorite) {
+                            rememberSwipeToDismissBoxState(
+                                confirmValueChange = { value ->
+                                    if (value == SwipeToDismissBoxValue.EndToStart && userId != "guest") {
+                                        if (isFavorite) {
+                                            collectionViewModel.removeSite(userId, site.id)
+                                        } else {
+                                            collectionViewModel.saveSite(userId, site.id)
+                                        }
+                                    }
+                                    false
+                                }
+                            )
+                        }
+
+                        SwipeToDismissBox(
+                            state = dismissState,
+                            enableDismissFromStartToEnd = false,
+                            enableDismissFromEndToStart = true,
+                            backgroundContent = {
+                                val backgroundColor = if (isFavorite) Color(0xFFE53935) else EcoGuiaColors.Jade
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(backgroundColor, RoundedCornerShape(20.dp))
+                                        .padding(horizontal = 20.dp),
+                                    contentAlignment = Alignment.CenterEnd
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(
+                                            text = if (isFavorite) "Quitar de Favoritos" else "Agregar a Favoritos",
+                                            color = Color.White,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 12.sp
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Icon(
+                                            imageVector = if (isFavorite) Icons.Default.FavoriteBorder else Icons.Default.Favorite,
+                                            contentDescription = if (isFavorite) "Quitar" else "Agregar",
+                                            tint = Color.White
+                                        )
                                     }
                                 }
-                                false
                             }
-                        )
-                    }
-
-                    SwipeToDismissBox(
-                        state = dismissState,
-                        enableDismissFromStartToEnd = false,
-                        enableDismissFromEndToStart = true,
-                        backgroundContent = {
-                            // Si NO es favorito (al deslizar se AGREGARÁ) -> Fondo Azul con Corazón Relleno
-                            // Si YA es favorito (al deslizar se QUITARÁ) -> Fondo Rojo con Corazón Contorno
-                            val backgroundColor = if (isFavorite) Color(0xFFE53935) else EcoGuiaColors.Jade
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(backgroundColor, RoundedCornerShape(20.dp))
-                                    .padding(horizontal = 20.dp),
-                                contentAlignment = Alignment.CenterEnd
-                            ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(
-                                        text = if (isFavorite) "Quitar de Favoritos" else "Agregar a Favoritos",
-                                        color = Color.White,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 12.sp
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Icon(
-                                        imageVector = if (isFavorite) Icons.Default.FavoriteBorder else Icons.Default.Favorite,
-                                        contentDescription = if (isFavorite) "Quitar" else "Agregar",
-                                        tint = Color.White
-                                    )
-                                }
-                            }
-                        }
-                    ) {
-                        RecommendedSiteItem(
-                            title = site.name,
-                            subtitle = site.siteType + " • " + (site.address ?: ""),
-                            icon = if (isFavorite) Icons.Default.Favorite else Icons.Default.Place,
-                            trailing = "Ver",
-                            onVerClick = {
-                                isFollowingUser = false
-                                selectedSite = site
-                                if (userId != "guest") {
-                                    collectionViewModel.checkIfSaved(userId, site.id)
-                                }
-                            }
-                        )
-                    }
-                }
-
-                if (sortedSites.size > displayLimit) {
-                    item {
-                        TextButton(
-                            onClick = { displayLimit += 5 },
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
                         ) {
-                            Text("Cargar más sitios (+5)", color = EcoGuiaColors.Jade, fontWeight = FontWeight.Bold)
+                            RecommendedSiteItem(
+                                title = site.name,
+                                subtitle = site.siteType + " • " + (site.address ?: ""),
+                                icon = if (isFavorite) Icons.Default.Favorite else Icons.Default.Place,
+                                trailing = "Ver",
+                                onVerClick = {
+                                    isFollowingUser = false
+                                    selectedSite = site
+                                    if (userId != "guest") {
+                                        collectionViewModel.checkIfSaved(userId, site.id)
+                                    }
+                                }
+                            )
+                        }
+                    }
+
+                    if (sortedSites.size > displayLimit) {
+                        item {
+                            TextButton(
+                                onClick = { displayLimit += 5 },
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+                            ) {
+                                Text("Cargar más sitios (+5)", color = EcoGuiaColors.Jade, fontWeight = FontWeight.Bold)
+                            }
                         }
                     }
                 }
             }
+        }
+
+        if (isLandscape) {
+            Row(modifier = Modifier.fillMaxSize()) {
+                mapContent(Modifier.weight(1f).fillMaxHeight())
+                listContent(Modifier.weight(1f).fillMaxHeight())
+            }
+        } else {
+            mapContent(Modifier.fillMaxWidth().height(260.dp))
+            listContent(Modifier.weight(1f))
         }
     }
 

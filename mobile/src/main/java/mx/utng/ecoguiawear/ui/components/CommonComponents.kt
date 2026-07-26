@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Archivo: CommonComponents.kt
  * Autor: ZahirMora
  * Fecha de Ãºltima actualizaciÃ³n: 2026-07-22
@@ -51,7 +51,7 @@ fun EcoTopBar(
             .fillMaxWidth()
             .background(surface)
             .windowInsetsPadding(WindowInsets.statusBars)
-            .padding(start = 24.dp, end = 16.dp, top = 12.dp, bottom = 20.dp)
+            .padding(start = 24.dp, end = 16.dp, top = 8.dp, bottom = 8.dp)
     ) {
         Column(modifier = Modifier.align(Alignment.CenterStart)) {
             if (subtitle.isNotBlank()) {

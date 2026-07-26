@@ -26,12 +26,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.google.android.gms.wearable.Wearable
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import mx.utng.ecoguia.shared.data.EcoGuiaDatabase
-
 import mx.utng.ecoguia.shared.data.repository.EcoGuiaRepositoryImpl
 import mx.utng.ecoguia.shared.domain.model.RemoteGeoDrop
 
@@ -47,6 +47,8 @@ import mx.utng.ecoguiawear.ui.viewmodel.NotificationType
 import mx.utng.ecoguiawear.ui.viewmodel.SiteRegistrationViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import mx.utng.ecoguiawear.ui.components.EcoBottomBar
+import mx.utng.ecoguiawear.ui.components.EcoNavigationRail
+import mx.utng.ecoguiawear.ui.components.EcoTopBar
 import mx.utng.ecoguiawear.ui.components.BottomMenuSheet
 
 import androidx.activity.enableEdgeToEdge
@@ -114,7 +116,6 @@ fun MainAppContainer(activity: ComponentActivity, repository: EcoGuiaRepositoryI
             snackbarHostState.showSnackbar(it.message)
         }
     }
-    
     // Estado de Usuario (Simulado Admin)
     var isAdmin by remember { mutableStateOf(true) }
     var showBottomMenu by remember { mutableStateOf(false) }
@@ -123,289 +124,305 @@ fun MainAppContainer(activity: ComponentActivity, repository: EcoGuiaRepositoryI
     val authRoutes = listOf("login", "signup", "recovery")
     val showNav = currentRoute !in authRoutes
 
-    Scaffold(
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
-        bottomBar = {
-            if (showNav) {
-                EcoBottomBar(
-                    currentRoute = currentRoute,
-                    onNavigate = { route ->
-                        if (route == "logout") {
+    // Orientación de la pantalla (Vertical vs Horizontal)
+    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+    val isLandscape = configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
+
+    val onNavigateAction: (String) -> Unit = { route ->
+        if (route == "logout") {
+            authViewModel.logout()
+            navController.navigate("login") {
+                popUpTo(0) { inclusive = true }
+            }
+        } else {
+            navController.navigate(route) {
+                popUpTo("exploration") { saveState = true }
+                launchSingleTop = true
+                restoreState = true
+            }
+        }
+    }
+
+    Row(modifier = Modifier.fillMaxSize()) {
+        if (showNav && isLandscape) {
+            EcoNavigationRail(
+                currentRoute = currentRoute,
+                onNavigate = onNavigateAction,
+                onOpenSidebar = { showBottomMenu = true },
+                isRouteActive = isRouteActive
+            )
+        }
+
+        Scaffold(
+            modifier = Modifier.weight(1f),
+            snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
+            bottomBar = {
+                if (showNav && !isLandscape) {
+                    EcoBottomBar(
+                        currentRoute = currentRoute,
+                        onNavigate = onNavigateAction,
+                        onOpenSidebar = { showBottomMenu = true },
+                        isRouteActive = isRouteActive
+                    )
+                }
+            }
+        ) { padding ->
+            Box(modifier = Modifier.padding(padding)) {
+                NavHost(navController = navController, startDestination = "login") {
+                    composable("login") {
+                        LoginScreen(
+                            viewModel = authViewModel,
+                            onLoginSuccess = { 
+                                navController.navigate("exploration") {
+                                    popUpTo("login") { inclusive = true }
+                                }
+                            },
+                            onSignUpClick = { navController.navigate("signup") },
+                            onRecoverClick = { navController.navigate("recovery") }
+                        )
+                    }
+                    composable("signup") {
+                        SignUpScreen(
+                            viewModel = authViewModel,
+                            onSignUpSuccess = { },
+                            onBackToLogin = { navController.popBackStack() }
+                        )
+                    }
+                    composable("recovery") {
+                        RecoveryScreen(
+                            onSendClick = { navController.popBackStack() },
+                            onBackToLogin = { navController.popBackStack() }
+                        )
+                    }
+                    
+                    // Rutas de Aplicación Principal
+                    composable("exploration") {
+                        ExplorationScreen(
+                            onAdminClick = { navController.navigate("more_options") },
+                            onOpenRoutes = { navController.navigate("search_experience") },
+                            userId = authViewModel.currentUser?.id ?: "guest"
+                        )
+                    }
+                    composable("collection") {
+                        MyCollectionScreen(userId = authViewModel.currentUser?.id ?: "guest")
+                    }
+                    composable("profile") {
+                        ProfileScreen(
+                            user = authViewModel.currentUser,
+                            onEditClick = { navController.navigate("edit_profile") }
+                        )
+                    }
+                    composable("edit_profile") {
+                        EditProfileScreen(
+                            user = authViewModel.currentUser,
+                            onSaveClick = { newName: String ->
+                                authViewModel.updateProfile(newName)
+                                navController.popBackStack()
+                            }
+                        )
+                    }
+                    composable("security") {
+                        SecurityScreen(onLogoutClick = {
                             authViewModel.logout()
                             navController.navigate("login") {
                                 popUpTo(0) { inclusive = true }
                             }
-                        } else {
-                            navController.navigate(route) {
-                                popUpTo("exploration") { saveState = true }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        }
-                    },
-                    onOpenSidebar = {
-                        showBottomMenu = true
-                    },
-                    isRouteActive = isRouteActive
-                )
-            }
-        }
-    ) { padding ->
-        Box(modifier = Modifier.padding(padding)) {
-            NavHost(navController = navController, startDestination = "login") {
-                composable("login") {
-                    LoginScreen(
-                        viewModel = authViewModel,
-                        onLoginSuccess = { 
-                            navController.navigate("exploration") {
-                                popUpTo("login") { inclusive = true }
-                            }
-                        },
-                        onSignUpClick = { navController.navigate("signup") },
-                        onRecoverClick = { navController.navigate("recovery") }
-                    )
-                }
-                composable("signup") {
-                    SignUpScreen(
-                        viewModel = authViewModel,
-                        onSignUpSuccess = { },
-                        onBackToLogin = { navController.popBackStack() }
-                    )
-                }
-                composable("recovery") {
-                    RecoveryScreen(
-                        onSendClick = { navController.popBackStack() },
-                        onBackToLogin = { navController.popBackStack() }
-                    )
-                }
-                
-                // Rutas de Aplicación Principal
-                composable("exploration") {
-                    ExplorationScreen(
-                        onAdminClick = { navController.navigate("more_options") },
-                        onOpenRoutes = { navController.navigate("search_experience") },
-                        userId = authViewModel.currentUser?.id ?: "guest"
-                    )
-                }
-                composable("collection") {
-                    MyCollectionScreen(userId = authViewModel.currentUser?.id ?: "guest")
-                }
-                composable("profile") {
-                    ProfileScreen(
-                        user = authViewModel.currentUser,
-                        onEditClick = { navController.navigate("edit_profile") }
-                    )
-                }
-                composable("edit_profile") {
-                    EditProfileScreen(
-                        user = authViewModel.currentUser,
-                        onSaveClick = { newName: String ->
-                            authViewModel.updateProfile(newName)
-                            navController.popBackStack()
-                        }
-                    )
-                }
-                composable("security") {
-                    SecurityScreen(onLogoutClick = {
-                        authViewModel.logout()
-                        navController.navigate("login") {
-                            popUpTo(0) { inclusive = true }
-                        }
-                    })
-                }
-                composable("chat_ia") {
-                    MiguelHidalgoChatScreen(
-                        onKnowledgeBaseClick = { navController.navigate("ia_knowledge_base") }
-                    )
-                }
-                composable("ia_knowledge_base") {
-                    IAKnowledgeBaseScreen()
-                }
-                composable("more_options") {
-                    MoreOptionsScreen(
-                        isAdmin = isAdmin,
-                        onOptionClick = { route ->
-                            if (route == "logout") {
-                                authViewModel.logout()
-                                navController.navigate("login") {
-                                    popUpTo(0) { inclusive = true }
+                        })
+                    }
+                    composable("chat_ia") {
+                        MiguelHidalgoChatScreen(
+                            onKnowledgeBaseClick = { navController.navigate("ia_knowledge_base") }
+                        )
+                    }
+                    composable("ia_knowledge_base") {
+                        IAKnowledgeBaseScreen()
+                    }
+                    composable("more_options") {
+                        MoreOptionsScreen(
+                            isAdmin = isAdmin,
+                            onOptionClick = { route ->
+                                if (route == "logout") {
+                                    authViewModel.logout()
+                                    navController.navigate("login") {
+                                        popUpTo(0) { inclusive = true }
+                                    }
+                                } else {
+                                    navController.navigate(route) { launchSingleTop = true }
                                 }
-                            } else {
-                                navController.navigate(route) { launchSingleTop = true }
                             }
-                        }
-                    )
-                }
-                
-                // Nuevas Pantallas de Flujo
-                composable("proximity_alerts") {
-                    ProximityAlertsScreen()
-                }
-                composable("camera_capture") {
-                    CameraGeoDropScreen(
-                        onCapture = { file -> 
-                            // Aquí se podría pasar la ruta del archivo a la siguiente pantalla
-                            navController.navigate("anchor_photo") 
-                        }
-                    )
-                }
-                composable("anchor_photo") {
-                    AnchorPhotoScreen(
-                        onAnchorClick = { 
-                            notificationViewModel.showNotification("¡Foto anclada con éxito!", NotificationType.SUCCESS)
-                            navController.navigate("exploration") {
-                                popUpTo("exploration") { inclusive = true }
+                        )
+                    }
+                    
+                    // Nuevas Pantallas de Flujo
+                    composable("proximity_alerts") {
+                        ProximityAlertsScreen()
+                    }
+                    composable("camera_capture") {
+                        CameraGeoDropScreen(
+                            onCapture = { file -> 
+                                navController.navigate("anchor_photo") 
                             }
-                        }
-                    )
-                }
-                composable("active_route") {
-                    ActiveRouteScreen(
-                        onFinishRoute = {
-                            val route = routeViewModel.activeRoute.value
-                            val userId = authViewModel.currentUser?.id ?: "guest"
-                            if (route != null) {
-                                routeViewModel.viewModelScope.launch {
-                                    val ok = EcoGuiaRepositoryImpl().saveRouteToCollection(userId, route.id)
-                                    android.util.Log.d("MainActivity", "Guardado de ruta en DB completado: $ok para routeId=${route.id}")
-                                    routeViewModel.completeActiveRoute()
-                                    notificationViewModel.showNotification("🎉 ¡Ruta completada y guardada en Mi Colección!", NotificationType.SUCCESS)
+                        )
+                    }
+                    composable("anchor_photo") {
+                        AnchorPhotoScreen(
+                            onAnchorClick = { 
+                                notificationViewModel.showNotification("¡Foto anclada con éxito!", NotificationType.SUCCESS)
+                                navController.navigate("exploration") {
+                                    popUpTo("exploration") { inclusive = true }
+                                }
+                            }
+                        )
+                    }
+                    composable("active_route") {
+                        ActiveRouteScreen(
+                            onFinishRoute = {
+                                val route = routeViewModel.activeRoute.value
+                                val userId = authViewModel.currentUser?.id ?: "guest"
+                                if (route != null) {
+                                    routeViewModel.viewModelScope.launch {
+                                        val ok = EcoGuiaRepositoryImpl().saveRouteToCollection(userId, route.id)
+                                        android.util.Log.d("MainActivity", "Guardado de ruta en DB completado: $ok para routeId=${route.id}")
+                                        routeViewModel.completeActiveRoute()
+                                        notificationViewModel.showNotification("🎉 ¡Ruta completada y guardada en Mi Colección!", NotificationType.SUCCESS)
+                                        navController.navigate("collection") {
+                                            popUpTo("exploration") { inclusive = false }
+                                        }
+                                    }
+                                } else {
+                                    routeViewModel.stopActiveRoute()
                                     navController.navigate("collection") {
                                         popUpTo("exploration") { inclusive = false }
                                     }
                                 }
-                            } else {
-                                routeViewModel.stopActiveRoute()
-                                navController.navigate("collection") {
-                                    popUpTo("exploration") { inclusive = false }
-                                }
+                            },
+                            routeViewModel = routeViewModel
+                        )
+                    }
+                    composable("search_experience") {
+                        SearchExperienceScreen(
+                            onSelectRoute = { navController.navigate("active_route") },
+                            routeViewModel = routeViewModel
+                        )
+                    }
+                    composable("permissions") {
+                        PermissionsScreen()
+                    }
+                    composable("create_route") {
+                        CreateRouteScreen(
+                            onRouteCreated = { navController.popBackStack() },
+                            routeViewModel = routeViewModel
+                        )
+                    }
+                    composable("offline") {
+                        OfflineRouteScreen()
+                    }
+                    
+                    // Device Management Module
+                    composable("linked_devices") {
+                        LinkedDevicesScreen(
+                            onTVCampaignClick = { navController.navigate("tv_campaign") },
+                            onManageClick = { navController.navigate("manage_devices") },
+                            onStatusClick = { navController.navigate("device_status") }
+                        )
+                    }
+                    composable("manage_devices") {
+                        ManageDevicesScreen(
+                            onConfirmChanges = { 
+                                notificationViewModel.showNotification("Cambios guardados.", NotificationType.SUCCESS)
+                                navController.popBackStack() 
                             }
-                        },
-                        routeViewModel = routeViewModel
-                    )
-                }
-                composable("search_experience") {
-                    SearchExperienceScreen(
-                        onSelectRoute = { navController.navigate("active_route") },
-                        routeViewModel = routeViewModel
-                    )
-                }
-                composable("permissions") {
-                    PermissionsScreen()
-                }
-                composable("create_route") {
-                    CreateRouteScreen(
-                        onRouteCreated = { navController.popBackStack() },
-                        routeViewModel = routeViewModel
-                    )
-                }
-                composable("offline") {
-                    OfflineRouteScreen()
-                }
-                
-                // Device Management Module
-                composable("linked_devices") {
-                    LinkedDevicesScreen(
-                        onTVCampaignClick = { navController.navigate("tv_campaign") },
-                        onManageClick = { navController.navigate("manage_devices") },
-                        onStatusClick = { navController.navigate("device_status") }
-                    )
-                }
-                composable("manage_devices") {
-                    ManageDevicesScreen(
-                        onConfirmChanges = { 
-                            notificationViewModel.showNotification("Cambios guardados.", NotificationType.SUCCESS)
+                        )
+                    }
+                    composable("device_status") {
+                        DeviceStatusScreen(onBack = { navController.popBackStack() })
+                    }
+                    
+                    // TV & Analytics Sub-module
+                    composable("tv_campaign") {
+                        TVCampaignScreen(
+                            onAnalyticsClick = { navController.navigate("visitor_analytics") },
+                            onManageDevicesClick = { navController.navigate("campaign_devices") }
+                        )
+                    }
+                    composable("visitor_analytics") {
+                        VisitorAnalyticsScreen()
+                    }
+                    composable("campaign_devices") {
+                        CampaignDevicesScreen(
+                            onManageContentClick = { navController.navigate("portal_360") }
+                        )
+                    }
+                    composable("portal_360") {
+                        MuseumPortal360Screen()
+                    }
+
+                    composable("admin") {
+                        val activityContext = LocalContext.current as ComponentActivity
+                        ControlPanel(activityContext, repository)
+                    }
+
+                    // Admin & Moderation Module
+                    composable("site_registration") {
+                        SiteRegistrationScreen(
+                            viewModel = siteRegistrationViewModel,
+                            onNext = { navController.navigate("site_content") }
+                        )
+                    }
+                    composable("site_content") {
+                        SiteContentScreen(
+                            viewModel = siteRegistrationViewModel,
+                            onNext = { navController.navigate("site_location") }
+                        )
+                    }
+                    composable("site_location") {
+                        SiteLocationScreen(
+                            viewModel = siteRegistrationViewModel,
+                            onNext = { navController.navigate("site_operation") }
+                        )
+                    }
+                    composable("site_operation") {
+                        SiteOperationScreen(
+                            viewModel = siteRegistrationViewModel,
+                            onFinish = { 
+                                siteRegistrationViewModel.registerSite(
+                                    onSuccess = {
+                                        notificationViewModel.showNotification("Sitio publicado con éxito.", NotificationType.SUCCESS)
+                                        navController.navigate("exploration") { popUpTo("exploration") { inclusive = true } }
+                                    },
+                                    onError = { msg ->
+                                        notificationViewModel.showNotification(msg, NotificationType.ERROR)
+                                    }
+                                )
+                            }
+                        )
+                    }
+                    composable("gallery_addition") {
+                        GalleryAdditionScreen(
+                            onAddClick = { navController.popBackStack() },
+                            onNavigate = { route -> navController.navigate(route) { launchSingleTop = true } }
+                        )
+                    }
+                    composable("moderation_list") {
+                        ModerationListScreen(onResolveClick = { navController.navigate("report_detail") })
+                    }
+                    composable("report_detail") {
+                        ReportDetailScreen(onResolve = { 
+                            notificationViewModel.showNotification("Reporte resuelto.", NotificationType.SUCCESS)
                             navController.popBackStack() 
-                        }
-                    )
-                }
-                composable("device_status") {
-                    DeviceStatusScreen(onBack = { navController.popBackStack() })
-                }
-                
-                // TV & Analytics Sub-module
-                composable("tv_campaign") {
-                    TVCampaignScreen(
-                        onAnalyticsClick = { navController.navigate("visitor_analytics") },
-                        onManageDevicesClick = { navController.navigate("campaign_devices") }
-                    )
-                }
-                composable("visitor_analytics") {
-                    VisitorAnalyticsScreen()
-                }
-                composable("campaign_devices") {
-                    CampaignDevicesScreen(
-                        onManageContentClick = { navController.navigate("portal_360") }
-                    )
-                }
-                composable("portal_360") {
-                    MuseumPortal360Screen()
-                }
-
-                composable("admin") {
-                    ControlPanel(activity, repository)
-                }
-
-                // Admin & Moderation Module
-                composable("site_registration") {
-                    SiteRegistrationScreen(
-                        viewModel = siteRegistrationViewModel,
-                        onNext = { navController.navigate("site_content") }
-                    )
-                }
-                composable("site_content") {
-                    SiteContentScreen(
-                        viewModel = siteRegistrationViewModel,
-                        onNext = { navController.navigate("site_location") }
-                    )
-                }
-                composable("site_location") {
-                    SiteLocationScreen(
-                        viewModel = siteRegistrationViewModel,
-                        onNext = { navController.navigate("site_operation") }
-                    )
-                }
-                composable("site_operation") {
-                    SiteOperationScreen(
-                        viewModel = siteRegistrationViewModel,
-                        onFinish = { 
-                            siteRegistrationViewModel.registerSite(
-                                onSuccess = {
-                                    notificationViewModel.showNotification("Sitio publicado con éxito.", NotificationType.SUCCESS)
-                                    navController.navigate("exploration") { popUpTo("exploration") { inclusive = true } }
-                                },
-                                onError = { msg ->
-                                    notificationViewModel.showNotification(msg, NotificationType.ERROR)
-                                }
-                            )
-                        }
-                    )
-                }
-                composable("gallery_addition") {
-                    GalleryAdditionScreen(
-                        onAddClick = { navController.popBackStack() },
-                        onNavigate = { route -> navController.navigate(route) { launchSingleTop = true } }
-                    )
-                }
-                composable("moderation_list") {
-                    ModerationListScreen(onResolveClick = { navController.navigate("report_detail") })
-                }
-                composable("report_detail") {
-                    ReportDetailScreen(onResolve = { 
-                        notificationViewModel.showNotification("Reporte resuelto.", NotificationType.SUCCESS)
-                        navController.popBackStack() 
-                    })
-                }
-                composable("manual_geo_drop") {
-                    ManualGeoDropScreen(onAnchorClick = { navController.popBackStack() })
-                }
-                
-                // Mapeo de botones de barra inferior
-                composable("radar") { 
-                    navController.navigate("camera_capture") { launchSingleTop = true }
-                }
-                composable("favorites") { 
-                    navController.navigate("collection") { launchSingleTop = true }
+                        })
+                    }
+                    composable("manual_geo_drop") {
+                        ManualGeoDropScreen(onAnchorClick = { navController.popBackStack() })
+                    }
+                    
+                    // Mapeo de botones de barra inferior
+                    composable("radar") { 
+                        navController.navigate("camera_capture") { launchSingleTop = true }
+                    }
+                    composable("favorites") { 
+                        navController.navigate("collection") { launchSingleTop = true }
+                    }
                 }
             }
         }
@@ -605,7 +622,7 @@ fun ControlPanel(activity: ComponentActivity, repository: EcoGuiaRepositoryImpl)
     }
 }
 
-private suspend fun sendMessage(context: android.content.Context, path: String, payload: String) {
+suspend fun sendMessage(context: android.content.Context, path: String, payload: String) {
     try {
         val nodes = Wearable.getNodeClient(context).connectedNodes.await()
         nodes.forEach { node ->
