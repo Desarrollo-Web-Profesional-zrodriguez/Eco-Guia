@@ -140,11 +140,12 @@ fun MyCollectionScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp)
-                .padding(bottom = 8.dp),
+                .padding(top = 2.dp, bottom = 8.dp),
             colors = CardDefaults.cardColors(containerColor = EcoGuiaColors.Surface),
             shape = RoundedCornerShape(24.dp)
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
+            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+
                 val countText = when {
                     searchQuery.isNotEmpty() -> "${filteredItems.size} resultado(s) para \"$searchQuery\""
                     else -> "${items.size} guardados en tu colección"
@@ -200,8 +201,9 @@ fun MyCollectionScreen(
                     else -> "${tabs[selectedTab]} (${filteredItems.size})"
                 },
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(vertical = 12.dp)
+                modifier = Modifier.padding(top = 4.dp, bottom = 8.dp)
             )
+
 
             when {
                 isLoading -> {

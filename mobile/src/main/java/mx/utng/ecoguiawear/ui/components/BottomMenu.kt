@@ -140,6 +140,7 @@ private fun getContextItems(route: String, isAdmin: Boolean): List<ContextMenuIt
     }
 
     // Opciones base accesibles para todos los usuarios
+    items.add(ContextMenuItem("Cápsula Geo-Drop (AR)", Icons.Default.CameraAlt, "camera_capture", enabled = true))
     items.add(ContextMenuItem("Mi Colección", Icons.Default.Favorite, "collection"))
     items.add(ContextMenuItem("Rutas Turísticas", Icons.Default.Map, "search_experience"))
     items.add(ContextMenuItem("Crear Ruta", Icons.Default.AltRoute, "create_route"))
@@ -148,6 +149,7 @@ private fun getContextItems(route: String, isAdmin: Boolean): List<ContextMenuIt
     items.add(ContextMenuItem("Dispositivos", Icons.Default.Watch, "linked_devices"))
     items.add(ContextMenuItem("Mi Perfil", Icons.Default.AccountCircle, "profile", enabled = true))
     items.add(ContextMenuItem("Ajustes", Icons.Default.Settings, "permissions", enabled = true))
+
 
     // Cerrar Sesión siempre presente
     items.add(ContextMenuItem("Cerrar Sesión", Icons.AutoMirrored.Filled.ExitToApp, "logout"))

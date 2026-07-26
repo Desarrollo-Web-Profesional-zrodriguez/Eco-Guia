@@ -38,9 +38,10 @@ interface EcoGuiaRepository {
     suspend fun getGeoDrops(): List<RemoteGeoDrop>
 
     /**
-     * Registra una nueva cápsula de información en la nube.
+     * Registra una nueva cápsula de información (Geo-Drop) en la nube y la guarda en la colección del usuario.
      */
-    suspend fun createGeoDrop(title: String, description: String, lat: Double, lng: Double): Boolean
+    suspend fun createGeoDrop(title: String, description: String, lat: Double, lng: Double, userId: String? = null, siteId: String? = null): Boolean
+
 
     /**
      * Busca sitios históricos cercanos a una ubicación específica.

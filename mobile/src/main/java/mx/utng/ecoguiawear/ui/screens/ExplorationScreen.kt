@@ -65,10 +65,12 @@ import mx.utng.ecoguiawear.ui.viewmodel.LocationViewModel
 fun ExplorationScreen(
     onAdminClick: () -> Unit,
     onOpenRoutes: () -> Unit = {},
+    onOpenGeoDrop: () -> Unit = {},
     userId: String = "guest",
     locationViewModel: LocationViewModel = viewModel(),
     collectionViewModel: CollectionViewModel = viewModel()
 ) {
+
     val context = LocalContext.current
     val currentLocation by locationViewModel.currentLocation
     val nearbySites by locationViewModel.nearbySites
@@ -263,11 +265,16 @@ fun ExplorationScreen(
                     }
                     selectedSite = null
                 },
+                onGeoDropClick = {
+                    selectedSite = null
+                    onOpenGeoDrop()
+                },
                 onDismiss = { selectedSite = null }
             )
         }
     }
 }
+
 
 @Preview(showBackground = true)
 @Composable

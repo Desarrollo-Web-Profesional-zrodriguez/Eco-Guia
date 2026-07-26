@@ -18,10 +18,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Navigation
 import androidx.compose.material.icons.filled.Place
+
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -54,8 +56,10 @@ fun SiteDetailSheet(
     userId: String,
     collectionViewModel: CollectionViewModel,
     onNavigate: () -> Unit,
+    onGeoDropClick: () -> Unit = {},
     onDismiss: () -> Unit
 ) {
+
     val isSaved = collectionViewModel.savedSiteIds[site.id] == true
 
     val saveButtonColor by animateColorAsState(
@@ -151,61 +155,93 @@ fun SiteDetailSheet(
         Spacer(modifier = Modifier.height(16.dp))
 
         // Botones de acción
-        Row(
+        Column(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            // Botón Guardar / Guardado (toggle animado)
+            // Botón principal de Cápsula Geo-Drop (AR)
             Button(
                 onClick = {
-                    if (userId != "guest") {
-                        collectionViewModel.toggleSave(userId, site.id)
-                    }
+                    onDismiss()
+                    onGeoDropClick()
                 },
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = saveButtonColor,
-                    contentColor = saveButtonTextColor
+                    containerColor = EcoGuiaColors.Jade,
+                    contentColor = Color.White
                 ),
-                shape = RoundedCornerShape(16.dp),
-                border = if (!isSaved) ButtonDefaults.outlinedButtonBorder else null
+                shape = RoundedCornerShape(16.dp)
             ) {
                 Icon(
-                    imageVector = if (isSaved) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                    imageVector = Icons.Default.CameraAlt,
                     contentDescription = null,
-                    modifier = Modifier.size(16.dp)
+                    modifier = Modifier.size(18.dp)
                 )
-                Spacer(modifier = Modifier.width(6.dp))
+                Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = if (isSaved) "Guardado" else "Guardar",
+                    text = "📷 Capturar / Escanear Geo-Drop (AR)",
                     fontWeight = FontWeight.Bold,
                     fontSize = 13.sp
                 )
             }
 
-            // Botón Navegar — sincroniza destino con el reloj Wear OS
-            Button(
-                onClick = onNavigate,
-                modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = EcoGuiaColors.Gold,
-                    contentColor = EcoGuiaColors.DeepBlue
-                ),
-                shape = RoundedCornerShape(16.dp)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Default.Navigation,
-                    contentDescription = null,
-                    modifier = Modifier.size(16.dp)
-                )
-                Spacer(modifier = Modifier.width(6.dp))
-                Text(
-                    text = "Navegar",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 13.sp
-                )
+                // Botón Guardar / Guardado (toggle animado)
+                Button(
+                    onClick = {
+                        if (userId != "guest") {
+                            collectionViewModel.toggleSave(userId, site.id)
+                        }
+                    },
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = saveButtonColor,
+                        contentColor = saveButtonTextColor
+                    ),
+                    shape = RoundedCornerShape(16.dp),
+                    border = if (!isSaved) ButtonDefaults.outlinedButtonBorder else null
+                ) {
+                    Icon(
+                        imageVector = if (isSaved) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = if (isSaved) "Guardado" else "Guardar",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.sp
+                    )
+                }
+
+                // Botón Navegar — sincroniza destino con el reloj Wear OS
+                Button(
+                    onClick = onNavigate,
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = EcoGuiaColors.Gold,
+                        contentColor = EcoGuiaColors.DeepBlue
+                    ),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Navigation,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "Navegar",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.sp
+                    )
+                }
             }
         }
+
 
         // Aviso si el usuario no está autenticado
         if (userId == "guest") {

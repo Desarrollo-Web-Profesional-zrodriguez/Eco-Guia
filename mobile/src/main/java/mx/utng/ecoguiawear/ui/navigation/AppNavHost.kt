@@ -17,11 +17,14 @@ package mx.utng.ecoguiawear.ui.navigation
 
 import androidx.activity.ComponentActivity
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+
 import mx.utng.ecoguia.shared.data.repository.EcoGuiaRepositoryImpl
 import mx.utng.ecoguiawear.ui.screens.*
 import mx.utng.ecoguiawear.ui.screens.admin.*
@@ -106,6 +109,7 @@ fun AppNavHost(
             ExplorationScreen(
                 onAdminClick = { navController.navigate("more_options") },
                 onOpenRoutes = { navController.navigate("search_experience") },
+                onOpenGeoDrop = { navController.navigate("camera_capture") },
                 userId = authViewModel.currentUser?.id ?: "guest"
             )
         }
@@ -166,20 +170,35 @@ fun AppNavHost(
             ProximityAlertsScreen()
         }
         composable("camera_capture") {
+            val parentEntry = remember(it) { navController.getBackStackEntry("camera_capture") }
+            val geoDropViewModel: mx.utng.ecoguiawear.ui.viewmodel.GeoDropViewModel = viewModel(parentEntry)
             CameraGeoDropScreen(
-                onCapture = { _ -> navController.navigate("anchor_photo") }
+                onCapture = { _ -> navController.navigate("anchor_photo") },
+                geoDropViewModel = geoDropViewModel
             )
         }
         composable("anchor_photo") {
+            val parentEntry = remember(it) {
+                try {
+                    navController.getBackStackEntry("camera_capture")
+                } catch (e: Exception) {
+                    it
+                }
+            }
+            val geoDropViewModel: mx.utng.ecoguiawear.ui.viewmodel.GeoDropViewModel = viewModel(parentEntry)
             AnchorPhotoScreen(
                 onAnchorClick = {
-                    notificationViewModel.showNotification("¡Foto anclada con éxito!", NotificationType.SUCCESS)
+                    notificationViewModel.showNotification("🎉 ¡Foto anclada al mapa con éxito!", NotificationType.SUCCESS)
                     navController.navigate("exploration") {
                         popUpTo("exploration") { inclusive = true }
                     }
-                }
+                },
+                userId = authViewModel.currentUser?.id ?: "guest",
+                geoDropViewModel = geoDropViewModel
             )
+
         }
+
 
         // ── Rutas turísticas ──────────────────────────────────────────────────
         composable("search_experience") {

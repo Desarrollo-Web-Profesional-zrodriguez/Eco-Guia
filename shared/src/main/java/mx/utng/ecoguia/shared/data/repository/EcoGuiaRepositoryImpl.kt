@@ -78,24 +78,66 @@ class EcoGuiaRepositoryImpl(
     }
 
     /**
-     * Crea un nuevo Geo-Drop usando PostGIS para la localización.
+     * Crea un nuevo Geo-Drop usando PostGIS para la localización y lo vincula al usuario en user_saved_items.
      */
-    override suspend fun createGeoDrop(title: String, description: String, lat: Double, lng: Double): Boolean {
-        val query = """
-            INSERT INTO geo_drops (title, description, location, status, type) 
-            VALUES ($1, $2, ST_SetSRID(ST_MakePoint($3, $4), 4326)::geography, 'approved', 'text')
+    override suspend fun createGeoDrop(title: String, description: String, lat: Double, lng: Double, userId: String?, siteId: String?): Boolean {
+        val insertGeoDropQuery = """
+            INSERT INTO geo_drops (title, description, location, status, type, author_id, site_id) 
+            VALUES ($1, $2, ST_SetSRID(ST_MakePoint($3, $4), 4326)::geography, 'approved', 'photo', 
+                    CASE WHEN $5 = '' THEN NULL ELSE $5::uuid END, 
+                    CASE WHEN $6 = '' THEN NULL ELSE $6::uuid END)
+            RETURNING id::text
         """.trimIndent()
         return try {
-            val rowsAffected = neonClient.executeCommand(
-                query = query, 
-                params = listOf(title, description, lng.toString(), lat.toString())
+            val response = neonClient.executeQuery<kotlinx.serialization.json.JsonObject>(
+                query = insertGeoDropQuery, 
+                params = listOf(title, description, lng.toString(), lat.toString(), userId.orEmpty(), siteId.orEmpty())
             )
-            rowsAffected > 0
+            val newGeoDropId = response.firstOrNull()?.get("id")?.toString()?.replace("\"", "")
+            
+            if (newGeoDropId != null && !userId.isNullOrBlank()) {
+                val saveItemQuery = """
+                    INSERT INTO user_saved_items (user_id, geo_drop_id, site_id)
+                    VALUES ($1::uuid, $2::uuid, CASE WHEN $3 = '' THEN NULL ELSE $3::uuid END)
+                """.trimIndent()
+                neonClient.executeCommand(saveItemQuery, listOf(userId, newGeoDropId, siteId.orEmpty()))
+            }
+            true
         } catch (e: Exception) {
+            android.util.Log.e("EcoGuiaRepo", "Error al crear Geo-Drop: ${e.message}", e)
             false
         }
     }
 
+    /**
+     * Recupera la colección real del usuario consultando user_saved_items unida con historical_sites, routes y geo_drops.
+     */
+    override suspend fun getUserCollection(userId: String): List<RemoteCollectionItem> {
+        val query = """
+            SELECT
+                COALESCE(gd.id::text, hs.id::text, r.id::text, usi.id::text) AS id,
+                COALESCE(gd.title, hs.name, r.title, 'Elemento Guardado')    AS title,
+                COALESCE(gd.description, hs.site_type, r.description, 'Colección') AS subtitle,
+                CASE 
+                    WHEN usi.geo_drop_id IS NOT NULL THEN 'photo'
+                    WHEN usi.route_id IS NOT NULL THEN 'route' 
+                    ELSE 'site' 
+                END AS type,
+                usi.created_at
+            FROM user_saved_items usi
+            LEFT JOIN geo_drops gd ON gd.id = usi.geo_drop_id
+            LEFT JOIN historical_sites hs ON hs.id = usi.site_id
+            LEFT JOIN routes r ON r.id = usi.route_id
+            WHERE usi.user_id = $1::uuid
+            ORDER BY usi.created_at DESC
+        """.trimIndent()
+        return try {
+            neonClient.executeQuery<RemoteCollectionItem>(query, listOf(userId))
+        } catch (e: Exception) {
+            android.util.Log.e("EcoGuiaRepo", "Error al cargar colección: ${e.message}", e)
+            emptyList()
+        }
+    }
     /**
      * Busca sitios cercanos utilizando ST_DWithin de PostGIS.
      */
@@ -170,34 +212,8 @@ class EcoGuiaRepositoryImpl(
     }
 
     /**
-     * Recupera la colección real del usuario consultando user_saved_items unida con historical_sites.
-     * IMPORTANTE: Selecciona usi.site_id como id (no usi.id) para que RemoteCollectionItem.id
-     * coincida con el historical_site UUID usado en savedSiteIds y removeSavedSite.
-     */
-    override suspend fun getUserCollection(userId: String): List<RemoteCollectionItem> {
-        val query = """
-            SELECT
-                COALESCE(hs.id::text, r.id::text, usi.id::text)   AS id,
-                COALESCE(hs.name, r.title, 'Elemento Guardado')   AS title,
-                COALESCE(hs.site_type, r.description, 'Colección') AS subtitle,
-                CASE WHEN usi.route_id IS NOT NULL THEN 'route' ELSE 'site' END AS type,
-                usi.created_at
-            FROM user_saved_items usi
-            LEFT JOIN historical_sites hs ON hs.id = usi.site_id
-            LEFT JOIN routes r ON r.id = usi.route_id
-            WHERE usi.user_id = $1::uuid
-            ORDER BY usi.created_at DESC
-        """.trimIndent()
-        return try {
-            neonClient.executeQuery<RemoteCollectionItem>(query, listOf(userId))
-        } catch (e: Exception) {
-            android.util.Log.e("EcoGuiaRepo", "Error al cargar colección: ${e.message}", e)
-            emptyList()
-        }
-    }
-
-    /**
      * Guarda un sitio en la colección del usuario en user_saved_items.
+
      * ON CONFLICT DO NOTHING garantiza que no haya duplicados.
      */
     override suspend fun saveSite(userId: String, siteId: String): Boolean {

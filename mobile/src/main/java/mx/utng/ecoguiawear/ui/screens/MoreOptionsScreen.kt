@@ -121,6 +121,16 @@ fun MoreOptionsScreen(
 
                 item {
                     MenuOptionItem(
+                        title = "Cámara Geo-Drop",
+                        subtitle = "Escanear y anclar cápsulas AR",
+                        icon = Icons.Default.CameraAlt,
+                        enabled = true,
+                        onClick = { onOptionClick("camera_capture") }
+                    )
+                }
+
+                item {
+                    MenuOptionItem(
                         title = "Miguel Hidalgo IA",
                         subtitle = "Chatbot histórico con AI",
                         icon = Icons.Default.Chat,
@@ -128,6 +138,7 @@ fun MoreOptionsScreen(
                         onClick = { onOptionClick("chat_ia") }
                     )
                 }
+
 
                 item {
                     MenuOptionItem(
