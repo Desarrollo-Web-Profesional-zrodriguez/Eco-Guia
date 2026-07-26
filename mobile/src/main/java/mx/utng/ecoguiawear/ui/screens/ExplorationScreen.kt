@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.key
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -273,22 +274,27 @@ fun ExplorationScreen(
             }
 
             LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                items(visibleSites.size) { index ->
+                items(
+                    count = visibleSites.size,
+                    key = { index -> visibleSites[index].id }
+                ) { index ->
                     val site = visibleSites[index]
                     val isFavorite = collectionViewModel.savedSiteIds[site.id] == true
 
-                    val dismissState = rememberSwipeToDismissBoxState(
-                        confirmValueChange = { value ->
-                            if (value == SwipeToDismissBoxValue.EndToStart && userId != "guest") {
-                                if (isFavorite) {
-                                    collectionViewModel.removeSite(userId, site.id)
-                                } else {
-                                    collectionViewModel.saveSite(userId, site.id)
+                    val dismissState = key(site.id, isFavorite) {
+                        rememberSwipeToDismissBoxState(
+                            confirmValueChange = { value ->
+                                if (value == SwipeToDismissBoxValue.EndToStart && userId != "guest") {
+                                    if (isFavorite) {
+                                        collectionViewModel.removeSite(userId, site.id)
+                                    } else {
+                                        collectionViewModel.saveSite(userId, site.id)
+                                    }
                                 }
+                                false
                             }
-                            false
-                        }
-                    )
+                        )
+                    }
 
                     SwipeToDismissBox(
                         state = dismissState,
