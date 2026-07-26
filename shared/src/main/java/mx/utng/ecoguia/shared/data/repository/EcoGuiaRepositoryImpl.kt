@@ -177,7 +177,7 @@ class EcoGuiaRepositoryImpl(
     override suspend fun getUserCollection(userId: String): List<RemoteCollectionItem> {
         val query = """
             SELECT
-                usi.id::text                        AS id,
+                COALESCE(hs.id::text, r.id::text, usi.id::text)   AS id,
                 COALESCE(hs.name, r.title, 'Elemento Guardado')   AS title,
                 COALESCE(hs.site_type, r.description, 'Colección') AS subtitle,
                 CASE WHEN usi.route_id IS NOT NULL THEN 'route' ELSE 'site' END AS type,
@@ -203,13 +203,15 @@ class EcoGuiaRepositoryImpl(
     override suspend fun saveSite(userId: String, siteId: String): Boolean {
         val query = """
             INSERT INTO user_saved_items (user_id, site_id)
-            VALUES ($1::uuid, $2::uuid)
-            ON CONFLICT DO NOTHING
+            SELECT $1::uuid, $2::uuid
+            WHERE NOT EXISTS (
+                SELECT 1 FROM user_saved_items WHERE user_id = $1::uuid AND site_id = $2::uuid
+            )
         """.trimIndent()
         return try {
             val rows = neonClient.executeCommand(query, listOf(userId, siteId))
             android.util.Log.d("EcoGuiaRepo", "Sitio guardado: $siteId para usuario $userId ($rows filas)")
-            true // ON CONFLICT devuelve 0 filas pero no es un error
+            true
         } catch (e: Exception) {
             android.util.Log.e("EcoGuiaRepo", "Error al guardar sitio: ${e.message}", e)
             false
@@ -228,7 +230,7 @@ class EcoGuiaRepositoryImpl(
         return try {
             val rows = neonClient.executeCommand(query, listOf(userId, siteId))
             android.util.Log.d("EcoGuiaRepo", "Elemento eliminado de colección: $siteId ($rows filas)")
-            rows > 0
+            true
         } catch (e: Exception) {
             android.util.Log.e("EcoGuiaRepo", "Error al eliminar elemento de colección: ${e.message}", e)
             false

@@ -16,6 +16,7 @@ package mx.utng.ecoguiawear.ui.screens
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
@@ -37,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -113,6 +115,28 @@ fun ExplorationScreen(
         }
     }
 
+    var displayLimit by remember { mutableIntStateOf(5) }
+
+    // Ordenamiento: Más cercanos primero, divididos en 2 grupos (Favoritos primero, luego Normales)
+    val sortedSites = remember(nearbySites, collectionViewModel.savedSiteIds, currentLocation) {
+        nearbySites.sortedWith(
+            compareByDescending<RemoteHistoricalSite> { site ->
+                collectionViewModel.savedSiteIds[site.id] == true
+            }.thenBy { site ->
+                if (currentLocation != null && site.latitude != null && site.longitude != null) {
+                    val results = FloatArray(1)
+                    android.location.Location.distanceBetween(
+                        currentLocation!!.latitude, currentLocation!!.longitude,
+                        site.latitude!!, site.longitude!!, results
+                    )
+                    results[0]
+                } else Float.MAX_VALUE
+            }
+        )
+    }
+
+    val visibleSites = sortedSites.take(displayLimit)
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -135,10 +159,22 @@ fun ExplorationScreen(
                 .clip(RoundedCornerShape(24.dp))
                 .background(Color(0xFFE8F5E9))
         ) {
+            val isSystemInDark = isSystemInDarkTheme()
+            val mapStyleOptions = remember(isSystemInDark) {
+                if (isSystemInDark) {
+                    com.google.android.gms.maps.model.MapStyleOptions(
+                        """[{"elementType":"geometry","stylers":[{"color":"#242f3e"}]},{"elementType":"labels.text.fill","stylers":[{"color":"#746855"}]},{"elementType":"labels.text.stroke","stylers":[{"color":"#242f3e"}]},{"featureType":"administrative.locality","elementType":"labels.text.fill","stylers":[{"color":"#d59563"}]},{"featureType":"poi","elementType":"labels.text.fill","stylers":[{"color":"#d59563"}]},{"featureType":"poi.park","elementType":"geometry","stylers":[{"color":"#263c3f"}]},{"featureType":"poi.park","elementType":"labels.text.fill","stylers":[{"color":"#6b9a76"}]},{"featureType":"road","elementType":"geometry","stylers":[{"color":"#38414e"}]},{"featureType":"road","elementType":"geometry.stroke","stylers":[{"color":"#212a37"}]},{"featureType":"road","elementType":"labels.text.fill","stylers":[{"color":"#9ca5b3"}]},{"featureType":"road.highway","elementType":"geometry","stylers":[{"color":"#746855"}]},{"featureType":"road.highway","elementType":"geometry.stroke","stylers":[{"color":"#1f2835"}]},{"featureType":"road.highway","elementType":"labels.text.fill","stylers":[{"color":"#f3d19c"}]},{"featureType":"transit","elementType":"geometry","stylers":[{"color":"#2f3948"}]},{"featureType":"transit.station","elementType":"labels.text.fill","stylers":[{"color":"#d59563"}]},{"featureType":"water","elementType":"geometry","stylers":[{"color":"#17263c"}]},{"featureType":"water","elementType":"labels.text.fill","stylers":[{"color":"#515c6d"}]},{"featureType":"water","elementType":"labels.text.stroke","stylers":[{"color":"#17263c"}]}]"""
+                    )
+                } else null
+            }
+
             GoogleMap(
                 modifier = Modifier.fillMaxSize(),
                 cameraPositionState = cameraPositionState,
-                properties = MapProperties(isMyLocationEnabled = currentLocation != null),
+                properties = MapProperties(
+                    isMyLocationEnabled = currentLocation != null,
+                    mapStyleOptions = mapStyleOptions
+                ),
                 uiSettings = MapUiSettings(
                     myLocationButtonEnabled = false,
                     zoomControlsEnabled = false
@@ -147,10 +183,25 @@ fun ExplorationScreen(
                 nearbySites.forEach { site ->
                     val siteLat = site.latitude ?: return@forEach
                     val siteLng = site.longitude ?: return@forEach
+                    val sitePos = LatLng(siteLat, siteLng)
+                    val customIcon = remember(site.siteType) {
+                        getCustomCategoryMarkerIcon(context, site.siteType)
+                    }
+
+                    // Área del radio de detección geográfica registrado en la base de datos (detection_radius_m)
+                    Circle(
+                        center = sitePos,
+                        radius = site.detectionRadiusM.toDouble(),
+                        strokeColor = EcoGuiaColors.Jade,
+                        strokeWidth = 3f,
+                        fillColor = EcoGuiaColors.Jade.copy(alpha = 0.15f)
+                    )
+
                     Marker(
-                        state = MarkerState(position = LatLng(siteLat, siteLng)),
+                        state = MarkerState(position = sitePos),
                         title = site.name,
-                        snippet = site.shortDescription
+                        snippet = site.shortDescription,
+                        icon = customIcon
                     )
                 }
             }
@@ -209,7 +260,7 @@ fun ExplorationScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    if (nearbySites.isEmpty()) "Buscando sitios..." else "Sitios recomendados",
+                    if (nearbySites.isEmpty()) "Buscando sitios..." else "Sitios recomendados (${visibleSites.size}/${sortedSites.size})",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -222,22 +273,80 @@ fun ExplorationScreen(
             }
 
             LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                items(nearbySites.size) { index ->
-                    val site = nearbySites[index]
-                    RecommendedSiteItem(
-                        title = site.name,
-                        subtitle = site.siteType + " • " + (site.address ?: ""),
-                        icon = Icons.Default.Place,
-                        trailing = "Ver",
-                        onVerClick = {
-                            isFollowingUser = false
-                            selectedSite = site
-                            // Precargar estado de guardado para este sitio específico
-                            if (userId != "guest") {
-                                collectionViewModel.checkIfSaved(userId, site.id)
+                items(visibleSites.size) { index ->
+                    val site = visibleSites[index]
+                    val isFavorite = collectionViewModel.savedSiteIds[site.id] == true
+
+                    val dismissState = rememberSwipeToDismissBoxState(
+                        confirmValueChange = { value ->
+                            if (value == SwipeToDismissBoxValue.EndToStart && userId != "guest") {
+                                if (isFavorite) {
+                                    collectionViewModel.removeSite(userId, site.id)
+                                } else {
+                                    collectionViewModel.saveSite(userId, site.id)
+                                }
                             }
+                            false
                         }
                     )
+
+                    SwipeToDismissBox(
+                        state = dismissState,
+                        enableDismissFromStartToEnd = false,
+                        enableDismissFromEndToStart = true,
+                        backgroundContent = {
+                            // Si NO es favorito (al deslizar se AGREGARÁ) -> Fondo Azul con Corazón Relleno
+                            // Si YA es favorito (al deslizar se QUITARÁ) -> Fondo Rojo con Corazón Contorno
+                            val backgroundColor = if (isFavorite) Color(0xFFE53935) else EcoGuiaColors.Jade
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(backgroundColor, RoundedCornerShape(20.dp))
+                                    .padding(horizontal = 20.dp),
+                                contentAlignment = Alignment.CenterEnd
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        text = if (isFavorite) "Quitar de Favoritos" else "Agregar a Favoritos",
+                                        color = Color.White,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 12.sp
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Icon(
+                                        imageVector = if (isFavorite) Icons.Default.FavoriteBorder else Icons.Default.Favorite,
+                                        contentDescription = if (isFavorite) "Quitar" else "Agregar",
+                                        tint = Color.White
+                                    )
+                                }
+                            }
+                        }
+                    ) {
+                        RecommendedSiteItem(
+                            title = site.name,
+                            subtitle = site.siteType + " • " + (site.address ?: ""),
+                            icon = if (isFavorite) Icons.Default.Favorite else Icons.Default.Place,
+                            trailing = "Ver",
+                            onVerClick = {
+                                isFollowingUser = false
+                                selectedSite = site
+                                if (userId != "guest") {
+                                    collectionViewModel.checkIfSaved(userId, site.id)
+                                }
+                            }
+                        )
+                    }
+                }
+
+                if (sortedSites.size > displayLimit) {
+                    item {
+                        TextButton(
+                            onClick = { displayLimit += 5 },
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+                        ) {
+                            Text("Cargar más sitios (+5)", color = EcoGuiaColors.Jade, fontWeight = FontWeight.Bold)
+                        }
+                    }
                 }
             }
         }
@@ -521,5 +630,66 @@ fun RecommendedSiteItem(
 fun ExplorationScreenPreview() {
     EcoGuiaMobileTheme {
         ExplorationScreen({})
+    }
+}
+
+/**
+ * Devuelve un BitmapDescriptor personalizado para Google Maps generando un marcador circular 
+ * con color distintivo según la categoría del sitio.
+ */
+fun getCustomCategoryMarkerIcon(context: android.content.Context, siteType: String): com.google.android.gms.maps.model.BitmapDescriptor {
+    val type = siteType.lowercase()
+    val (colorInt, emoji) = when {
+        type.contains("museo") -> android.graphics.Color.parseColor("#0288D1") to "🏛️"
+        type.contains("monumento") || type.contains("estatua") -> android.graphics.Color.parseColor("#F57C00") to "🗿"
+        type.contains("parque") || type.contains("plaza") -> android.graphics.Color.parseColor("#388E3C") to "🌳"
+        type.contains("iglesia") || type.contains("templo") || type.contains("religioso") -> android.graphics.Color.parseColor("#7B1FA2") to "⛪"
+        type.contains("galería") || type.contains("galeria") -> android.graphics.Color.parseColor("#C2185B") to "🎨"
+        type.contains("restaurante") -> android.graphics.Color.parseColor("#D32F2F") to "🍽️"
+        type.contains("historico") || type.contains("histórico") -> android.graphics.Color.parseColor("#FBC02D") to "📜"
+        else -> android.graphics.Color.parseColor("#00B4D8") to "📍"
+    }
+
+    val sizePx = (48 * context.resources.displayMetrics.density).toInt()
+    val bitmap = android.graphics.Bitmap.createBitmap(sizePx, sizePx, android.graphics.Bitmap.Config.ARGB_8888)
+    val canvas = android.graphics.Canvas(bitmap)
+
+    val paint = android.graphics.Paint().apply {
+        isAntiAlias = true
+    }
+
+    // Borde exterior blanco
+    paint.color = android.graphics.Color.WHITE
+    canvas.drawCircle(sizePx / 2f, sizePx / 2f, sizePx / 2f, paint)
+
+    // Círculo interior de categoría
+    paint.color = colorInt
+    canvas.drawCircle(sizePx / 2f, sizePx / 2f, (sizePx / 2f) - (3 * context.resources.displayMetrics.density), paint)
+
+    // Dibujar Emoji centrado en el medio de la marca
+    val textPaint = android.graphics.Paint().apply {
+        isAntiAlias = true
+        textSize = 22 * context.resources.displayMetrics.density
+        textAlign = android.graphics.Paint.Align.CENTER
+    }
+
+    val yPos = (canvas.height / 2f) - ((textPaint.descent() + textPaint.ascent()) / 2f)
+    canvas.drawText(emoji, canvas.width / 2f, yPos, textPaint)
+
+    return com.google.android.gms.maps.model.BitmapDescriptorFactory.fromBitmap(bitmap)
+}
+
+/**
+ * Devuelve un tono de color (Hue) único de Marker de Google Maps según la categoría del sitio.
+ */
+fun getCategoryHue(siteType: String): Float {
+    val type = siteType.lowercase()
+    return when {
+        type.contains("museo") -> com.google.android.gms.maps.model.BitmapDescriptorFactory.HUE_AZURE
+        type.contains("monumento") || type.contains("estatua") -> com.google.android.gms.maps.model.BitmapDescriptorFactory.HUE_ORANGE
+        type.contains("parque") || type.contains("plaza") -> com.google.android.gms.maps.model.BitmapDescriptorFactory.HUE_GREEN
+        type.contains("iglesia") || type.contains("templo") || type.contains("religioso") -> com.google.android.gms.maps.model.BitmapDescriptorFactory.HUE_VIOLET
+        type.contains("historico") || type.contains("histórico") -> com.google.android.gms.maps.model.BitmapDescriptorFactory.HUE_YELLOW
+        else -> com.google.android.gms.maps.model.BitmapDescriptorFactory.HUE_RED
     }
 }

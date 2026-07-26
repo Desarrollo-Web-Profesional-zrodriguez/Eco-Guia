@@ -19,7 +19,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -258,20 +262,51 @@ fun MyCollectionScreen(
         }
     }
 }
-
 /**
- * Fila de un elemento guardado en la colección.
- * Resalta el texto que coincide con la búsqueda activa.
+ * Fila de un elemento guardado en la colección con SwipeToDismiss.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CollectionItemRow(
     item: RemoteCollectionItem,
     searchQuery: String = "",
     onRemove: () -> Unit = {}
 ) {
-    var showConfirm by remember { mutableStateOf(false) }
+    var showConfirmDialog by remember { mutableStateOf(false) }
 
-    // Construye el título con highlight del texto buscado
+    val dismissState = rememberSwipeToDismissBoxState(
+        confirmValueChange = { value ->
+            if (value == SwipeToDismissBoxValue.EndToStart) {
+                showConfirmDialog = true
+            }
+            false // Siempre mantener la tarjeta en su posición visual hasta confirmar en la modal
+        }
+    )
+
+    if (showConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { showConfirmDialog = false },
+            title = { Text("Eliminar de Mi Colección", fontWeight = FontWeight.Bold) },
+            text = { Text("¿Deseas quitar \"${item.title}\" de tu colección personal?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showConfirmDialog = false
+                        onRemove()
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("Eliminar", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showConfirmDialog = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+
     val highlightedTitle = buildAnnotatedString {
         val query = searchQuery.trim().lowercase()
         val title = item.title
@@ -295,78 +330,79 @@ fun CollectionItemRow(
         }
     }
 
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-    ) {
-        Row(
-            modifier = Modifier.padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+    SwipeToDismissBox(
+        state = dismissState,
+        enableDismissFromStartToEnd = false,
+        enableDismissFromEndToStart = true,
+        backgroundContent = {
             Box(
                 modifier = Modifier
-                    .size(44.dp)
-                    .background(
-                        when (item.type) {
-                            "site" -> EcoGuiaColors.Jade.copy(alpha = 0.12f)
-                            "photo" -> EcoGuiaColors.Gold.copy(alpha = 0.12f)
-                            else -> MaterialTheme.colorScheme.surfaceVariant
-                        },
-                        RoundedCornerShape(14.dp)
-                    ),
-                contentAlignment = Alignment.Center
+                    .fillMaxSize()
+                    .background(Color(0xFFE53935), RoundedCornerShape(16.dp))
+                    .padding(horizontal = 20.dp),
+                contentAlignment = Alignment.CenterEnd
             ) {
-                Text(
-                    text = when (item.type) {
-                        "site" -> "🏛️"
-                        "photo" -> "📸"
-                        else -> "🗺️"
-                    },
-                    fontSize = 20.sp
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Deslizar para eliminar",
+                    tint = Color.White
                 )
             }
-
-            Column(
-                modifier = Modifier
-                    .padding(horizontal = 12.dp)
-                    .weight(1f)
+        }
+    ) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        ) {
+            Row(
+                modifier = Modifier.padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                // Título con highlight de búsqueda
-                Text(
-                    text = highlightedTitle,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = "${item.subtitle} · ${item.createdAt?.take(10) ?: ""}",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 12.sp
-                )
-            }
-
-            // Botón eliminar con confirmación en dos pasos
-            if (showConfirm) {
-                TextButton(
-                    onClick = {
-                        showConfirm = false
-                        onRemove()
-                    },
-                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                ) {
-                    Text("Eliminar", fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                }
-            } else {
-                IconButton(
-                    onClick = { showConfirm = true },
-                    modifier = Modifier.size(32.dp)
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .background(
+                            when (item.type) {
+                                "site" -> EcoGuiaColors.Jade.copy(alpha = 0.12f)
+                                "photo" -> EcoGuiaColors.Gold.copy(alpha = 0.12f)
+                                else -> MaterialTheme.colorScheme.surfaceVariant
+                            },
+                            RoundedCornerShape(14.dp)
+                        ),
+                    contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Close,
-                        contentDescription = "Eliminar de colección",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(18.dp)
+                        imageVector = when (item.type) {
+                            "site" -> Icons.Default.AccountBalance
+                            "photo" -> Icons.Default.CameraAlt
+                            else -> Icons.Default.Map
+                        },
+                        contentDescription = null,
+                        tint = when (item.type) {
+                            "site" -> EcoGuiaColors.Jade
+                            "photo" -> EcoGuiaColors.Gold
+                            else -> MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+
+                Column(
+                    modifier = Modifier
+                        .padding(horizontal = 12.dp)
+                        .weight(1f)
+                ) {
+                    Text(
+                        text = highlightedTitle,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "${item.subtitle} · ${item.createdAt?.take(10) ?: ""}",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 12.sp
                     )
                 }
             }

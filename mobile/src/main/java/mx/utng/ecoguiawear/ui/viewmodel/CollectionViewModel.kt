@@ -91,12 +91,11 @@ class CollectionViewModel(
      */
     fun saveSite(userId: String, siteId: String, onSuccess: () -> Unit = {}) {
         viewModelScope.launch {
-            savedSiteIds[siteId] = true // Optimistic update para respuesta inmediata en UI
+            savedSiteIds[siteId] = true // State reactivo (Signal-like update instantáneo)
             try {
                 val success = repository.saveSite(userId, siteId)
                 if (success) {
                     onSuccess()
-                    loadCollection(userId) // Recarga para sincronizar lista
                 } else {
                     savedSiteIds[siteId] = false
                     _saveError.value = "No se pudo guardar el sitio."
@@ -115,18 +114,21 @@ class CollectionViewModel(
      */
     fun removeSite(userId: String, siteId: String, onSuccess: () -> Unit = {}) {
         viewModelScope.launch {
-            savedSiteIds[siteId] = false // Optimistic update
+            savedSiteIds[siteId] = false // Optimistic update del mapa
+            val previousItems = _items.value
+            _items.value = previousItems.filter { it.id != siteId } // Actualización inmediata de la lista UI
             try {
                 val success = repository.removeSavedSite(userId, siteId)
                 if (success) {
                     onSuccess()
-                    loadCollection(userId)
                 } else {
                     savedSiteIds[siteId] = true
+                    _items.value = previousItems // Revertir si falla en la BD
                     _saveError.value = "No se pudo eliminar el sitio."
                 }
             } catch (e: Exception) {
                 savedSiteIds[siteId] = true
+                _items.value = previousItems // Revertir si hay error de red
                 android.util.Log.e("CollectionVM", "Error al eliminar sitio: ${e.message}")
                 _saveError.value = "Error de red al eliminar."
             }

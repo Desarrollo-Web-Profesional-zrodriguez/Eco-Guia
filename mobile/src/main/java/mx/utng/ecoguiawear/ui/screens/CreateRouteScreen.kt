@@ -18,6 +18,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -68,6 +69,37 @@ fun CreateRouteScreen(
 
     var siteSearchQuery by remember { mutableStateOf("") }
     val currentLocation by locationViewModel.currentLocation
+
+    val dbCategories by locationViewModel.dbCategories
+    var selectedCategory by remember { mutableStateOf("Todas") }
+
+    val categories = remember(dbCategories, availableSites) {
+        if (dbCategories.isNotEmpty()) {
+            listOf("Todas") + dbCategories.map { it.name }.distinct()
+        } else {
+            listOf("Todas") + availableSites.map { it.siteType }.distinct().filter { it.isNotBlank() }
+        }
+    }
+
+    val filteredSites = remember(availableSites, selectedCategory, siteSearchQuery, currentLocation) {
+        availableSites.filter { site ->
+            val categoryMatch = selectedCategory == "Todas" || site.siteType.equals(selectedCategory, ignoreCase = true)
+            val queryMatch = siteSearchQuery.isBlank() ||
+                site.name.contains(siteSearchQuery, ignoreCase = true) ||
+                site.siteType.contains(siteSearchQuery, ignoreCase = true)
+
+            val distanceMatch = if (currentLocation != null && site.latitude != null && site.longitude != null) {
+                val results = FloatArray(1)
+                android.location.Location.distanceBetween(
+                    currentLocation!!.latitude, currentLocation!!.longitude,
+                    site.latitude!!, site.longitude!!, results
+                )
+                results[0] <= mx.utng.ecoguia.shared.config.EcoGuiaConfig.SEARCH_RADIUS_METERS
+            } else true
+
+            categoryMatch && queryMatch && distanceMatch
+        }
+    }
 
     LaunchedEffect(Unit) {
         locationViewModel.startLocationUpdates(context)
@@ -204,21 +236,23 @@ fun CreateRouteScreen(
                     )
                 }
 
-                val filteredSites = availableSites.filter { site ->
-                    val queryMatch = siteSearchQuery.isBlank() ||
-                        site.name.contains(siteSearchQuery, ignoreCase = true) ||
-                        site.siteType.contains(siteSearchQuery, ignoreCase = true)
-
-                    val distanceMatch = if (currentLocation != null && site.latitude != null && site.longitude != null) {
-                        val results = FloatArray(1)
-                        android.location.Location.distanceBetween(
-                            currentLocation!!.latitude, currentLocation!!.longitude,
-                            site.latitude!!, site.longitude!!, results
-                        )
-                        results[0] <= 50000 // 50km
-                    } else true
-
-                    queryMatch && distanceMatch
+                item {
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.padding(vertical = 6.dp)
+                    ) {
+                        items(categories) { cat ->
+                            FilterChip(
+                                selected = selectedCategory == cat,
+                                onClick = { selectedCategory = cat },
+                                label = { Text(cat, fontSize = 11.sp) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = EcoGuiaColors.Jade,
+                                    selectedLabelColor = Color.White
+                                )
+                            )
+                        }
+                    }
                 }
 
                 if (filteredSites.isEmpty()) {

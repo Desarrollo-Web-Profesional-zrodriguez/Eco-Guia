@@ -50,6 +50,9 @@ class LocationViewModel(
     private val _closestSite = mutableStateOf<RemoteHistoricalSite?>(null)
     val closestSite: State<RemoteHistoricalSite?> = _closestSite
 
+    private val _dbCategories = mutableStateOf<List<mx.utng.ecoguia.shared.domain.model.RemoteCategory>>(emptyList())
+    val dbCategories: State<List<mx.utng.ecoguia.shared.domain.model.RemoteCategory>> = _dbCategories
+
     /** Estado observable del ProximityService para que la UI pueda mostrar el toggle. */
     private val _isProximityServiceActive = mutableStateOf(false)
     val isProximityServiceActive: State<Boolean> = _isProximityServiceActive
@@ -110,8 +113,10 @@ class LocationViewModel(
             try {
                 val sites = repository.getHistoricalSites()
                 _nearbySites.value = sites
+                val cats = repository.getSiteCategories()
+                _dbCategories.value = cats
             } catch (e: Exception) {
-                Log.e("LocationViewModel", "Error al cargar sitios históricos: ${e.message}")
+                Log.e("LocationViewModel", "Error al cargar sitios/categorías: ${e.message}")
             }
         }
     }

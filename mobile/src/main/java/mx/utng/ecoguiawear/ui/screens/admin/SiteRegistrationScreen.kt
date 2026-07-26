@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Archivo: SiteRegistrationScreen.kt
  * Autor: Zahir Rodriguez
  * Fecha de última actualización: 2026-07-24
@@ -161,13 +161,6 @@ fun SiteRegistrationScreen(
                                     }
                                 )
                             }
-                            DropdownMenuItem(
-                                text = { Text("Otro", color = EcoGuiaColors.Gold) },
-                                onClick = {
-                                    category = "Otro"
-                                    expanded = false
-                                }
-                            )
                         }
                     }
                 }
