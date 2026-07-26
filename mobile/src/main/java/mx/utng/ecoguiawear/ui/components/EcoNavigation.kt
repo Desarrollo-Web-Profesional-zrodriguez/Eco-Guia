@@ -44,21 +44,20 @@ fun EcoBottomBar(
         NavigationBarItem(
             selected = currentRoute == "exploration",
             onClick = { onNavigate("exploration") },
-            icon = { Icon(Icons.Default.LocationOn, contentDescription = "Mapa") },
+            icon = { Icon(Icons.Default.LocationOn, contentDescription = "Sitios recomendados") },
             colors = NavigationBarItemDefaults.colors(
                 selectedIconColor = EcoGuiaColors.Jade,
                 unselectedIconColor = EcoGuiaColors.Muted,
                 indicatorColor = Color.Transparent
             )
         )
-        // Botón dinámico: Si hay una ruta activa en curso, muestra el acceso directo con ícono de Navegación resaltado
         NavigationBarItem(
-            selected = currentRoute == "active_route",
+            selected = currentRoute == "search_experience" || currentRoute == "active_route",
             onClick = { onNavigate(if (isRouteActive) "active_route" else "search_experience") },
             icon = {
                 Icon(
                     imageVector = if (isRouteActive) Icons.Default.Navigation else Icons.Default.Map,
-                    contentDescription = if (isRouteActive) "Ruta en curso" else "Buscar rutas"
+                    contentDescription = "Las rutas"
                 )
             },
             colors = NavigationBarItemDefaults.colors(
@@ -111,7 +110,7 @@ fun EcoNavigationRail(
     NavigationRail(
         containerColor = EcoGuiaColors.DeepBlue,
         contentColor = EcoGuiaColors.Text,
-        modifier = Modifier.width(72.dp)
+        modifier = Modifier.width(76.dp)
     ) {
         Column(
             modifier = Modifier.fillMaxHeight(),
@@ -120,7 +119,7 @@ fun EcoNavigationRail(
             NavigationRailItem(
                 selected = currentRoute == "exploration",
                 onClick = { onNavigate("exploration") },
-                icon = { Icon(Icons.Default.LocationOn, contentDescription = "Mapa") },
+                icon = { Icon(Icons.Default.LocationOn, contentDescription = "Sitios recomendados") },
                 colors = NavigationRailItemDefaults.colors(
                     selectedIconColor = EcoGuiaColors.Jade,
                     unselectedIconColor = EcoGuiaColors.Muted,
@@ -128,12 +127,12 @@ fun EcoNavigationRail(
                 )
             )
             NavigationRailItem(
-                selected = currentRoute == "active_route",
+                selected = currentRoute == "search_experience" || currentRoute == "active_route",
                 onClick = { onNavigate(if (isRouteActive) "active_route" else "search_experience") },
                 icon = {
                     Icon(
                         imageVector = if (isRouteActive) Icons.Default.Navigation else Icons.Default.Map,
-                        contentDescription = if (isRouteActive) "Ruta en curso" else "Buscar rutas"
+                        contentDescription = "Las rutas"
                     )
                 },
                 colors = NavigationRailItemDefaults.colors(

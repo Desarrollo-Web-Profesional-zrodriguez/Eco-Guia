@@ -282,28 +282,73 @@ fun ExplorationScreen(
                     }
                 }
 
-                LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(
-                        count = visibleSites.size,
-                        key = { index -> visibleSites[index].id }
-                    ) { index ->
-                        val site = visibleSites[index]
-                        val isFavorite = collectionViewModel.savedSiteIds[site.id] == true
+                val isLoading by locationViewModel.isLoading
 
-                        val dismissState = key(site.id, isFavorite) {
-                            rememberSwipeToDismissBoxState(
-                                confirmValueChange = { value ->
-                                    if (value == SwipeToDismissBoxValue.EndToStart && userId != "guest") {
-                                        if (isFavorite) {
-                                            collectionViewModel.removeSite(userId, site.id)
-                                        } else {
-                                            collectionViewModel.saveSite(userId, site.id)
-                                        }
+                if (isLoading) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        repeat(3) {
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(72.dp),
+                                shape = RoundedCornerShape(20.dp),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(48.dp)
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .background(Color.Gray.copy(alpha = 0.3f))
+                                    )
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth(0.6f)
+                                                .height(14.dp)
+                                                .clip(RoundedCornerShape(4.dp))
+                                                .background(Color.Gray.copy(alpha = 0.3f))
+                                        )
+                                        Spacer(modifier = Modifier.height(6.dp))
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth(0.4f)
+                                                .height(10.dp)
+                                                .clip(RoundedCornerShape(4.dp))
+                                                .background(Color.Gray.copy(alpha = 0.2f))
+                                        )
                                     }
-                                    false
                                 }
-                            )
+                            }
                         }
+                    }
+                } else {
+                    LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        items(
+                            count = visibleSites.size,
+                            key = { index -> visibleSites[index].id }
+                        ) { index ->
+                            val site = visibleSites[index]
+                            val isFavorite = collectionViewModel.savedSiteIds[site.id] == true
+
+                            val dismissState = key(site.id, isFavorite) {
+                                rememberSwipeToDismissBoxState(
+                                    confirmValueChange = { value ->
+                                        if (value == SwipeToDismissBoxValue.EndToStart && userId != "guest") {
+                                            if (isFavorite) {
+                                                collectionViewModel.removeSite(userId, site.id)
+                                            } else {
+                                                collectionViewModel.saveSite(userId, site.id)
+                                            }
+                                        }
+                                        false
+                                    }
+                                )
+                            }
 
                         SwipeToDismissBox(
                             state = dismissState,

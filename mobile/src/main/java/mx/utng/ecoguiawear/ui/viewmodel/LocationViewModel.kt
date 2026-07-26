@@ -44,6 +44,9 @@ class LocationViewModel(
     private val _currentLocation = mutableStateOf<Location?>(null)
     val currentLocation: State<Location?> = _currentLocation
 
+    private val _isLoading = mutableStateOf(true)
+    val isLoading: State<Boolean> = _isLoading
+
     private val _nearbySites = mutableStateOf<List<RemoteHistoricalSite>>(emptyList())
     val nearbySites: State<List<RemoteHistoricalSite>> = _nearbySites
 
@@ -152,6 +155,8 @@ class LocationViewModel(
                 
             } catch (e: Exception) {
                 Log.e("LocationViewModel", "Error al obtener sitios cercanos: ${e.message}")
+            } finally {
+                _isLoading.value = false
             }
         }
     }

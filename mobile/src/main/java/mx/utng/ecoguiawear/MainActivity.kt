@@ -13,6 +13,7 @@
 package mx.utng.ecoguiawear
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -73,6 +74,7 @@ class MainActivity : ComponentActivity() {
 /**
  * Contenedor principal que gestiona el Scaffold global, la navegación y las notificaciones.
  */
+@SuppressLint("ContextCastToActivity")
 @Composable
 fun MainAppContainer(activity: ComponentActivity, repository: EcoGuiaRepositoryImpl) {
     val navController = rememberNavController()
@@ -135,10 +137,18 @@ fun MainAppContainer(activity: ComponentActivity, repository: EcoGuiaRepositoryI
                 popUpTo(0) { inclusive = true }
             }
         } else {
+            val isMainTab = route in listOf("exploration", "search_experience", "collection")
             navController.navigate(route) {
-                popUpTo("exploration") { saveState = true }
+                if (isMainTab) {
+                    popUpTo("exploration") { 
+                        inclusive = (route == "exploration")
+                        saveState = false
+                    }
+                } else {
+                    popUpTo("exploration") { saveState = true }
+                }
                 launchSingleTop = true
-                restoreState = true
+                restoreState = isMainTab && route != "exploration"
             }
         }
     }

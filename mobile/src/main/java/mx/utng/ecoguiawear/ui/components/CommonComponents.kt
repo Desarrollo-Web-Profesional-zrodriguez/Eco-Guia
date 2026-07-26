@@ -51,7 +51,7 @@ fun EcoTopBar(
             .fillMaxWidth()
             .background(surface)
             .windowInsetsPadding(WindowInsets.statusBars)
-            .padding(start = 24.dp, end = 16.dp, top = 8.dp, bottom = 8.dp)
+            .padding(start = 24.dp, end = 16.dp, top = 0.dp, bottom = 4.dp)
     ) {
         Column(modifier = Modifier.align(Alignment.CenterStart)) {
             if (subtitle.isNotBlank()) {
