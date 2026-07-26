@@ -38,7 +38,8 @@ import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
  */
 @Composable
 fun MoreOptionsScreen(
-    isAdmin: Boolean = true,
+    isSuperAdmin: Boolean = true,
+    isModerator: Boolean = true,
     onOptionClick: (String) -> Unit
 ) {
     Column(
@@ -101,22 +102,23 @@ fun MoreOptionsScreen(
                     )
                 }
 
-                item {
-                    MenuOptionItem(
-                        title = "Crear ruta",
-                        subtitle = "Diseñar recorrido turístico",
-                        icon = Icons.Default.AltRoute,
-                        onClick = { onOptionClick("create_route") }
-                    )
-                }
-
-                item {
-                    MenuOptionItem(
-                        title = "Alta de sitio",
-                        subtitle = "Registrar nuevo punto histórico",
-                        icon = Icons.Default.AddLocationAlt,
-                        onClick = { onOptionClick("site_registration") }
-                    )
+                if (isModerator) {
+                    item {
+                        MenuOptionItem(
+                            title = "Crear ruta",
+                            subtitle = "Diseñar recorrido turístico",
+                            icon = Icons.Default.AltRoute,
+                            onClick = { onOptionClick("create_route") }
+                        )
+                    }
+                    item {
+                        MenuOptionItem(
+                            title = "Alta de sitio",
+                            subtitle = "Registrar nuevo punto histórico",
+                            icon = Icons.Default.AddLocationAlt,
+                            onClick = { onOptionClick("site_registration") }
+                        )
+                    }
                 }
 
                 item {
@@ -138,7 +140,6 @@ fun MoreOptionsScreen(
                         onClick = { onOptionClick("chat_ia") }
                     )
                 }
-
 
                 item {
                     MenuOptionItem(
@@ -179,13 +180,26 @@ fun MoreOptionsScreen(
                     )
                 }
 
-                item {
-                    MenuOptionItem(
-                        title = "Panel Admin",
-                        subtitle = "Administración de sistema",
-                        icon = Icons.Default.AdminPanelSettings,
-                        onClick = { onOptionClick("admin") }
-                    )
+                if (isModerator) {
+                    item {
+                        MenuOptionItem(
+                            title = "Moderación",
+                            subtitle = "Revisión de reportes y cápsulas",
+                            icon = Icons.Default.Security,
+                            onClick = { onOptionClick("moderation_list") }
+                        )
+                    }
+                }
+
+                if (isSuperAdmin) {
+                    item {
+                        MenuOptionItem(
+                            title = "Panel Admin",
+                            subtitle = "Administración total de sistema",
+                            icon = Icons.Default.AdminPanelSettings,
+                            onClick = { onOptionClick("admin") }
+                        )
+                    }
                 }
             }
         }
@@ -196,6 +210,7 @@ fun MoreOptionsScreen(
 @Composable
 fun MoreOptionsScreenPreview() {
     EcoGuiaMobileTheme {
-        MoreOptionsScreen(true, {})
+        MoreOptionsScreen(true, true, {})
     }
 }
+

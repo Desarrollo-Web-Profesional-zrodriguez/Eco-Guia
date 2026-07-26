@@ -128,7 +128,7 @@ fun ContextMenuItemRow(
 }
 
 /**
- * Obtiene las opciones del menú según la pantalla donde se encuentre el usuario.
+ * Obtiene las opciones del menú según la pantalla y el rol del usuario.
  */
 private fun getContextItems(route: String, isAdmin: Boolean): List<ContextMenuItem> {
     val items = mutableListOf<ContextMenuItem>()
@@ -143,16 +143,21 @@ private fun getContextItems(route: String, isAdmin: Boolean): List<ContextMenuIt
     items.add(ContextMenuItem("Cápsula Geo-Drop (AR)", Icons.Default.CameraAlt, "camera_capture", enabled = true))
     items.add(ContextMenuItem("Mi Colección", Icons.Default.Favorite, "collection"))
     items.add(ContextMenuItem("Rutas Turísticas", Icons.Default.Map, "search_experience"))
-    items.add(ContextMenuItem("Crear Ruta", Icons.Default.AltRoute, "create_route"))
-    items.add(ContextMenuItem("Alta de Sitio", Icons.Default.AddLocationAlt, "site_registration"))
+
+    if (isAdmin) {
+        items.add(ContextMenuItem("Crear Ruta", Icons.Default.AltRoute, "create_route"))
+        items.add(ContextMenuItem("Alta de Sitio", Icons.Default.AddLocationAlt, "site_registration"))
+        items.add(ContextMenuItem("Moderación", Icons.Default.Security, "moderation_list"))
+    }
+
     items.add(ContextMenuItem("Miguel Hidalgo IA", Icons.Default.AutoAwesome, "chat_ia", enabled = true))
     items.add(ContextMenuItem("Dispositivos", Icons.Default.Watch, "linked_devices"))
     items.add(ContextMenuItem("Mi Perfil", Icons.Default.AccountCircle, "profile", enabled = true))
     items.add(ContextMenuItem("Ajustes", Icons.Default.Settings, "permissions", enabled = true))
-
 
     // Cerrar Sesión siempre presente
     items.add(ContextMenuItem("Cerrar Sesión", Icons.AutoMirrored.Filled.ExitToApp, "logout"))
 
     return items
 }
+

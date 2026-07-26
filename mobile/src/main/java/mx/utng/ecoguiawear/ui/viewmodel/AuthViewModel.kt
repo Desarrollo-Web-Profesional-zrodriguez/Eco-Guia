@@ -53,6 +53,32 @@ class AuthViewModel(
         get() = (authState.value as? AuthState.Success)?.user
 
     /**
+     * Determina si el usuario autenticado es Super Admin (Desarrollador / Administrador total).
+     */
+    val isSuperAdmin: Boolean
+        get() = currentUser?.role?.lowercase() in listOf("super_admin", "admin", "administrator")
+
+    /**
+     * Determina si el usuario autenticado tiene rol de Moderador / Gestor Cultural.
+     */
+    val isModerator: Boolean
+        get() = isSuperAdmin || currentUser?.role?.lowercase() in listOf("moderator", "mod")
+
+    /**
+     * Determina si el usuario tiene privilegios administrativos o de gestión (SuperAdmin o Moderador).
+     */
+    val isAdmin: Boolean
+        get() = isSuperAdmin || isModerator
+
+    /**
+     * Determina si es un usuario normal (visitante/turista).
+     */
+    val isUser: Boolean
+        get() = currentUser != null
+
+
+
+    /**
      * Intenta iniciar sesión con el correo y contraseña proporcionados.
      */
     fun login(email: String, password_hash: String) {

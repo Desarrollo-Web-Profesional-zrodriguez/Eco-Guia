@@ -159,17 +159,56 @@ class EcoGuiaRepositoryImpl(
     }
 
     /**
-     * Verifica las credenciales de un usuario. Utiliza crypt() de pgcrypto.
+     * Verifica las credenciales de un usuario.
+     * Soporta las credenciales directas por username/rol:
+     * - admin / 1234 -> Rol: super_admin
+     * - mod / 1234   -> Rol: moderator
+     * - user / 1234  -> Rol: user
+     * Para el resto de usuarios normales, consulta la base de datos de Neon filtrando estrictamente por email.
      */
     override suspend fun login(email: String, password_hash: String): RemoteUser? {
-        val query = "SELECT id, email, display_name, role, avatar_url, created_at FROM users WHERE email = $1 AND password_hash = crypt($2, password_hash) AND is_active = TRUE"
+        val input = email.trim().lowercase()
+
+        // 1. Cuentas estáticas predeterminadas de prueba por rol
+        when {
+            input == "admin" && password_hash == "1234" -> {
+                return RemoteUser(
+                    id = "00000000-0000-0000-0000-000000000001",
+                    email = "admin@ecoguia.com",
+                    displayName = "Super Admin (Dev)",
+                    role = "super_admin"
+                )
+            }
+            input == "mod" && password_hash == "1234" -> {
+                return RemoteUser(
+                    id = "00000000-0000-0000-0000-000000000002",
+                    email = "mod@ecoguia.com",
+                    displayName = "Moderador Cultural",
+                    role = "moderator"
+                )
+            }
+            input == "user" && password_hash == "1234" -> {
+                return RemoteUser(
+                    id = "00000000-0000-0000-0000-000000000003",
+                    email = "user@ecoguia.com",
+                    displayName = "Usuario Turista",
+                    role = "user"
+                )
+            }
+        }
+
+        // 2. Para usuarios normales en la base de datos Neon (requiere correo válido)
+        val query = "SELECT id, email, display_name, role, avatar_url, created_at FROM users WHERE LOWER(email) = LOWER($1) AND password_hash = crypt($2, password_hash) AND is_active = TRUE"
         return try {
-            val result = neonClient.executeQuery<RemoteUser>(query, listOf(email, password_hash))
+            val result = neonClient.executeQuery<RemoteUser>(query, listOf(input, password_hash))
             result.firstOrNull()
         } catch (e: Exception) {
+            android.util.Log.e("EcoGuiaRepo", "Error en login por correo: ${e.message}", e)
             null
         }
     }
+
+
 
     /**
      * Registra un nuevo usuario. Cifra la contraseña con gen_salt('bf').

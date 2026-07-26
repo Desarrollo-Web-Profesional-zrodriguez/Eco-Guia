@@ -127,8 +127,9 @@ fun MainAppContainer(activity: ComponentActivity, repository: EcoGuiaRepositoryI
         }
     }
 
-    var isAdmin by remember { mutableStateOf(true) }
+    val isAdmin = authViewModel.isAdmin
     var showBottomMenu by remember { mutableStateOf(false) }
+
 
     val authRoutes = listOf("login", "signup", "recovery")
     val showNav = currentRoute !in authRoutes

@@ -141,7 +141,8 @@ fun AppNavHost(
         }
         composable("more_options") {
             MoreOptionsScreen(
-                isAdmin = isAdmin,
+                isSuperAdmin = authViewModel.isSuperAdmin,
+                isModerator = authViewModel.isModerator,
                 onOptionClick = { route ->
                     if (route == "logout") {
                         authViewModel.logout()
@@ -154,6 +155,7 @@ fun AppNavHost(
                 }
             )
         }
+
 
         // ── Chat / IA ─────────────────────────────────────────────────────────
         composable("chat_ia") {

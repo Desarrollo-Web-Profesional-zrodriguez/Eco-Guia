@@ -47,10 +47,19 @@ Desarrollar una solución tecnológica multiplataforma (Móvil y Wear OS) que fa
   - **Radar Activo:** Visualización de distancia y dirección al punto más cercano.
   - **Brújula Dinámica:** Flecha de orientación que gira en tiempo real.
   - **Resumen de Ruta:** Seguimiento del progreso de paradas visitadas.
-- **Feedback Háptico:** Vibraciones personalizadas para cambios de pantalla y llegada a objetivos.
-- **Soporte Rotativo:** Control total mediante la corona del reloj o rueda del mouse.
+## 👥 Roles del Sistema y Credenciales de Prueba
+
+El sistema cuenta con un control de acceso basado en **3 roles**, donde un usuario puede acumular permisos según sus atribuciones:
+
+| Rol | Descripción y Permisos | Credenciales de Prueba (Login) |
+| :--- | :--- | :--- |
+| **👑 Super Admin** | **Desarrolladores / Administradores de Sistema.** Acceso total a analíticas, mapa de calor, gestión de Smart TV, panel de control y todos los permisos de Moderador y Usuario. | **User:** `admin` <br> **Pass:** `1234` |
+| **🛡️ Moderador** | **Gestores Culturales.** Acceso a Alta de Sitios Históricos, Creación de Rutas Guiadas, Moderación de Comunidad (aprobar/rechazar Geo-Drops y revisar reportes) y alimentación de IA. | **User:** `mod` <br> **Pass:** `1234` |
+| **🌿 Usuario Normal** | **Turistas / Visitantes.** Exploración de mapa con radar GPS, escáner de cámara AR de Geo-Drops, interacción con chatbot Miguel Hidalgo IA y Mi Colección. | **User:** `user` <br> **Pass:** `1234` <br> *(O iniciar sesión con correo registrado)* |
+
 
 ## 🚀 Instrucciones de Ejecución
+
 
 1. **Clonar el Repositorio:**
    ```bash
