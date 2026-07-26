@@ -350,59 +350,60 @@ fun ExplorationScreen(
                                 )
                             }
 
-                        SwipeToDismissBox(
-                            state = dismissState,
-                            enableDismissFromStartToEnd = false,
-                            enableDismissFromEndToStart = true,
-                            backgroundContent = {
-                                val backgroundColor = if (isFavorite) Color(0xFFE53935) else EcoGuiaColors.Jade
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .background(backgroundColor, RoundedCornerShape(20.dp))
-                                        .padding(horizontal = 20.dp),
-                                    contentAlignment = Alignment.CenterEnd
-                                ) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text(
-                                            text = if (isFavorite) "Quitar de Favoritos" else "Agregar a Favoritos",
-                                            color = Color.White,
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 12.sp
-                                        )
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Icon(
-                                            imageVector = if (isFavorite) Icons.Default.FavoriteBorder else Icons.Default.Favorite,
-                                            contentDescription = if (isFavorite) "Quitar" else "Agregar",
-                                            tint = Color.White
-                                        )
+                            SwipeToDismissBox(
+                                state = dismissState,
+                                enableDismissFromStartToEnd = false,
+                                enableDismissFromEndToStart = true,
+                                backgroundContent = {
+                                    val backgroundColor = if (isFavorite) Color(0xFFE53935) else EcoGuiaColors.Jade
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .background(backgroundColor, RoundedCornerShape(20.dp))
+                                            .padding(horizontal = 20.dp),
+                                        contentAlignment = Alignment.CenterEnd
+                                    ) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Text(
+                                                text = if (isFavorite) "Quitar de Favoritos" else "Agregar a Favoritos",
+                                                color = Color.White,
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 12.sp
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Icon(
+                                                imageVector = if (isFavorite) Icons.Default.FavoriteBorder else Icons.Default.Favorite,
+                                                contentDescription = if (isFavorite) "Quitar" else "Agregar",
+                                                tint = Color.White
+                                            )
+                                        }
                                     }
                                 }
-                            }
-                        ) {
-                            RecommendedSiteItem(
-                                title = site.name,
-                                subtitle = site.siteType + " • " + (site.address ?: ""),
-                                icon = if (isFavorite) Icons.Default.Favorite else Icons.Default.Place,
-                                trailing = "Ver",
-                                onVerClick = {
-                                    isFollowingUser = false
-                                    selectedSite = site
-                                    if (userId != "guest") {
-                                        collectionViewModel.checkIfSaved(userId, site.id)
-                                    }
-                                }
-                            )
-                        }
-                    }
-
-                    if (sortedSites.size > displayLimit) {
-                        item {
-                            TextButton(
-                                onClick = { displayLimit += 5 },
-                                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
                             ) {
-                                Text("Cargar más sitios (+5)", color = EcoGuiaColors.Jade, fontWeight = FontWeight.Bold)
+                                RecommendedSiteItem(
+                                    title = site.name,
+                                    subtitle = site.siteType + " • " + (site.address ?: ""),
+                                    icon = if (isFavorite) Icons.Default.Favorite else Icons.Default.Place,
+                                    trailing = "Ver",
+                                    onVerClick = {
+                                        isFollowingUser = false
+                                        selectedSite = site
+                                        if (userId != "guest") {
+                                            collectionViewModel.checkIfSaved(userId, site.id)
+                                        }
+                                    }
+                                )
+                            }
+                        }
+
+                        if (sortedSites.size > displayLimit) {
+                            item {
+                                TextButton(
+                                    onClick = { displayLimit += 5 },
+                                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+                                ) {
+                                    Text("Cargar más sitios (+5)", color = EcoGuiaColors.Jade, fontWeight = FontWeight.Bold)
+                                }
                             }
                         }
                     }
