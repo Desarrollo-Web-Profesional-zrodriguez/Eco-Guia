@@ -100,3 +100,115 @@ Desarrollar una solución tecnológica multiplataforma (Móvil y Wear OS) que fa
 <div align="center">
   <sub>Desarrollado para la materia de Desarrollo de Aplicaciones para Dispositivos Inteligentes</sub>
 </div>
+
+---
+
+## 🏗️ Arquitectura del Módulo Mobile
+
+El módulo `:mobile` sigue una arquitectura **Feature-First + MVVM** organizada por funcionalidad. Cada pantalla grande se divide en componentes enfocados para mantener archivos menores a 200 líneas.
+
+```mermaid
+graph TD
+    subgraph "🟢 Entrada"
+        MA["MainActivity.kt\n~280 líneas"]
+    end
+
+    subgraph "🔵 Navegación"
+        ANH["AppNavHost.kt\nui/navigation/"]
+    end
+
+    subgraph "📱 Screens — Orquestadores"
+        ES["ExplorationScreen.kt\n~230 líneas"]
+        MCS["MyCollectionScreen.kt\n~200 líneas"]
+        CRS["CreateRouteScreen.kt"]
+        SES["SearchExperienceScreen.kt"]
+        ARS["ActiveRouteScreen.kt"]
+        LS["LoginScreen.kt"]
+    end
+
+    subgraph "🧩 Feature — Exploration"
+        EMC["ExplorationMapContent.kt\nMapa + Marcadores + Zoom"]
+        ESL["ExplorationSiteList.kt\nLista + Skeleton + Swipe"]
+        SDS["SiteDetailSheet.kt\nBottomSheet de Detalle"]
+        MMU["MapMarkerUtils.kt\nUtilidades de Íconos"]
+    end
+
+    subgraph "🧩 Feature — Collection"
+        CIC["CollectionItemCard.kt\nTarjeta Swipeable + Confirm"]
+    end
+
+    subgraph "🎨 Componentes Compartidos"
+        ETB["EcoTopBar"]
+        EBB["EcoBottomBar / EcoNavigationRail"]
+        ECC["EcoTextField / EcoButton / EcoChipGroup"]
+    end
+
+    subgraph "🧠 ViewModels — MVVM"
+        LVM["LocationViewModel"]
+        CVM["CollectionViewModel"]
+        RVM["RouteViewModel"]
+        AVM["AuthViewModel"]
+        SRVM["SiteRegistrationViewModel"]
+    end
+
+    subgraph "🗄️ Datos"
+        SH["shared/\nRepository + Models"]
+        DB["Neon PostgreSQL\nvía NeonClient"]
+    end
+
+    MA --> ANH
+    MA --> EBB
+    ANH --> ES
+    ANH --> MCS
+    ANH --> CRS
+    ANH --> SES
+    ANH --> ARS
+    ANH --> LS
+
+    ES --> EMC
+    ES --> ESL
+    ES --> SDS
+    EMC --> MMU
+
+    MCS --> CIC
+
+    ES --> LVM
+    ES --> CVM
+    MCS --> CVM
+    CRS --> RVM
+    SES --> RVM
+    ARS --> RVM
+    LS --> AVM
+
+    ES --> ETB
+    MCS --> ETB
+
+    LVM --> SH
+    CVM --> SH
+    RVM --> SH
+    SH --> DB
+```
+
+### 📂 Estructura de Directorios
+
+```
+mobile/src/main/java/mx/utng/ecoguiawear/
+├── MainActivity.kt               ← Punto de entrada (~280 líneas)
+└── ui/
+    ├── navigation/
+    │   └── AppNavHost.kt         ← Grafo de navegación completo
+    ├── feature/
+    │   ├── exploration/
+    │   │   ├── ExplorationMapContent.kt
+    │   │   ├── ExplorationSiteList.kt
+    │   │   ├── SiteDetailSheet.kt
+    │   │   └── MapMarkerUtils.kt
+    │   └── collection/
+    │       └── CollectionItemCard.kt
+    ├── screens/                  ← Orquestadores de pantalla (<200 líneas c/u)
+    ├── components/               ← Componentes verdaderamente compartidos
+    ├── viewmodel/                ← ViewModels por dominio
+    └── theme/                    ← Sistema de diseño EcoGuiaColors
+```
+
+> **Regla de oro:** Los archivos `*Screen.kt` son orquestadores de estado, NO contienen lógica visual. Máximo 200 líneas. Los componentes específicos de una feature viven en `ui/feature/<nombre>/`.

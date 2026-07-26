@@ -1,17 +1,21 @@
 /**
  * Archivo: MyCollectionScreen.kt
- * Autor: ZahirMora
- * Fecha de última actualización: 2026-07-25
- * Descripción: Pantalla de colección personal del usuario. Muestra elementos guardados desde
- * user_saved_items en Neon. Soporta filtros por tipo y eliminación individual con swipe o botón.
+ * Autores: ZahirAndres, CesarEnrique
+ * Fecha de última actualización: 2026-07-26
+ * Descripción: Pantalla de colección personal del usuario. Actúa como orquestador ligero
+ * que gestiona el estado de filtros, búsqueda y paginación. La lógica visual de las tarjetas
+ * se ha separado a ui/feature/collection/ para mantener archivos pequeños y enfocados.
+ *
+ * Archivos relacionados en ui/feature/collection/:
+ * - CollectionItemCard.kt → Tarjeta swipeable individual con confirmación de eliminación.
+ *
+ * Funciones destacadas:
+ * - MyCollectionScreen: Orquestador con EcoTopBar, búsqueda, tabs, lista y grid landscape.
  */
 
 package mx.utng.ecoguiawear.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -19,11 +23,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountBalance
-import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -31,23 +31,28 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import mx.utng.ecoguia.shared.domain.model.RemoteCollectionItem
 import mx.utng.ecoguiawear.ui.components.EcoTopBar
+import mx.utng.ecoguiawear.ui.feature.collection.CollectionItemRow
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 import mx.utng.ecoguiawear.ui.viewmodel.CollectionViewModel
 
 /**
- * Composable que representa la pantalla "Mi Colección".
+ * Pantalla de colección personal del usuario.
+ *
+ * Muestra los elementos guardados desde la tabla [user_saved_items] en Neon.
+ * Soporta filtros por tipo (Todos, Sitios, Fotos, Rutas), búsqueda de texto y
+ * eliminación individual con swipe-to-dismiss y confirmación modal.
+ * En modo landscape renderiza una grilla de 2 columnas.
+ *
  * @param userId ID del usuario autenticado para cargar y eliminar sus elementos.
+ * @param viewModel ViewModel que gestiona la lista de elementos y el estado de carga.
  */
 @Composable
 fun MyCollectionScreen(
@@ -69,7 +74,7 @@ fun MyCollectionScreen(
         viewModel.loadCollection(userId)
     }
 
-    // Filtro combinado: tab + búsqueda de texto
+    // Filtro combinado: tipo de tab + texto de búsqueda
     val filteredItems = remember(items, selectedTab, searchQuery) {
         val typeFilter = tabFilters[selectedTab]
         val query = searchQuery.trim().lowercase()
@@ -101,18 +106,14 @@ fun MyCollectionScreen(
             }
         )
 
-        // Campo de búsqueda expandible
+        // Campo de búsqueda expandible con animación
         AnimatedVisibility(visible = showSearch) {
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
                 placeholder = { Text("Buscar en mi colección...") },
                 leadingIcon = {
-                    Icon(
-                        Icons.Default.Search,
-                        contentDescription = null,
-                        tint = EcoGuiaColors.Jade
-                    )
+                    Icon(Icons.Default.Search, contentDescription = null, tint = EcoGuiaColors.Jade)
                 },
                 trailingIcon = {
                     if (searchQuery.isNotEmpty()) {
@@ -134,7 +135,7 @@ fun MyCollectionScreen(
             )
         }
 
-        // Info Card con contador y tabs de filtro
+        // Card de contador y tabs de filtro
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -144,7 +145,6 @@ fun MyCollectionScreen(
             shape = RoundedCornerShape(24.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                // Contador adaptado a búsqueda activa
                 val countText = when {
                     searchQuery.isNotEmpty() -> "${filteredItems.size} resultado(s) para \"$searchQuery\""
                     else -> "${items.size} guardados en tu colección"
@@ -158,7 +158,7 @@ fun MyCollectionScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Tabs de filtro
+                // Tabs de filtro por tipo
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -191,7 +191,7 @@ fun MyCollectionScreen(
             }
         }
 
-        // Lista de elementos
+        // Sección de lista de elementos
         Column(modifier = Modifier.padding(horizontal = 16.dp)) {
             Text(
                 text = when {
@@ -211,7 +211,9 @@ fun MyCollectionScreen(
                 }
                 filteredItems.isEmpty() -> {
                     Box(
-                        modifier = Modifier.fillMaxWidth().padding(top = 32.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 32.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -240,9 +242,11 @@ fun MyCollectionScreen(
                 }
                 else -> {
                     val configuration = androidx.compose.ui.platform.LocalConfiguration.current
-                    val isLandscape = configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
+                    val isLandscape =
+                        configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
 
                     if (isLandscape) {
+                        // Grilla de 2 columnas en modo horizontal
                         androidx.compose.foundation.lazy.grid.LazyVerticalGrid(
                             columns = androidx.compose.foundation.lazy.grid.GridCells.Fixed(2),
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -261,6 +265,7 @@ fun MyCollectionScreen(
                             }
                         }
                     } else {
+                        // Lista vertical en modo portrait
                         LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                             itemsIndexed(
                                 items = filteredItems,
@@ -274,153 +279,6 @@ fun MyCollectionScreen(
                             }
                         }
                     }
-                }
-            }
-        }
-    }
-}
-/**
- * Fila de un elemento guardado en la colección con SwipeToDismiss.
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun CollectionItemRow(
-    item: RemoteCollectionItem,
-    searchQuery: String = "",
-    onRemove: () -> Unit = {}
-) {
-    var showConfirmDialog by remember { mutableStateOf(false) }
-
-    val dismissState = rememberSwipeToDismissBoxState(
-        confirmValueChange = { value ->
-            if (value == SwipeToDismissBoxValue.EndToStart) {
-                showConfirmDialog = true
-            }
-            false // Siempre mantener la tarjeta en su posición visual hasta confirmar en la modal
-        }
-    )
-
-    if (showConfirmDialog) {
-        AlertDialog(
-            onDismissRequest = { showConfirmDialog = false },
-            title = { Text("Eliminar de Mi Colección", fontWeight = FontWeight.Bold) },
-            text = { Text("¿Deseas quitar \"${item.title}\" de tu colección personal?") },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        showConfirmDialog = false
-                        onRemove()
-                    },
-                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                ) {
-                    Text("Eliminar", fontWeight = FontWeight.Bold)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showConfirmDialog = false }) {
-                    Text("Cancelar")
-                }
-            }
-        )
-    }
-
-    val highlightedTitle = buildAnnotatedString {
-        val query = searchQuery.trim().lowercase()
-        val title = item.title
-        if (query.isEmpty()) {
-            append(title)
-        } else {
-            var start = 0
-            val lower = title.lowercase()
-            while (start < title.length) {
-                val idx = lower.indexOf(query, start)
-                if (idx == -1) {
-                    append(title.substring(start))
-                    break
-                }
-                append(title.substring(start, idx))
-                withStyle(SpanStyle(background = EcoGuiaColors.Jade.copy(alpha = 0.25f), color = EcoGuiaColors.Jade, fontWeight = FontWeight.Bold)) {
-                    append(title.substring(idx, idx + query.length))
-                }
-                start = idx + query.length
-            }
-        }
-    }
-
-    SwipeToDismissBox(
-        state = dismissState,
-        enableDismissFromStartToEnd = false,
-        enableDismissFromEndToStart = true,
-        backgroundContent = {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color(0xFFE53935), RoundedCornerShape(16.dp))
-                    .padding(horizontal = 20.dp),
-                contentAlignment = Alignment.CenterEnd
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Deslizar para eliminar",
-                    tint = Color.White
-                )
-            }
-        }
-    ) {
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-        ) {
-            Row(
-                modifier = Modifier.padding(12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(44.dp)
-                        .background(
-                            when (item.type) {
-                                "site" -> EcoGuiaColors.Jade.copy(alpha = 0.12f)
-                                "photo" -> EcoGuiaColors.Gold.copy(alpha = 0.12f)
-                                else -> MaterialTheme.colorScheme.surfaceVariant
-                            },
-                            RoundedCornerShape(14.dp)
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = when (item.type) {
-                            "site" -> Icons.Default.AccountBalance
-                            "photo" -> Icons.Default.CameraAlt
-                            else -> Icons.Default.Map
-                        },
-                        contentDescription = null,
-                        tint = when (item.type) {
-                            "site" -> EcoGuiaColors.Jade
-                            "photo" -> EcoGuiaColors.Gold
-                            else -> MaterialTheme.colorScheme.onSurfaceVariant
-                        },
-                        modifier = Modifier.size(22.dp)
-                    )
-                }
-
-                Column(
-                    modifier = Modifier
-                        .padding(horizontal = 12.dp)
-                        .weight(1f)
-                ) {
-                    Text(
-                        text = highlightedTitle,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = "${item.subtitle} · ${item.createdAt?.take(10) ?: ""}",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 12.sp
-                    )
                 }
             }
         }

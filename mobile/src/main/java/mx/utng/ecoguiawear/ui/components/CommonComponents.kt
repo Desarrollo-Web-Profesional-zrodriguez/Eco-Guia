@@ -1,8 +1,13 @@
 /**
  * Archivo: CommonComponents.kt
- * Autor: ZahirMora
- * Fecha de Ãºltima actualizaciÃ³n: 2026-07-22
- * DescripciÃ³n: Biblioteca de componentes de UI reutilizables para mantener la consistencia visual en la aplicaciÃ³n.
+ * Autores: ZahirAndres, CesarEnrique
+ * Fecha de última actualización: 2026-07-26
+ * Descripción: Biblioteca de componentes de UI reutilizables para mantener la consistencia
+ * visual en toda la aplicación EcoGuía. Incluye EcoTopBar, EcoBackground, EcoTextField,
+ * EcoChipGroup, EcoButton y EcoLogo.
+ *
+ * Todos los componentes siguen el sistema de diseño EcoGuiaColors y se adaptan
+ * automáticamente al modo oscuro mediante MaterialTheme.colorScheme.
  */
 
 package mx.utng.ecoguiawear.ui.components

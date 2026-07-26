@@ -1,13 +1,16 @@
 /**
  * Archivo: MainActivity.kt
- * Autor: Zahir Rodriguez
- * Fecha de última actualización: 2026-07-24
- * Descripción: Actividad principal y punto de entrada de la aplicación. Configura el Scaffold global,
- * la navegación mediante NavHost y gestiona los permisos críticos de ubicación y cámara.
- * 
+ * Autores: ZahirAndres, CesarEnrique
+ * Fecha de última actualización: 2026-07-26
+ * Descripción: Actividad principal y punto de entrada de la aplicación EcoGuía. Configura el
+ * Scaffold global, la barra de navegación adaptativa (portrait/landscape), el SnackBar de
+ * notificaciones reactivas y delega el grafo de navegación completo a [AppNavHost].
+ *
  * Funciones destacadas:
- * - MainAppContainer: Gestiona la estructura global de la UI y la inyección de ViewModels.
- * - permissionLauncher: Maneja la solicitud de permisos de GPS en tiempo de ejecución.
+ * - MainActivity: Actividad ComponentActivity con edge-to-edge y tema unificado.
+ * - MainAppContainer: Orquestador de estado global (permisos, sesión, orientación).
+ * - ControlPanel: Panel interno de pruebas y gestión de cápsulas GeoDrop.
+ * - sendMessage: Envío de mensajes al nodo Wear OS conectado.
  */
 
 package mx.utng.ecoguiawear
@@ -35,12 +38,9 @@ import kotlinx.coroutines.tasks.await
 import mx.utng.ecoguia.shared.data.EcoGuiaDatabase
 import mx.utng.ecoguia.shared.data.repository.EcoGuiaRepositoryImpl
 import mx.utng.ecoguia.shared.domain.model.RemoteGeoDrop
-
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.compose.currentBackStackEntryAsState
-import mx.utng.ecoguiawear.ui.screens.*
+import mx.utng.ecoguiawear.ui.navigation.AppNavHost
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 import mx.utng.ecoguiawear.ui.viewmodel.AuthViewModel
 import mx.utng.ecoguiawear.ui.viewmodel.NotificationViewModel
@@ -49,20 +49,19 @@ import mx.utng.ecoguiawear.ui.viewmodel.SiteRegistrationViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import mx.utng.ecoguiawear.ui.components.EcoBottomBar
 import mx.utng.ecoguiawear.ui.components.EcoNavigationRail
-import mx.utng.ecoguiawear.ui.components.EcoTopBar
 import mx.utng.ecoguiawear.ui.components.BottomMenuSheet
-
 import androidx.activity.enableEdgeToEdge
-import androidx.lifecycle.viewModelScope
+import mx.utng.ecoguiawear.ui.viewmodel.RouteViewModel
 
-import mx.utng.ecoguiawear.ui.screens.admin.*
-
+/**
+ * Actividad principal. Establece el tema y delega toda la composición a [MainAppContainer].
+ */
 class MainActivity : ComponentActivity() {
     private val repository = EcoGuiaRepositoryImpl()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge() // Fuerza el diseño pantalla completa e inmersivo
+        enableEdgeToEdge()
         setContent {
             EcoGuiaMobileTheme {
                 MainAppContainer(this, repository)
@@ -72,7 +71,17 @@ class MainActivity : ComponentActivity() {
 }
 
 /**
- * Contenedor principal que gestiona el Scaffold global, la navegación y las notificaciones.
+ * Contenedor principal de la aplicación.
+ *
+ * Responsabilidades:
+ * - Solicitar permisos de ubicación en tiempo de ejecución.
+ * - Observar el estado de sesión y la ruta actual de navegación.
+ * - Mostrar la barra de navegación adaptativa (bottom bar en portrait, rail en landscape).
+ * - Mostrar notificaciones reactivas mediante [SnackbarHost].
+ * - Delegar el grafo de rutas a [AppNavHost].
+ *
+ * @param activity Referencia a la [ComponentActivity] activa.
+ * @param repository Repositorio de datos compartido entre módulos.
  */
 @SuppressLint("ContextCastToActivity")
 @Composable
@@ -81,55 +90,53 @@ fun MainAppContainer(activity: ComponentActivity, repository: EcoGuiaRepositoryI
     val authViewModel: AuthViewModel = viewModel()
     val notificationViewModel: NotificationViewModel = viewModel()
     val siteRegistrationViewModel: SiteRegistrationViewModel = viewModel()
-    val routeViewModel: mx.utng.ecoguiawear.ui.viewmodel.RouteViewModel = viewModel()
+    val routeViewModel: RouteViewModel = viewModel()
     val isRouteActive by routeViewModel.activeRoute.run { remember { derivedStateOf { value != null } } }
 
-    // Gestión de Permisos
+    // Solicitar permisos de GPS al iniciar
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
         val granted = permissions.entries.all { it.value }
         if (!granted) {
             notificationViewModel.showNotification(
-                "La app necesita GPS para funcionar correctamente.", 
+                "La app necesita GPS para funcionar correctamente.",
                 NotificationType.INFO
             )
         }
     }
 
-    // Inicializar vinculación de ViewModels para notificaciones automáticas y pedir permisos
     LaunchedEffect(Unit) {
         authViewModel.initNotifications(notificationViewModel)
-        permissionLauncher.launch(arrayOf(
-            Manifest.permission.ACCESS_FINE_LOCATION,
-            Manifest.permission.ACCESS_COARSE_LOCATION
-        ))
+        permissionLauncher.launch(
+            arrayOf(
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            )
+        )
     }
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route ?: "login"
-    
+
     val snackbarHostState = remember { SnackbarHostState() }
-    
-    // Observar notificaciones reactivas
     val notification by notificationViewModel.currentNotification
     LaunchedEffect(notification) {
         notification?.let {
             snackbarHostState.showSnackbar(it.message)
         }
     }
-    // Estado de Usuario (Simulado Admin)
+
     var isAdmin by remember { mutableStateOf(true) }
     var showBottomMenu by remember { mutableStateOf(false) }
 
-    // Pantallas de Auth que ocultan la navegación
     val authRoutes = listOf("login", "signup", "recovery")
     val showNav = currentRoute !in authRoutes
 
-    // Orientación de la pantalla (Vertical vs Horizontal)
     val configuration = androidx.compose.ui.platform.LocalConfiguration.current
     val isLandscape = configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
 
+    // Lógica unificada de navegación entre tabs principales
     val onNavigateAction: (String) -> Unit = { route ->
         if (route == "logout") {
             authViewModel.logout()
@@ -140,7 +147,7 @@ fun MainAppContainer(activity: ComponentActivity, repository: EcoGuiaRepositoryI
             val isMainTab = route in listOf("exploration", "search_experience", "collection")
             navController.navigate(route) {
                 if (isMainTab) {
-                    popUpTo("exploration") { 
+                    popUpTo("exploration") {
                         inclusive = (route == "exploration")
                         saveState = false
                     }
@@ -154,6 +161,7 @@ fun MainAppContainer(activity: ComponentActivity, repository: EcoGuiaRepositoryI
     }
 
     Row(modifier = Modifier.fillMaxSize()) {
+        // Navigation Rail en modo landscape
         if (showNav && isLandscape) {
             EcoNavigationRail(
                 currentRoute = currentRoute,
@@ -178,265 +186,19 @@ fun MainAppContainer(activity: ComponentActivity, repository: EcoGuiaRepositoryI
             }
         ) { padding ->
             Box(modifier = Modifier.padding(padding)) {
-                NavHost(navController = navController, startDestination = "login") {
-                    composable("login") {
-                        LoginScreen(
-                            viewModel = authViewModel,
-                            onLoginSuccess = { 
-                                navController.navigate("exploration") {
-                                    popUpTo("login") { inclusive = true }
-                                }
-                            },
-                            onSignUpClick = { navController.navigate("signup") },
-                            onRecoverClick = { navController.navigate("recovery") }
-                        )
-                    }
-                    composable("signup") {
-                        SignUpScreen(
-                            viewModel = authViewModel,
-                            onSignUpSuccess = { },
-                            onBackToLogin = { navController.popBackStack() }
-                        )
-                    }
-                    composable("recovery") {
-                        RecoveryScreen(
-                            onSendClick = { navController.popBackStack() },
-                            onBackToLogin = { navController.popBackStack() }
-                        )
-                    }
-                    
-                    // Rutas de Aplicación Principal
-                    composable("exploration") {
-                        ExplorationScreen(
-                            onAdminClick = { navController.navigate("more_options") },
-                            onOpenRoutes = { navController.navigate("search_experience") },
-                            userId = authViewModel.currentUser?.id ?: "guest"
-                        )
-                    }
-                    composable("collection") {
-                        MyCollectionScreen(userId = authViewModel.currentUser?.id ?: "guest")
-                    }
-                    composable("profile") {
-                        ProfileScreen(
-                            user = authViewModel.currentUser,
-                            onEditClick = { navController.navigate("edit_profile") }
-                        )
-                    }
-                    composable("edit_profile") {
-                        EditProfileScreen(
-                            user = authViewModel.currentUser,
-                            onSaveClick = { newName: String ->
-                                authViewModel.updateProfile(newName)
-                                navController.popBackStack()
-                            }
-                        )
-                    }
-                    composable("security") {
-                        SecurityScreen(onLogoutClick = {
-                            authViewModel.logout()
-                            navController.navigate("login") {
-                                popUpTo(0) { inclusive = true }
-                            }
-                        })
-                    }
-                    composable("chat_ia") {
-                        MiguelHidalgoChatScreen(
-                            onKnowledgeBaseClick = { navController.navigate("ia_knowledge_base") }
-                        )
-                    }
-                    composable("ia_knowledge_base") {
-                        IAKnowledgeBaseScreen()
-                    }
-                    composable("more_options") {
-                        MoreOptionsScreen(
-                            isAdmin = isAdmin,
-                            onOptionClick = { route ->
-                                if (route == "logout") {
-                                    authViewModel.logout()
-                                    navController.navigate("login") {
-                                        popUpTo(0) { inclusive = true }
-                                    }
-                                } else {
-                                    navController.navigate(route) { launchSingleTop = true }
-                                }
-                            }
-                        )
-                    }
-                    
-                    // Nuevas Pantallas de Flujo
-                    composable("proximity_alerts") {
-                        ProximityAlertsScreen()
-                    }
-                    composable("camera_capture") {
-                        CameraGeoDropScreen(
-                            onCapture = { file -> 
-                                navController.navigate("anchor_photo") 
-                            }
-                        )
-                    }
-                    composable("anchor_photo") {
-                        AnchorPhotoScreen(
-                            onAnchorClick = { 
-                                notificationViewModel.showNotification("¡Foto anclada con éxito!", NotificationType.SUCCESS)
-                                navController.navigate("exploration") {
-                                    popUpTo("exploration") { inclusive = true }
-                                }
-                            }
-                        )
-                    }
-                    composable("active_route") {
-                        ActiveRouteScreen(
-                            onFinishRoute = {
-                                val route = routeViewModel.activeRoute.value
-                                val userId = authViewModel.currentUser?.id ?: "guest"
-                                if (route != null) {
-                                    routeViewModel.viewModelScope.launch {
-                                        val ok = EcoGuiaRepositoryImpl().saveRouteToCollection(userId, route.id)
-                                        android.util.Log.d("MainActivity", "Guardado de ruta en DB completado: $ok para routeId=${route.id}")
-                                        routeViewModel.completeActiveRoute()
-                                        notificationViewModel.showNotification("🎉 ¡Ruta completada y guardada en Mi Colección!", NotificationType.SUCCESS)
-                                        navController.navigate("collection") {
-                                            popUpTo("exploration") { inclusive = false }
-                                        }
-                                    }
-                                } else {
-                                    routeViewModel.stopActiveRoute()
-                                    navController.navigate("collection") {
-                                        popUpTo("exploration") { inclusive = false }
-                                    }
-                                }
-                            },
-                            routeViewModel = routeViewModel
-                        )
-                    }
-                    composable("search_experience") {
-                        SearchExperienceScreen(
-                            onSelectRoute = { navController.navigate("active_route") },
-                            routeViewModel = routeViewModel
-                        )
-                    }
-                    composable("permissions") {
-                        PermissionsScreen()
-                    }
-                    composable("create_route") {
-                        CreateRouteScreen(
-                            onRouteCreated = { navController.popBackStack() },
-                            routeViewModel = routeViewModel
-                        )
-                    }
-                    composable("offline") {
-                        OfflineRouteScreen()
-                    }
-                    
-                    // Device Management Module
-                    composable("linked_devices") {
-                        LinkedDevicesScreen(
-                            onTVCampaignClick = { navController.navigate("tv_campaign") },
-                            onManageClick = { navController.navigate("manage_devices") },
-                            onStatusClick = { navController.navigate("device_status") }
-                        )
-                    }
-                    composable("manage_devices") {
-                        ManageDevicesScreen(
-                            onConfirmChanges = { 
-                                notificationViewModel.showNotification("Cambios guardados.", NotificationType.SUCCESS)
-                                navController.popBackStack() 
-                            }
-                        )
-                    }
-                    composable("device_status") {
-                        DeviceStatusScreen(onBack = { navController.popBackStack() })
-                    }
-                    
-                    // TV & Analytics Sub-module
-                    composable("tv_campaign") {
-                        TVCampaignScreen(
-                            onAnalyticsClick = { navController.navigate("visitor_analytics") },
-                            onManageDevicesClick = { navController.navigate("campaign_devices") }
-                        )
-                    }
-                    composable("visitor_analytics") {
-                        VisitorAnalyticsScreen()
-                    }
-                    composable("campaign_devices") {
-                        CampaignDevicesScreen(
-                            onManageContentClick = { navController.navigate("portal_360") }
-                        )
-                    }
-                    composable("portal_360") {
-                        MuseumPortal360Screen()
-                    }
-
-                    composable("admin") {
-                        val activityContext = LocalContext.current as ComponentActivity
-                        ControlPanel(activityContext, repository)
-                    }
-
-                    // Admin & Moderation Module
-                    composable("site_registration") {
-                        SiteRegistrationScreen(
-                            viewModel = siteRegistrationViewModel,
-                            onNext = { navController.navigate("site_content") }
-                        )
-                    }
-                    composable("site_content") {
-                        SiteContentScreen(
-                            viewModel = siteRegistrationViewModel,
-                            onNext = { navController.navigate("site_location") }
-                        )
-                    }
-                    composable("site_location") {
-                        SiteLocationScreen(
-                            viewModel = siteRegistrationViewModel,
-                            onNext = { navController.navigate("site_operation") }
-                        )
-                    }
-                    composable("site_operation") {
-                        SiteOperationScreen(
-                            viewModel = siteRegistrationViewModel,
-                            onFinish = { 
-                                siteRegistrationViewModel.registerSite(
-                                    onSuccess = {
-                                        notificationViewModel.showNotification("Sitio publicado con éxito.", NotificationType.SUCCESS)
-                                        navController.navigate("exploration") { popUpTo("exploration") { inclusive = true } }
-                                    },
-                                    onError = { msg ->
-                                        notificationViewModel.showNotification(msg, NotificationType.ERROR)
-                                    }
-                                )
-                            }
-                        )
-                    }
-                    composable("gallery_addition") {
-                        GalleryAdditionScreen(
-                            onAddClick = { navController.popBackStack() },
-                            onNavigate = { route -> navController.navigate(route) { launchSingleTop = true } }
-                        )
-                    }
-                    composable("moderation_list") {
-                        ModerationListScreen(onResolveClick = { navController.navigate("report_detail") })
-                    }
-                    composable("report_detail") {
-                        ReportDetailScreen(onResolve = { 
-                            notificationViewModel.showNotification("Reporte resuelto.", NotificationType.SUCCESS)
-                            navController.popBackStack() 
-                        })
-                    }
-                    composable("manual_geo_drop") {
-                        ManualGeoDropScreen(onAnchorClick = { navController.popBackStack() })
-                    }
-                    
-                    // Mapeo de botones de barra inferior
-                    composable("radar") { 
-                        navController.navigate("camera_capture") { launchSingleTop = true }
-                    }
-                    composable("favorites") { 
-                        navController.navigate("collection") { launchSingleTop = true }
-                    }
-                }
+                AppNavHost(
+                    navController = navController,
+                    authViewModel = authViewModel,
+                    notificationViewModel = notificationViewModel,
+                    siteRegistrationViewModel = siteRegistrationViewModel,
+                    routeViewModel = routeViewModel,
+                    repository = repository,
+                    isAdmin = isAdmin
+                )
             }
         }
 
+        // Bottom sheet del menú de opciones extra
         if (showBottomMenu) {
             BottomMenuSheet(
                 currentRoute = currentRoute,
@@ -458,13 +220,18 @@ fun MainAppContainer(activity: ComponentActivity, repository: EcoGuiaRepositoryI
 }
 
 /**
- * Panel de control para simulación y pruebas de administración.
+ * Panel de control interno para simulación y pruebas de administración.
+ * Permite crear y listar cápsulas GeoDrop desde la base de datos Neon,
+ * y simular la conexión con el reloj Wear OS.
+ *
+ * @param activity Contexto de la actividad principal.
+ * @param repository Repositorio de datos para operaciones de GeoDrop.
  */
 @Composable
 fun ControlPanel(activity: ComponentActivity, repository: EcoGuiaRepositoryImpl) {
     val scope = rememberCoroutineScope()
     var lastMessage by remember { mutableStateOf("Esperando interacción...") }
-    
+
     var geoDropTitle by remember { mutableStateOf("") }
     var geoDropDesc by remember { mutableStateOf("") }
     var geoDrops by remember { mutableStateOf(emptyList<RemoteGeoDrop>()) }
@@ -484,9 +251,7 @@ fun ControlPanel(activity: ComponentActivity, repository: EcoGuiaRepositoryImpl)
         }
     }
 
-    LaunchedEffect(Unit) {
-        refreshGeoDrops()
-    }
+    LaunchedEffect(Unit) { refreshGeoDrops() }
 
     var isPhoneConnected by remember { mutableStateOf(false) }
     var gpsEnabled by remember { mutableStateOf(true) }
@@ -497,7 +262,7 @@ fun ControlPanel(activity: ComponentActivity, repository: EcoGuiaRepositoryImpl)
 
     Column(modifier = Modifier.padding(16.dp)) {
         Text("Eco-Guía: Panel Admin", style = MaterialTheme.typography.headlineMedium)
-        
+
         Card(
             modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
@@ -506,21 +271,27 @@ fun ControlPanel(activity: ComponentActivity, repository: EcoGuiaRepositoryImpl)
                 Text("Estados en tiempo real:", style = MaterialTheme.typography.titleSmall)
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text("Conexión Reloj:", style = MaterialTheme.typography.bodySmall)
-                    Text(if (isPhoneConnected) "CONECTADO" else "DESCONECTADO", 
+                    Text(
+                        if (isPhoneConnected) "CONECTADO" else "DESCONECTADO",
                         color = if (isPhoneConnected) Color(0xFF2E7D32) else Color.Red,
-                        style = MaterialTheme.typography.bodySmall)
+                        style = MaterialTheme.typography.bodySmall
+                    )
                 }
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text("GPS Preciso:", style = MaterialTheme.typography.bodySmall)
-                    Text(if (gpsEnabled) "ACTIVO" else "INACTIVO", 
+                    Text(
+                        if (gpsEnabled) "ACTIVO" else "INACTIVO",
                         color = if (gpsEnabled) Color(0xFF2E7D32) else Color.Red,
-                        style = MaterialTheme.typography.bodySmall)
+                        style = MaterialTheme.typography.bodySmall
+                    )
                 }
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text("Cámara Móvil:", style = MaterialTheme.typography.bodySmall)
-                    Text(if (cameraReady) "LISTA" else "ERROR/OFF", 
+                    Text(
+                        if (cameraReady) "LISTA" else "ERROR/OFF",
                         color = if (cameraReady) Color(0xFF2E7D32) else Color.Red,
-                        style = MaterialTheme.typography.bodySmall)
+                        style = MaterialTheme.typography.bodySmall
+                    )
                 }
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
@@ -533,7 +304,7 @@ fun ControlPanel(activity: ComponentActivity, repository: EcoGuiaRepositoryImpl)
 
         Spacer(modifier = Modifier.height(8.dp))
         Text("Log: $lastMessage", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
-        
+
         HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
 
         LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.weight(1f)) {
@@ -603,7 +374,11 @@ fun ControlPanel(activity: ComponentActivity, repository: EcoGuiaRepositoryImpl)
                     Column(modifier = Modifier.padding(8.dp)) {
                         Text(drop.title, style = MaterialTheme.typography.titleSmall)
                         Text(drop.description ?: "", style = MaterialTheme.typography.bodySmall)
-                        Text("Fecha: ${drop.createdAt?.take(10) ?: "---"}", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                        Text(
+                            "Fecha: ${drop.createdAt?.take(10) ?: "---"}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color.Gray
+                        )
                     }
                 }
             }
@@ -613,25 +388,32 @@ fun ControlPanel(activity: ComponentActivity, repository: EcoGuiaRepositoryImpl)
             item {
                 Text("Gestión de Conexión", style = MaterialTheme.typography.titleSmall)
                 Button(
-                    onClick = { 
+                    onClick = {
                         isPhoneConnected = !isPhoneConnected
-                        scope.launch { 
+                        scope.launch {
                             lastMessage = "Conexión: $isPhoneConnected"
-                            sendMessage(activity, "/eco-guia/simulate/link", isPhoneConnected.toString()) 
-                        } 
-                    }, 
+                            sendMessage(activity, "/eco-guia/simulate/link", isPhoneConnected.toString())
+                        }
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = if (isPhoneConnected) Color.Red else Color(0xFF2E7D32)
                     )
-                ) { 
-                    Text(if (isPhoneConnected) "Desconectar Reloj" else "Vincular con Reloj") 
+                ) {
+                    Text(if (isPhoneConnected) "Desconectar Reloj" else "Vincular con Reloj")
                 }
             }
         }
     }
 }
 
+/**
+ * Envía un mensaje a todos los nodos Wear OS conectados vía Wearable Data Layer.
+ *
+ * @param context Contexto Android para acceder al cliente de Wearable.
+ * @param path Ruta del mensaje (e.g. "/eco-guia/simulate/link").
+ * @param payload Contenido del mensaje como cadena de texto.
+ */
 suspend fun sendMessage(context: android.content.Context, path: String, payload: String) {
     try {
         val nodes = Wearable.getNodeClient(context).connectedNodes.await()
