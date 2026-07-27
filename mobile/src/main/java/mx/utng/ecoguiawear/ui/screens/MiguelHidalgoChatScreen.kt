@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Archivo: MiguelHidalgoChatScreen.kt
  * Autor: ZahirMora
  * Fecha de última actualización: 2026-07-24
@@ -71,6 +71,7 @@ fun formatAIText(text: String): AnnotatedString {
 @Composable
 fun MiguelHidalgoChatScreen(
     onKnowledgeBaseClick: () -> Unit,
+    isSuperAdmin: Boolean = false,
     viewModel: ChatViewModel = viewModel()
 ) {
     var inputText by remember { mutableStateOf("") }
@@ -94,21 +95,24 @@ fun MiguelHidalgoChatScreen(
                 Text("Chat", color = Color.White.copy(alpha = 0.7f), fontSize = 14.sp)
             }
             
-            IconButton(
-                onClick = onKnowledgeBaseClick,
-                modifier = Modifier.align(Alignment.TopEnd)
-            ) {
-                Surface(
-                    color = Color.White.copy(alpha = 0.1f),
-                    shape = CircleShape,
-                    modifier = Modifier.size(40.dp)
+            if (isSuperAdmin) {
+                IconButton(
+                    onClick = onKnowledgeBaseClick,
+                    modifier = Modifier.align(Alignment.TopEnd)
                 ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Text("IA", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    Surface(
+                        color = EcoGuiaColors.Gold.copy(alpha = 0.2f),
+                        shape = CircleShape,
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text("IA", color = EcoGuiaColors.Gold, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                        }
                     }
                 }
             }
         }
+
 
         // IA Profile Card
         Card(

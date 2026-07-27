@@ -38,8 +38,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import mx.utng.ecoguia.shared.data.repository.EcoGuiaRepositoryImpl
 import mx.utng.ecoguia.shared.domain.model.RemoteRoute
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
+
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 import mx.utng.ecoguiawear.ui.viewmodel.RouteViewModel
 
@@ -192,58 +194,145 @@ fun SearchExperienceScreen(
 /**
  * Fila de una ruta en el catálogo de búsqueda.
  */
+/**
+ * Fila interactiva de una ruta en el catálogo de búsqueda. Al hacer clic se despliega la descripción completa y los destinos.
+ */
 @Composable
 fun RouteCatalogItem(
     route: RemoteRoute,
     onStartClick: () -> Unit
 ) {
+    var isExpanded by remember { mutableStateOf(false) }
+    var stops by remember { mutableStateOf<List<mx.utng.ecoguia.shared.domain.model.RemoteRouteStop>>(emptyList()) }
+    var isLoadingStops by remember { mutableStateOf(false) }
+
+    LaunchedEffect(isExpanded) {
+        if (isExpanded && stops.isEmpty()) {
+            isLoadingStops = true
+            try {
+                stops = EcoGuiaRepositoryImpl().getRouteStops(route.id)
+            } catch (e: Exception) {
+                android.util.Log.e("RouteItem", "Error al cargar destinos: ${e.message}")
+            } finally {
+                isLoadingStops = false
+            }
+        }
+    }
+
+
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { isExpanded = !isExpanded },
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
-        Row(
-            modifier = Modifier.padding(14.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(44.dp)
-                    .background(EcoGuiaColors.Jade.copy(alpha = 0.12f), CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(Icons.Default.Navigation, contentDescription = null, tint = EcoGuiaColors.Jade, modifier = Modifier.size(22.dp))
+        Column(modifier = Modifier.padding(14.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .background(EcoGuiaColors.Jade.copy(alpha = 0.12f), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Default.Navigation, contentDescription = null, tint = EcoGuiaColors.Jade, modifier = Modifier.size(22.dp))
+                }
+
+                Column(
+                    modifier = Modifier
+                        .padding(horizontal = 12.dp)
+                        .weight(1f)
+                ) {
+                    Text(route.title, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
+                    val desc = route.description ?: "Recorrido turístico cultural"
+                    Text(
+                        text = "${route.estimatedMinutes ?: 45} min · ${route.distanceM ?: 1200} m",
+                        color = EcoGuiaColors.Gold,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                Button(
+                    onClick = onStartClick,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = EcoGuiaColors.Jade,
+                        contentColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(12.dp),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                ) {
+                    Text("Iniciar", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                }
             }
 
-            Column(
-                modifier = Modifier
-                    .padding(horizontal = 12.dp)
-                    .weight(1f)
-            ) {
-                Text(route.title, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
-                val desc = route.description ?: "Recorrido turístico por la ciudad"
+            // Sección Expandible con Descripción Detallada y Destinos
+            if (isExpanded) {
+                Spacer(modifier = Modifier.height(12.dp))
+                HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+                Spacer(modifier = Modifier.height(8.dp))
+
                 Text(
-                    text = "${route.estimatedMinutes ?: 45} min · $desc",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 11.sp,
-                    maxLines = 2
+                    text = "Descripción del recorrido:",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 12.sp,
+                    color = EcoGuiaColors.Gold
                 )
-            }
+                Text(
+                    text = route.description ?: "Esta ruta te guiará por los puntos históricos más representativos.",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
 
-            Button(
-                onClick = onStartClick,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = EcoGuiaColors.Jade,
-                    contentColor = Color.White
-                ),
-                shape = RoundedCornerShape(12.dp),
-                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
-            ) {
-                Text("Iniciar", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(10.dp))
+                Text(
+                    text = "Destinos y Paradas Incluidas:",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 12.sp,
+                    color = EcoGuiaColors.Jade
+                )
+
+                if (isLoadingStops) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(vertical = 6.dp)
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            color = EcoGuiaColors.Jade,
+                            strokeWidth = 2.dp
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Cargando destinos...", fontSize = 11.sp, color = Color.Gray)
+                    }
+                } else if (stops.isEmpty()) {
+                    Text(
+                        text = "• Recorrido general por zona centro e hitos culturales.",
+                        fontSize = 11.sp,
+                        color = Color.Gray,
+                        modifier = Modifier.padding(start = 4.dp, top = 4.dp)
+                    )
+                } else {
+                    stops.forEachIndexed { index, stop ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(vertical = 2.dp)
+                        ) {
+                            Text("${index + 1}. ", fontWeight = FontWeight.Bold, fontSize = 11.sp, color = EcoGuiaColors.Gold)
+                            Text(stop.siteName ?: "Sitio histórico", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
+                            if (!stop.instruction.isNullOrEmpty()) {
+                                Text(" — ${stop.instruction}", fontSize = 10.sp, color = Color.Gray)
+                            }
+
+
+                        }
+                    }
+                }
             }
         }
     }
 }
+
 
 @Preview(showBackground = true)
 @Composable

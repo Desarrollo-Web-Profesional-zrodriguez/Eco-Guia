@@ -55,6 +55,7 @@ interface EcoGuiaRepository {
      */
     suspend fun getGeoDrops(): List<RemoteGeoDrop>
 
+
     /**
      * Obtiene todas las cápsulas Geo-Drop o reportes pendientes de moderación.
      */
@@ -104,9 +105,21 @@ interface EcoGuiaRepository {
     suspend fun updateUser(id: String, displayName: String): Boolean
 
     /**
+     * Obtiene los artículos de conocimiento curados para la IA desde la tabla knowledge_articles de Neon.
+     */
+    suspend fun getKnowledgeArticles(): List<RemoteKnowledgeArticle>
+
+    /**
+     * Guarda una nueva pregunta/respuesta curada en la tabla knowledge_articles de Neon.
+     */
+    suspend fun createKnowledgeArticle(title: String, content: String, authorId: String? = null): Boolean
+
+    /**
      * Obtiene todos los usuarios registrados excluyendo las cuentas con rol de super admin.
      */
     suspend fun getAllUsers(): List<RemoteUser>
+
+
 
     /**
      * Actualiza el rol de un usuario en la base de datos remota.

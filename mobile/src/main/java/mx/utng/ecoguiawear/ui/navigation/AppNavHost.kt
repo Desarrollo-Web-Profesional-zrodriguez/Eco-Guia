@@ -160,12 +160,19 @@ fun AppNavHost(
         // ── Chat / IA ─────────────────────────────────────────────────────────
         composable("chat_ia") {
             MiguelHidalgoChatScreen(
-                onKnowledgeBaseClick = { navController.navigate("ia_knowledge_base") }
+                onKnowledgeBaseClick = { navController.navigate("ia_knowledge_base") },
+                isSuperAdmin = authViewModel.isSuperAdmin
             )
         }
+
         composable("ia_knowledge_base") {
-            IAKnowledgeBaseScreen()
+            IAKnowledgeBaseScreen(
+                userId = authViewModel.currentUser?.id.orEmpty(),
+                onBack = { navController.popBackStack() }
+            )
         }
+
+
 
         // ── Cámara y GeoDrop ─────────────────────────────────────────────────
         composable("proximity_alerts") {
@@ -226,26 +233,29 @@ fun AppNavHost(
                                 "🎉 ¡Ruta completada y guardada en Mi Colección!",
                                 NotificationType.SUCCESS
                             )
-                            navController.navigate("collection") {
-                                popUpTo("exploration") { inclusive = false }
+                            navController.navigate("exploration") {
+                                popUpTo("exploration") { inclusive = true }
                             }
                         }
                     } else {
                         routeViewModel.stopActiveRoute()
-                        navController.navigate("collection") {
-                            popUpTo("exploration") { inclusive = false }
+                        navController.navigate("exploration") {
+                            popUpTo("exploration") { inclusive = true }
                         }
                     }
                 },
+
                 routeViewModel = routeViewModel
             )
         }
         composable("create_route") {
             CreateRouteScreen(
                 onRouteCreated = { navController.popBackStack() },
+                onBack = { navController.popBackStack() },
                 routeViewModel = routeViewModel
             )
         }
+
         composable("offline") {
             OfflineRouteScreen()
         }

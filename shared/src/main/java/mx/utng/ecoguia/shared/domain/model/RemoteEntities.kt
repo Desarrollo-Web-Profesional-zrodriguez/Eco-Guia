@@ -98,3 +98,17 @@ data class RemoteGeoDrop(
     @SerialName("likes_count") val likesCount: Int = 0,
     @SerialName("created_at") val createdAt: String? = null
 )
+
+/**
+ * Representa un artículo o pregunta/respuesta curada de conocimiento para la IA.
+ */
+@Serializable
+data class RemoteKnowledgeArticle(
+    val id: String? = null,
+    val title: String,
+    val content: String,
+    @SerialName("created_by") val createdBy: String? = null,
+    @SerialName("is_active") val isActive: Boolean = true,
+    @SerialName("created_at") val createdAt: String? = null
+)
+

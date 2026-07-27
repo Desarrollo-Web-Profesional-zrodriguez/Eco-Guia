@@ -104,6 +104,7 @@ class EcoGuiaRepositoryImpl(
      * Recupera el catálogo de categorías.
      */
     override suspend fun getSiteCategories(): List<RemoteCategory> {
+
         return neonClient.executeQuery("SELECT id, name, icon FROM site_categories WHERE is_active = TRUE ORDER BY name ASC")
     }
 
@@ -271,6 +272,40 @@ class EcoGuiaRepositoryImpl(
             false
         }
     }
+
+    /**
+     * Obtiene los artículos de conocimiento curados desde la tabla knowledge_articles de Neon.
+     */
+    override suspend fun getKnowledgeArticles(): List<RemoteKnowledgeArticle> {
+        val query = "SELECT id, title, content, created_by, is_active, created_at FROM knowledge_articles WHERE is_active = TRUE ORDER BY created_at DESC"
+        return try {
+            neonClient.executeQuery<RemoteKnowledgeArticle>(query)
+        } catch (e: Exception) {
+            android.util.Log.e("EcoGuiaRepo", "Error al obtener conocimiento de IA: ${e.message}", e)
+            emptyList()
+        }
+    }
+
+    /**
+     * Guarda una nueva pregunta/respuesta curada en la tabla knowledge_articles de Neon.
+     */
+    override suspend fun createKnowledgeArticle(title: String, content: String, authorId: String?): Boolean {
+        val cleanAuthorId = if (authorId.isNullOrEmpty()) "" else authorId
+
+        val query = """
+            INSERT INTO knowledge_articles (title, content, created_by, is_active)
+            VALUES ($1, $2, CASE WHEN $3 <> '' AND EXISTS (SELECT 1 FROM users WHERE id::text = $3) THEN $3::uuid ELSE NULL END, TRUE)
+        """.trimIndent()
+        return try {
+            val rows = neonClient.executeCommand(query, listOf(title, content, cleanAuthorId))
+            rows > 0
+        } catch (e: Exception) {
+            android.util.Log.e("EcoGuiaRepo", "Error al guardar conocimiento de IA: ${e.message}", e)
+            false
+        }
+    }
+
+
 
     /**
      * Obtiene todos los usuarios registrados en Neon PostgreSQL.

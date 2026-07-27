@@ -24,7 +24,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
+
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -52,6 +54,7 @@ import mx.utng.ecoguiawear.ui.viewmodel.RouteViewModel
 @Composable
 fun CreateRouteScreen(
     onRouteCreated: () -> Unit = {},
+    onBack: () -> Unit = {},
     routeViewModel: RouteViewModel = viewModel(),
     locationViewModel: LocationViewModel = viewModel(),
     notificationViewModel: mx.utng.ecoguiawear.ui.viewmodel.NotificationViewModel = viewModel()
@@ -132,16 +135,25 @@ fun CreateRouteScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        // Encabezado estándar del flujo (idéntico a SiteRegistrationScreen)
+        // Encabezado estándar del flujo con botón Volver
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(EcoGuiaColors.DeepBlue)
-                .padding(top = 40.dp, start = 24.dp, end = 24.dp, bottom = 16.dp)
+                .padding(top = 40.dp, start = 16.dp, end = 24.dp, bottom = 16.dp)
         ) {
-            Column {
-                Text("Alta de Ruta", color = Color.White, fontSize = 14.sp)
-                Text("Diseñar Recorrido", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onBack) {
+                    Icon(
+                        imageVector = androidx.compose.material.icons.Icons.Default.ArrowBack,
+                        contentDescription = "Volver",
+                        tint = Color.White
+                    )
+                }
+                Column {
+                    Text("Alta de Ruta", color = Color.White, fontSize = 14.sp)
+                    Text("Diseñar Recorrido", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                }
             }
             IconButton(
                 onClick = { },
@@ -150,6 +162,7 @@ fun CreateRouteScreen(
                 Icon(Icons.Default.AddCircle, contentDescription = null, tint = EcoGuiaColors.Gold)
             }
         }
+
 
         // Card superior descriptiva en Surface (Mismo diseño de alta de sitio)
         Card(

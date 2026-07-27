@@ -55,10 +55,12 @@ fun SiteDetailSheet(
     site: RemoteHistoricalSite,
     userId: String,
     collectionViewModel: CollectionViewModel,
+    isWithinRange: Boolean = false,
     onNavigate: () -> Unit,
     onGeoDropClick: () -> Unit = {},
     onDismiss: () -> Unit
 ) {
+
 
     val isSaved = collectionViewModel.savedSiteIds[site.id] == true
 
@@ -159,31 +161,34 @@ fun SiteDetailSheet(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            // Botón principal de Cápsula Geo-Drop (AR)
-            Button(
-                onClick = {
-                    onDismiss()
-                    onGeoDropClick()
-                },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = EcoGuiaColors.Jade,
-                    contentColor = Color.White
-                ),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.CameraAlt,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "📷 Capturar / Escanear Geo-Drop (AR)",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 13.sp
-                )
+            // Botón principal de Cápsula Geo-Drop (AR) (Solo visible al estar en rango)
+            if (isWithinRange) {
+                Button(
+                    onClick = {
+                        onDismiss()
+                        onGeoDropClick()
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = EcoGuiaColors.Jade,
+                        contentColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CameraAlt,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "📷 Capturar / Escanear Geo-Drop (AR)",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.sp
+                    )
+                }
             }
+
 
             Row(
                 modifier = Modifier.fillMaxWidth(),

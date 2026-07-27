@@ -242,6 +242,21 @@ fun ExplorationScreen(
 
     // BottomSheet de detalle del sitio seleccionado
     selectedSite?.let { site ->
+        val loc = currentLocation
+        val siteLat = site.latitude
+        val siteLng = site.longitude
+        val isWithinRange = remember(loc, siteLat, siteLng) {
+            if (loc != null && siteLat != null && siteLng != null) {
+                val results = FloatArray(1)
+                android.location.Location.distanceBetween(
+                    loc.latitude, loc.longitude,
+                    siteLat, siteLng, results
+                )
+                results[0] <= site.detectionRadiusM
+            } else false
+        }
+
+
         ModalBottomSheet(
             onDismissRequest = { selectedSite = null },
             sheetState = sheetState,
@@ -252,6 +267,7 @@ fun ExplorationScreen(
                 site = site,
                 userId = userId,
                 collectionViewModel = collectionViewModel,
+                isWithinRange = isWithinRange,
                 onNavigate = {
                     locationViewModel.syncTargetWithWatch(site)
                     val siteLat = site.latitude
@@ -272,6 +288,7 @@ fun ExplorationScreen(
                 onDismiss = { selectedSite = null }
             )
         }
+
     }
 }
 
