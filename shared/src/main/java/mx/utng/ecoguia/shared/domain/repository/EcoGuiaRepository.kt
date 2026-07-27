@@ -23,6 +23,24 @@ interface EcoGuiaRepository {
     suspend fun getHistoricalSites(): List<RemoteHistoricalSite>
 
     /**
+     * Registra un nuevo sitio histórico en la base de datos Neon PostgreSQL.
+     */
+    suspend fun createHistoricalSite(
+        name: String,
+        siteType: String,
+        address: String,
+        shortDesc: String,
+        historyDesc: String,
+        lat: Double,
+        lng: Double,
+        radiusM: Int,
+        hours: String,
+        cost: String,
+        accessibility: String
+    ): Boolean
+
+
+    /**
      * Obtiene la lista de todas las rutas turísticas activas.
      */
     suspend fun getRoutes(): List<RemoteRoute>
@@ -38,9 +56,21 @@ interface EcoGuiaRepository {
     suspend fun getGeoDrops(): List<RemoteGeoDrop>
 
     /**
+     * Obtiene todas las cápsulas Geo-Drop o reportes pendientes de moderación.
+     */
+    suspend fun getPendingGeoDrops(): List<RemoteGeoDrop>
+
+    /**
+     * Actualiza el estado de moderación de un Geo-Drop (approved, rejected, pending).
+     */
+    suspend fun updateGeoDropStatus(id: String, status: String): Boolean
+
+
+    /**
      * Registra una nueva cápsula de información (Geo-Drop) en la nube y la guarda en la colección del usuario.
      */
-    suspend fun createGeoDrop(title: String, description: String, lat: Double, lng: Double, userId: String? = null, siteId: String? = null): Boolean
+    suspend fun createGeoDrop(title: String, description: String, lat: Double, lng: Double, userId: String? = null, siteId: String? = null, mediaUrl: String? = null): Boolean
+
 
 
     /**
@@ -53,22 +83,7 @@ interface EcoGuiaRepository {
      */
     suspend fun getSiteCategories(): List<RemoteCategory>
 
-    /**
-     * Registra un nuevo sitio histórico en la nube.
-     */
-    suspend fun createHistoricalSite(
-        name: String,
-        siteType: String,
-        address: String,
-        shortDesc: String,
-        historyDesc: String,
-        lat: Double,
-        lng: Double,
-        radiusM: Int,
-        hours: String,
-        cost: String,
-        accessibility: String
-    ): Boolean
+
 
     /**
      * Inicia sesión verificando credenciales en la base de datos remota.
@@ -89,9 +104,20 @@ interface EcoGuiaRepository {
     suspend fun updateUser(id: String, displayName: String): Boolean
 
     /**
+     * Obtiene todos los usuarios registrados excluyendo las cuentas con rol de super admin.
+     */
+    suspend fun getAllUsers(): List<RemoteUser>
+
+    /**
+     * Actualiza el rol de un usuario en la base de datos remota.
+     */
+    suspend fun updateUserRole(userId: String, newRole: String): Boolean
+
+    /**
      * Prueba la conexión con el servidor de base de datos.
      */
     suspend fun testConnection(): String
+
 
     /**
      * Obtiene los elementos guardados por un usuario desde user_saved_items.

@@ -51,11 +51,12 @@ Desarrollar una solución tecnológica multiplataforma (Móvil y Wear OS) que fa
 
 El sistema cuenta con un control de acceso basado en **3 roles**, donde un usuario puede acumular permisos según sus atribuciones:
 
-| Rol | Descripción y Permisos | Credenciales de Prueba (Login) |
+| Rol | Descripción y Permisos | Autenticación Remota (Neon PostgreSQL) |
 | :--- | :--- | :--- |
-| **👑 Super Admin** | **Desarrolladores / Administradores de Sistema.** Acceso total a analíticas, mapa de calor, gestión de Smart TV, panel de control y todos los permisos de Moderador y Usuario. | **User:** `admin` <br> **Pass:** `1234` |
-| **🛡️ Moderador** | **Gestores Culturales.** Acceso a Alta de Sitios Históricos, Creación de Rutas Guiadas, Moderación de Comunidad (aprobar/rechazar Geo-Drops y revisar reportes) y alimentación de IA. | **User:** `mod` <br> **Pass:** `1234` |
-| **🌿 Usuario Normal** | **Turistas / Visitantes.** Exploración de mapa con radar GPS, escáner de cámara AR de Geo-Drops, interacción con chatbot Miguel Hidalgo IA y Mi Colección. | **User:** `user` <br> **Pass:** `1234` <br> *(O iniciar sesión con correo registrado)* |
+| **👑 Super Admin** | **Desarrolladores / Administradores de Sistema.** Acceso total a analíticas, mapa de calor, gestión de Smart TV, panel de control y todos los permisos de Moderador y Usuario. | **Auth:** Correo / Username registrado en tabla `users` con `role = 'super_admin'` |
+| **🛡️ Moderador** | **Gestores Culturales.** Acceso a Alta de Sitios Históricos, Creación de Rutas Guiadas, Moderación de Comunidad (aprobar/rechazar Geo-Drops y revisar reportes) y alimentación de IA. | **Auth:** Correo / Username registrado en tabla `users` con `role = 'moderator'` |
+| **🌿 Usuario Normal** | **Turistas / Visitantes.** Exploración de mapa con radar GPS, escáner de cámara AR de Geo-Drops, interacción con chatbot Miguel Hidalgo IA y Mi Colección. | **Auth:** Correo / Username registrado en tabla `users` con `role = 'visitor'` |
+
 
 
 ## 🚀 Instrucciones de Ejecución

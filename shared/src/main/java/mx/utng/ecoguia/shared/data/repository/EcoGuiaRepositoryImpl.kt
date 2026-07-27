@@ -26,11 +26,48 @@ class EcoGuiaRepositoryImpl(
 ) : EcoGuiaRepository {
 
     /**
-     * Recupera todos los sitios históricos marcados como activos.
+     * Recupera todos los sitios históricos activos ordenados por nombre.
      */
     override suspend fun getHistoricalSites(): List<RemoteHistoricalSite> {
-        return neonClient.executeQuery("SELECT *, ST_Y(location::geometry) as latitude, ST_X(location::geometry) as longitude FROM historical_sites WHERE is_active = TRUE")
+        return neonClient.executeQuery(
+            "SELECT id, name, slug, site_type, address, short_description, historical_description, ST_Y(location::geometry) as latitude, ST_X(location::geometry) as longitude, detection_radius_m, is_active FROM historical_sites WHERE is_active = TRUE ORDER BY name ASC"
+        )
     }
+
+    /**
+     * Registra un nuevo sitio histórico en Neon PostgreSQL usando las columnas existentes en el esquema real.
+     */
+    override suspend fun createHistoricalSite(
+        name: String,
+        siteType: String,
+        address: String,
+        shortDesc: String,
+        historyDesc: String,
+        lat: Double,
+        lng: Double,
+        radiusM: Int,
+        hours: String,
+        cost: String,
+        accessibility: String
+    ): Boolean {
+        val slug = name.lowercase().trim().replace(" ", "-").replace(Regex("[^a-z0-9-]"), "") + "-" + (System.currentTimeMillis() % 10000)
+        val query = """
+            INSERT INTO historical_sites (name, slug, site_type, address, short_description, historical_description, location, detection_radius_m, is_active)
+            VALUES ($1, $2, $3, $4, $5, $6, ST_SetSRID(ST_MakePoint($7, $8), 4326)::geography, $9::integer, TRUE)
+        """.trimIndent()
+        return try {
+            val rows = neonClient.executeCommand(
+                query,
+                listOf(name, slug, siteType, address, shortDesc, historyDesc, lng.toString(), lat.toString(), radiusM.toString())
+            )
+            android.util.Log.d("EcoGuiaRepo", "Sitio registrado con éxito: $name ($rows filas)")
+            rows > 0
+        } catch (e: Exception) {
+            android.util.Log.e("EcoGuiaRepo", "Error al crear sitio histórico: ${e.message}", e)
+            false
+        }
+    }
+
 
     /**
      * Recupera todas las rutas turísticas marcadas como activas.
@@ -71,36 +108,67 @@ class EcoGuiaRepositoryImpl(
     }
 
     /**
-     * Recupera los Geo-Drops (cápsulas) ordenados por fecha de creación.
+     * Recupera los Geo-Drops (cápsulas) aprobados para el mapa y exploración.
      */
     override suspend fun getGeoDrops(): List<RemoteGeoDrop> {
-        return neonClient.executeQuery("SELECT *, ST_Y(location::geometry) as latitude, ST_X(location::geometry) as longitude FROM geo_drops ORDER BY created_at DESC")
+        return neonClient.executeQuery("SELECT *, ST_Y(location::geometry) as latitude, ST_X(location::geometry) as longitude FROM geo_drops WHERE status = 'approved' ORDER BY created_at DESC")
     }
 
     /**
-     * Crea un nuevo Geo-Drop usando PostGIS para la localización y lo vincula al usuario en user_saved_items.
+     * Recupera las cápsulas pendientes o reportadas para la lista de moderación del admin/moderador.
      */
-    override suspend fun createGeoDrop(title: String, description: String, lat: Double, lng: Double, userId: String?, siteId: String?): Boolean {
+    override suspend fun getPendingGeoDrops(): List<RemoteGeoDrop> {
+        return try {
+            neonClient.executeQuery("SELECT *, ST_Y(location::geometry) as latitude, ST_X(location::geometry) as longitude FROM geo_drops ORDER BY created_at DESC")
+        } catch (e: Exception) {
+            android.util.Log.e("EcoGuiaRepo", "Error al cargar cápsulas pendientes: ${e.message}", e)
+            emptyList()
+        }
+    }
+
+    /**
+     * Actualiza el estado de moderación (approved/rejected) de un Geo-Drop.
+     */
+    override suspend fun updateGeoDropStatus(id: String, status: String): Boolean {
+        val query = "UPDATE geo_drops SET status = $1 WHERE id = $2::uuid"
+        return try {
+            val rows = neonClient.executeCommand(query, listOf(status, id))
+            rows > 0
+        } catch (e: Exception) {
+            android.util.Log.e("EcoGuiaRepo", "Error al actualizar estado de moderación: ${e.message}", e)
+            false
+        }
+    }
+
+
+    /**
+     * Crea un nuevo Geo-Drop usando PostGIS para la localización y lo vincula al usuario en user_saved_items.
+     * Verifica la validez de las llaves foráneas para evitar violaciones de restricción en cuentas de prueba o UUIDs sintéticos.
+     */
+    override suspend fun createGeoDrop(title: String, description: String, lat: Double, lng: Double, userId: String?, siteId: String?, mediaUrl: String?): Boolean {
+        val cleanUserId = if (userId == "guest") "" else userId.orEmpty()
         val insertGeoDropQuery = """
-            INSERT INTO geo_drops (title, description, location, status, type, author_id, site_id) 
-            VALUES ($1, $2, ST_SetSRID(ST_MakePoint($3, $4), 4326)::geography, 'approved', 'photo', 
-                    CASE WHEN $5 = '' THEN NULL ELSE $5::uuid END, 
-                    CASE WHEN $6 = '' THEN NULL ELSE $6::uuid END)
+            INSERT INTO geo_drops (title, description, location, status, type, author_id, site_id, media_url) 
+            VALUES ($1, $2, ST_SetSRID(ST_MakePoint($3, $4), 4326)::geography, 'pending', 'photo', 
+                    CASE WHEN EXISTS (SELECT 1 FROM users WHERE id::text = $5) THEN $5::uuid ELSE NULL END, 
+                    CASE WHEN EXISTS (SELECT 1 FROM historical_sites WHERE id::text = $6) THEN $6::uuid ELSE NULL END,
+                    CASE WHEN $7 = '' THEN NULL ELSE $7 END)
             RETURNING id::text
         """.trimIndent()
         return try {
             val response = neonClient.executeQuery<kotlinx.serialization.json.JsonObject>(
                 query = insertGeoDropQuery, 
-                params = listOf(title, description, lng.toString(), lat.toString(), userId.orEmpty(), siteId.orEmpty())
+                params = listOf(title, description, lng.toString(), lat.toString(), cleanUserId, siteId.orEmpty(), mediaUrl.orEmpty())
             )
             val newGeoDropId = response.firstOrNull()?.get("id")?.toString()?.replace("\"", "")
             
-            if (newGeoDropId != null && !userId.isNullOrBlank()) {
+            if (newGeoDropId != null && cleanUserId.isNotBlank()) {
                 val saveItemQuery = """
                     INSERT INTO user_saved_items (user_id, geo_drop_id, site_id)
-                    VALUES ($1::uuid, $2::uuid, CASE WHEN $3 = '' THEN NULL ELSE $3::uuid END)
+                    SELECT $1::uuid, $2::uuid, CASE WHEN EXISTS (SELECT 1 FROM historical_sites WHERE id::text = $3) THEN $3::uuid ELSE NULL END
+                    WHERE EXISTS (SELECT 1 FROM users WHERE id::text = $1)
                 """.trimIndent()
-                neonClient.executeCommand(saveItemQuery, listOf(userId, newGeoDropId, siteId.orEmpty()))
+                neonClient.executeCommand(saveItemQuery, listOf(cleanUserId, newGeoDropId, siteId.orEmpty()))
             }
             true
         } catch (e: Exception) {
@@ -108,6 +176,8 @@ class EcoGuiaRepositoryImpl(
             false
         }
     }
+
+
 
     /**
      * Recupera la colección real del usuario consultando user_saved_items unida con historical_sites, routes y geo_drops.
@@ -159,51 +229,17 @@ class EcoGuiaRepositoryImpl(
     }
 
     /**
-     * Verifica las credenciales de un usuario.
-     * Soporta las credenciales directas por username/rol:
-     * - admin / 1234 -> Rol: super_admin
-     * - mod / 1234   -> Rol: moderator
-     * - user / 1234  -> Rol: user
-     * Para el resto de usuarios normales, consulta la base de datos de Neon filtrando estrictamente por email.
+     * Verifica las credenciales de un usuario únicamente consultando la base de datos remota Neon PostgreSQL.
      */
     override suspend fun login(email: String, password_hash: String): RemoteUser? {
         val input = email.trim().lowercase()
 
-        // 1. Cuentas estáticas predeterminadas de prueba por rol
-        when {
-            input == "admin" && password_hash == "1234" -> {
-                return RemoteUser(
-                    id = "00000000-0000-0000-0000-000000000001",
-                    email = "admin@ecoguia.com",
-                    displayName = "Super Admin (Dev)",
-                    role = "super_admin"
-                )
-            }
-            input == "mod" && password_hash == "1234" -> {
-                return RemoteUser(
-                    id = "00000000-0000-0000-0000-000000000002",
-                    email = "mod@ecoguia.com",
-                    displayName = "Moderador Cultural",
-                    role = "moderator"
-                )
-            }
-            input == "user" && password_hash == "1234" -> {
-                return RemoteUser(
-                    id = "00000000-0000-0000-0000-000000000003",
-                    email = "user@ecoguia.com",
-                    displayName = "Usuario Turista",
-                    role = "user"
-                )
-            }
-        }
-
-        // 2. Para usuarios normales en la base de datos Neon (requiere correo válido)
-        val query = "SELECT id, email, display_name, role, avatar_url, created_at FROM users WHERE LOWER(email) = LOWER($1) AND password_hash = crypt($2, password_hash) AND is_active = TRUE"
+        val query = "SELECT id, email, display_name, role, avatar_url, created_at FROM users WHERE (LOWER(email) = LOWER($1) OR LOWER(display_name) = LOWER($1)) AND password_hash = crypt($2, password_hash) AND is_active = TRUE"
         return try {
             val result = neonClient.executeQuery<RemoteUser>(query, listOf(input, password_hash))
             result.firstOrNull()
         } catch (e: Exception) {
-            android.util.Log.e("EcoGuiaRepo", "Error en login por correo: ${e.message}", e)
+            android.util.Log.e("EcoGuiaRepo", "Error en login remotos: ${e.message}", e)
             null
         }
     }
@@ -235,6 +271,36 @@ class EcoGuiaRepositoryImpl(
             false
         }
     }
+
+    /**
+     * Obtiene todos los usuarios registrados en Neon PostgreSQL.
+     * Convierte el tipo de dato enum user_role a texto (role::text) para evitar errores de parseo en PostgreSQL.
+     */
+    override suspend fun getAllUsers(): List<RemoteUser> {
+        val query = "SELECT id, email, display_name, role::text AS role, avatar_url, created_at FROM users WHERE role::text NOT IN ('admin') ORDER BY created_at DESC"
+        return try {
+            neonClient.executeQuery<RemoteUser>(query)
+        } catch (e: Exception) {
+            android.util.Log.e("EcoGuiaRepo", "Error al obtener usuarios: ${e.message}", e)
+            emptyList()
+        }
+    }
+
+
+    /**
+     * Actualiza el rol de un usuario en Neon PostgreSQL.
+     */
+    override suspend fun updateUserRole(userId: String, newRole: String): Boolean {
+        val query = "UPDATE users SET role = $1::user_role WHERE id = $2::uuid"
+        return try {
+            val rows = neonClient.executeCommand(query, listOf(newRole, userId))
+            rows > 0
+        } catch (e: Exception) {
+            android.util.Log.e("EcoGuiaRepo", "Error al actualizar rol de usuario: ${e.message}", e)
+            false
+        }
+    }
+
 
     /**
      * Ejecuta una consulta simple para validar la disponibilidad de la base de datos.
@@ -312,54 +378,7 @@ class EcoGuiaRepositoryImpl(
         }
     }
 
-    /**
-     * Registra un nuevo sitio histórico utilizando PostGIS.
-     */
-    override suspend fun createHistoricalSite(
-        name: String,
-        siteType: String,
-        address: String,
-        shortDesc: String,
-        historyDesc: String,
-        lat: Double,
-        lng: Double,
-        radiusM: Int,
-        hours: String,
-        cost: String,
-        accessibility: String
-    ): Boolean {
-        val query = """
-            INSERT INTO historical_sites (
-                name, slug, site_type, short_description, historical_description, 
-                address, location, detection_radius_m, is_active,
-                cost_info
-            ) VALUES (
-                $1, $2, $3, $4, $5, $6, 
-                ST_SetSRID(ST_MakePoint($7::double precision, $8::double precision), 4326)::geography, 
-                $9::integer, TRUE, $10
-            )
-        """.trimIndent()
-        
-        // Generar un slug único añadiendo un sufijo aleatorio corto para evitar colisiones (Error 23505)
-        val randomSuffix = (1..4).map { (('a'..'z') + ('0'..'9')).random() }.joinToString("")
-        val baseSlug = name.lowercase().trim().replace(" ", "-").replace(Regex("[^a-z0-9-]"), "")
-        val slug = "${baseSlug}-${randomSuffix}"
-        
-        return try {
-            val rowsAffected = neonClient.executeCommand(
-                query = query,
-                params = listOf(
-                    name, slug, siteType, shortDesc, historyDesc, 
-                    address, lng.toString(), lat.toString(), radiusM.toString(), cost
-                )
-            )
-            android.util.Log.d("EcoGuiaRepo", "Sitio creado: $rowsAffected filas afectadas.")
-            rowsAffected > 0
-        } catch (e: Exception) {
-            android.util.Log.e("EcoGuiaRepo", "Error al crear sitio: ${e.message}", e)
-            false
-        }
-    }
+
 
     /**
      * Obtiene las paradas ordenadas de una ruta turística, incluyendo nombre y coordenadas del sitio histórico.

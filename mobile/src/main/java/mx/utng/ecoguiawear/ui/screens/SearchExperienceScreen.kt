@@ -49,6 +49,8 @@ import mx.utng.ecoguiawear.ui.viewmodel.RouteViewModel
 @Composable
 fun SearchExperienceScreen(
     onSelectRoute: () -> Unit = {},
+    onCreateRoute: () -> Unit = {},
+    isModerator: Boolean = false,
     routeViewModel: RouteViewModel = viewModel(),
     locationViewModel: mx.utng.ecoguiawear.ui.viewmodel.LocationViewModel = viewModel()
 ) {
@@ -87,8 +89,19 @@ fun SearchExperienceScreen(
                 Text("Explorar", color = EcoGuiaColors.Gold, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 Text("Rutas Turísticas", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
             }
-            Icon(Icons.Default.Map, null, tint = Color.White, modifier = Modifier.align(Alignment.TopEnd))
+
+            if (isModerator) {
+                IconButton(
+                    onClick = onCreateRoute,
+                    modifier = Modifier.align(Alignment.TopEnd)
+                ) {
+                    Icon(Icons.Default.AddCircle, contentDescription = "Crear Ruta", tint = EcoGuiaColors.Gold)
+                }
+            } else {
+                Icon(Icons.Default.Map, null, tint = Color.White, modifier = Modifier.align(Alignment.TopEnd))
+            }
         }
+
 
         // Campo de búsqueda por categoría / palabras clave
         OutlinedTextField(

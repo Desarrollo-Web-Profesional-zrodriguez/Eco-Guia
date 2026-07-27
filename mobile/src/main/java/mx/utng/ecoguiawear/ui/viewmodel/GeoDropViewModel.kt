@@ -110,13 +110,16 @@ class GeoDropViewModel(
         viewModelScope.launch {
             _isSaving.value = true
             try {
+                val photoPath = _capturedPhoto.value?.absolutePath
                 val success = repository.createGeoDrop(
                     title = title,
                     description = description,
                     lat = location.latitude,
                     lng = location.longitude,
-                    userId = userId
+                    userId = userId,
+                    mediaUrl = photoPath
                 )
+
 
                 if (success) {
                     loadGeoDrops()

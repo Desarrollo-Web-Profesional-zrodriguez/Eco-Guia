@@ -84,10 +84,11 @@ fun MoreOptionsScreen(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
+
                 item {
                     MenuOptionItem(
                         title = "Mi colección",
-                        subtitle = "Fotos, rutas y cápsulas guardadas",
+                        subtitle = "Fotos, rutas y cápsulas",
                         icon = Icons.Default.Favorite,
                         onClick = { onOptionClick("collection") }
                     )
@@ -95,48 +96,9 @@ fun MoreOptionsScreen(
 
                 item {
                     MenuOptionItem(
-                        title = "Rutas turísticas",
-                        subtitle = "Explora y sigue recorridos guiados",
-                        icon = Icons.Default.Map,
-                        onClick = { onOptionClick("search_experience") }
-                    )
-                }
-
-                if (isModerator) {
-                    item {
-                        MenuOptionItem(
-                            title = "Crear ruta",
-                            subtitle = "Diseñar recorrido turístico",
-                            icon = Icons.Default.AltRoute,
-                            onClick = { onOptionClick("create_route") }
-                        )
-                    }
-                    item {
-                        MenuOptionItem(
-                            title = "Alta de sitio",
-                            subtitle = "Registrar nuevo punto histórico",
-                            icon = Icons.Default.AddLocationAlt,
-                            onClick = { onOptionClick("site_registration") }
-                        )
-                    }
-                }
-
-                item {
-                    MenuOptionItem(
-                        title = "Cámara Geo-Drop",
-                        subtitle = "Escanear y anclar cápsulas AR",
-                        icon = Icons.Default.CameraAlt,
-                        enabled = true,
-                        onClick = { onOptionClick("camera_capture") }
-                    )
-                }
-
-                item {
-                    MenuOptionItem(
                         title = "Miguel Hidalgo IA",
-                        subtitle = "Chatbot histórico con AI",
-                        icon = Icons.Default.Chat,
-                        enabled = true,
+                        subtitle = "Chatbot histórico",
+                        icon = Icons.Default.AutoAwesome,
                         onClick = { onOptionClick("chat_ia") }
                     )
                 }
@@ -146,17 +108,7 @@ fun MoreOptionsScreen(
                         title = "Mi perfil",
                         subtitle = "Datos, logros y cuenta",
                         icon = Icons.Default.Person,
-                        enabled = true,
                         onClick = { onOptionClick("profile") }
-                    )
-                }
-
-                item {
-                    MenuOptionItem(
-                        title = "Dispositivos",
-                        subtitle = "Control de reloj y TV",
-                        icon = Icons.Default.Watch,
-                        onClick = { onOptionClick("linked_devices") }
                     )
                 }
 
@@ -165,26 +117,50 @@ fun MoreOptionsScreen(
                         title = "Modo offline",
                         subtitle = "Rutas descargadas",
                         icon = Icons.Default.Download,
-                        enabled = true,
                         onClick = { onOptionClick("offline") }
                     )
                 }
 
                 item {
                     MenuOptionItem(
-                        title = "Ajustes y Permisos",
-                        subtitle = "Permisos de GPS y alertas",
+                        title = "Permisos de la app",
+                        subtitle = "GPS y notificaciones",
                         icon = Icons.Default.Settings,
-                        enabled = true,
                         onClick = { onOptionClick("permissions") }
+                    )
+                }
+
+                item {
+                    MenuOptionItem(
+                        title = "Dispositivos",
+                        subtitle = "Reloj y TV conectados",
+                        icon = Icons.Default.Watch,
+                        onClick = { onOptionClick("linked_devices") }
+                    )
+                }
+
+                item {
+                    MenuOptionItem(
+                        title = "Configurar TV",
+                        subtitle = "Salón de la fama",
+                        icon = Icons.Default.Tv,
+                        onClick = { onOptionClick("tv_campaign") }
                     )
                 }
 
                 if (isModerator) {
                     item {
                         MenuOptionItem(
+                            title = "Dar alta del sitio",
+                            subtitle = "Registrar nuevo punto histórico",
+                            icon = Icons.Default.AddLocationAlt,
+                            onClick = { onOptionClick("site_registration") }
+                        )
+                    }
+                    item {
+                        MenuOptionItem(
                             title = "Moderación",
-                            subtitle = "Revisión de reportes y cápsulas",
+                            subtitle = "Revisión de cápsulas",
                             icon = Icons.Default.Security,
                             onClick = { onOptionClick("moderation_list") }
                         )
@@ -194,10 +170,10 @@ fun MoreOptionsScreen(
                 if (isSuperAdmin) {
                     item {
                         MenuOptionItem(
-                            title = "Panel Admin",
-                            subtitle = "Administración total de sistema",
-                            icon = Icons.Default.AdminPanelSettings,
-                            onClick = { onOptionClick("admin") }
+                            title = "Gestión de Usuarios",
+                            subtitle = "Control de roles",
+                            icon = Icons.Default.SupervisorAccount,
+                            onClick = { onOptionClick("user_management") }
                         )
                     }
                 }
@@ -205,6 +181,7 @@ fun MoreOptionsScreen(
         }
     }
 }
+
 
 @Preview(showBackground = true)
 @Composable

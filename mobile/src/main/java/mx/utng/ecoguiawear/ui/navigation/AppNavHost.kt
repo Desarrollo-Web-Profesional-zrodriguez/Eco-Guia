@@ -33,7 +33,7 @@ import mx.utng.ecoguiawear.ui.viewmodel.NotificationViewModel
 import mx.utng.ecoguiawear.ui.viewmodel.NotificationType
 import mx.utng.ecoguiawear.ui.viewmodel.RouteViewModel
 import mx.utng.ecoguiawear.ui.viewmodel.SiteRegistrationViewModel
-import mx.utng.ecoguiawear.ControlPanel
+
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
 import mx.utng.ecoguia.shared.data.EcoGuiaDatabase
@@ -206,9 +206,12 @@ fun AppNavHost(
         composable("search_experience") {
             SearchExperienceScreen(
                 onSelectRoute = { navController.navigate("active_route") },
+                onCreateRoute = { navController.navigate("create_route") },
+                isModerator = authViewModel.isModerator,
                 routeViewModel = routeViewModel
             )
         }
+
         composable("active_route") {
             ActiveRouteScreen(
                 onFinishRoute = {
@@ -251,11 +254,8 @@ fun AppNavHost(
         }
 
         // ── Admin y Moderación ────────────────────────────────────────────────
-        composable("admin") {
-            val activityContext = LocalContext.current as ComponentActivity
-            ControlPanel(activityContext, repository)
-        }
         composable("site_registration") {
+
             SiteRegistrationScreen(
                 viewModel = siteRegistrationViewModel,
                 onNext = { navController.navigate("site_content") }
@@ -298,17 +298,41 @@ fun AppNavHost(
             )
         }
         composable("moderation_list") {
-            ModerationListScreen(onResolveClick = { navController.navigate("report_detail") })
+            val parentEntry = remember(it) { navController.getBackStackEntry("moderation_list") }
+            val moderationViewModel: mx.utng.ecoguiawear.ui.viewmodel.ModerationViewModel = viewModel(parentEntry)
+            ModerationListScreen(
+                onResolveClick = { _ -> navController.navigate("report_detail") },
+                moderationViewModel = moderationViewModel
+            )
         }
         composable("report_detail") {
-            ReportDetailScreen(onResolve = {
-                notificationViewModel.showNotification("Reporte resuelto.", NotificationType.SUCCESS)
-                navController.popBackStack()
-            })
+            val parentEntry = remember(it) {
+                try {
+                    navController.getBackStackEntry("moderation_list")
+                } catch (e: Exception) {
+                    it
+                }
+            }
+            val moderationViewModel: mx.utng.ecoguiawear.ui.viewmodel.ModerationViewModel = viewModel(parentEntry)
+            ReportDetailScreen(
+                onResolve = {
+                    notificationViewModel.showNotification("🎉 Decisión de moderación guardada en tiempo real", NotificationType.SUCCESS)
+                    navController.popBackStack()
+                },
+                onBack = { navController.popBackStack() },
+                moderationViewModel = moderationViewModel
+            )
+        }
+
+        composable("user_management") {
+            UserManagementScreen(
+                onBack = { navController.popBackStack() }
+            )
         }
         composable("manual_geo_drop") {
             ManualGeoDropScreen(onAnchorClick = { navController.popBackStack() })
         }
+
 
         // ── Dispositivos ──────────────────────────────────────────────────────
         composable("linked_devices") {
