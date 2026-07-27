@@ -1,12 +1,10 @@
-# Tareas: Perfil, Notificaciones y Nuevas Pantallas
+# Tareas: Módulo Extendido de Dispositivos (TV & Analítica)
 
-- [x] Implementar `updateUser` en el Repositorio (`Shared`)
-- [x] Crear sistema de notificaciones centralizado (`NotificationViewModel.kt`)
-- [x] Actualizar `AuthViewModel.kt` (Update Profile, Logout y Alertas)
-- [x] Ajustar `BottomMenu.kt` (Cerrar Sesión global)
-- [x] Limpiar cabecera de la app en `MainActivity.kt` e integrar Notificaciones
-- [x] Implementar pantalla "Alertas Proximidad" (`ProximityAlertsScreen.kt`)
-- [x] Implementar pantalla "Cámara Geo-Drops" (`CameraGeoDropScreen.kt`)
-- [x] Implementar pantalla "Nueva Cápsula" (`AnchorPhotoScreen.kt`)
+- [x] Implementar `TVCampaignScreen.kt` (Campaña Salón de la Fama)
+- [x] Implementar `VisitorAnalyticsScreen.kt` (Mapa de calor y Métricas)
+- [x] Implementar `CampaignDevicesScreen.kt` (Dispositivos seleccionados)
+- [x] Implementar `MuseumPortal360Screen.kt` (Portal inmersivo)
+- [x] Vincular `LinkedDevicesScreen.kt` con el flujo de TV
+- [x] Actualizar navegación en `MainActivity.kt` con rutas de TV y Analítica
 - [x] Documentar todo bajo el estándar ZahirMora
-- [x] Verificar actualización de perfil y flujo de notificaciones
+- [x] Verificar flujo completo del ecosistema de dispositivos

@@ -16,6 +16,7 @@ class WearMessageListener(
 
     fun onMessageReceived(event: MessageEvent) {
         val payload = String(event.data)
+        android.util.Log.d("WearMessageListener", "Mensaje recibido: ${event.path} -> $payload")
         when (event.path) {
             "/eco-guia/simulate/link" -> {
                 val linked = payload.toBoolean()
@@ -64,6 +65,51 @@ class WearMessageListener(
                     val gps = parts[0].toBoolean()
                     val camera = parts[1].toBoolean()
                     repository.setPermissions(gps, camera)
+                }
+            }
+            "/eco-guia/sync/target" -> {
+                val parts = payload.split("|")
+                if (parts.size == 4) {
+                    val id = parts[0]
+                    val name = parts[1]
+                    val lat = parts[2].toDoubleOrNull() ?: return
+                    val lng = parts[3].toDoubleOrNull() ?: return
+                    repository.setSyncTarget(id, name, lat, lng)
+                }
+            }
+            "/eco-guia/sync/route" -> {
+                val firstPipe = payload.indexOf('|')
+                if (firstPipe != -1) {
+                    val title = payload.substring(0, firstPipe)
+                    val waypointsStr = payload.substring(firstPipe + 1)
+                    val waypoints = waypointsStr.split(";").filter { it.isNotBlank() }.map {
+                        val wpParts = it.split("|")
+                        mx.utng.ecoguiawear.domain.model.Waypoint(
+                            id = wpParts.getOrNull(0) ?: "0",
+                            title = wpParts.getOrNull(1) ?: "Punto",
+                            latitude = wpParts.getOrNull(2)?.toDoubleOrNull() ?: 0.0,
+                            longitude = wpParts.getOrNull(3)?.toDoubleOrNull() ?: 0.0
+                        )
+                    }
+                    android.util.Log.d("WearMessageListener", "Sincronizando ruta recibida en reloj: $title con ${waypoints.size} waypoints")
+                    repository.setSyncRoute(title, waypoints)
+                }
+            }
+            "/eco-guia/cancel/route" -> {
+                android.util.Log.d("WearMessageListener", "Cancelando ruta en el reloj por solicitud del móvil.")
+                repository.clearActiveRoute()
+            }
+            "/eco-guia/complete/route" -> {
+                android.util.Log.d("WearMessageListener", "Ruta completada recibida en el reloj.")
+                repository.markRouteCompleted()
+            }
+            "/eco-guia/sync/progress" -> {
+                val parts = payload.split("|")
+                if (parts.size == 2) {
+                    val visited = parts[0].toIntOrNull() ?: 0
+                    val total = parts[1].toIntOrNull() ?: 0
+                    android.util.Log.d("WearMessageListener", "Actualizando progreso en reloj: $visited / $total")
+                    repository.setRouteProgress(visited, total)
                 }
             }
         }

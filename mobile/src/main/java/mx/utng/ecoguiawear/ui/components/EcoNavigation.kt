@@ -31,7 +31,8 @@ import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 fun EcoBottomBar(
     currentRoute: String,
     onNavigate: (String) -> Unit,
-    onOpenSidebar: () -> Unit
+    onOpenSidebar: () -> Unit,
+    isRouteActive: Boolean = false
 ) {
     NavigationBar(
         containerColor = EcoGuiaColors.DeepBlue,
@@ -43,7 +44,7 @@ fun EcoBottomBar(
         NavigationBarItem(
             selected = currentRoute == "exploration",
             onClick = { onNavigate("exploration") },
-            icon = { Icon(Icons.Default.LocationOn, null) },
+            icon = { Icon(Icons.Default.LocationOn, contentDescription = "Sitios recomendados") },
             colors = NavigationBarItemDefaults.colors(
                 selectedIconColor = EcoGuiaColors.Jade,
                 unselectedIconColor = EcoGuiaColors.Muted,
@@ -51,19 +52,24 @@ fun EcoBottomBar(
             )
         )
         NavigationBarItem(
-            selected = currentRoute == "radar",
-            onClick = { onNavigate("radar") },
-            icon = { Icon(Icons.Default.ShareLocation, null) },
+            selected = currentRoute == "search_experience" || currentRoute == "active_route",
+            onClick = { onNavigate(if (isRouteActive) "active_route" else "search_experience") },
+            icon = {
+                Icon(
+                    imageVector = if (isRouteActive) Icons.Default.Navigation else Icons.Default.Map,
+                    contentDescription = "Las rutas"
+                )
+            },
             colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = EcoGuiaColors.Jade,
-                unselectedIconColor = EcoGuiaColors.Muted,
+                selectedIconColor = if (isRouteActive) EcoGuiaColors.Gold else EcoGuiaColors.Jade,
+                unselectedIconColor = if (isRouteActive) EcoGuiaColors.Gold else EcoGuiaColors.Muted,
                 indicatorColor = Color.Transparent
             )
         )
         NavigationBarItem(
-            selected = currentRoute == "favorites",
-            onClick = { onNavigate("favorites") },
-            icon = { Icon(Icons.Default.FavoriteBorder, null) },
+            selected = currentRoute == "collection",
+            onClick = { onNavigate("collection") },
+            icon = { Icon(Icons.Default.FavoriteBorder, contentDescription = "Mi Colección") },
             colors = NavigationBarItemDefaults.colors(
                 selectedIconColor = EcoGuiaColors.Jade,
                 unselectedIconColor = EcoGuiaColors.Muted,
@@ -73,7 +79,7 @@ fun EcoBottomBar(
         NavigationBarItem(
             selected = false,
             onClick = { onNavigate("logout") },
-            icon = { Icon(Icons.AutoMirrored.Filled.ExitToApp, null) },
+            icon = { Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Salir") },
             colors = NavigationBarItemDefaults.colors(
                 unselectedIconColor = Color.Red.copy(alpha = 0.7f),
                 indicatorColor = Color.Transparent
@@ -82,12 +88,88 @@ fun EcoBottomBar(
         NavigationBarItem(
             selected = false,
             onClick = onOpenSidebar,
-            icon = { Icon(Icons.Default.Menu, null) },
+            icon = { Icon(Icons.Default.Menu, contentDescription = "Menú") },
             colors = NavigationBarItemDefaults.colors(
                 unselectedIconColor = EcoGuiaColors.Muted,
                 indicatorColor = Color.Transparent
             )
         )
+    }
+}
+
+/**
+ * Barra de navegación lateral (NavigationRail) para modo horizontal (Landscape).
+ */
+@Composable
+fun EcoNavigationRail(
+    currentRoute: String,
+    onNavigate: (String) -> Unit,
+    onOpenSidebar: () -> Unit,
+    isRouteActive: Boolean = false
+) {
+    NavigationRail(
+        containerColor = EcoGuiaColors.DeepBlue,
+        contentColor = EcoGuiaColors.Text,
+        modifier = Modifier.width(76.dp)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxHeight(),
+            verticalArrangement = Arrangement.SpaceEvenly
+        ) {
+            NavigationRailItem(
+                selected = currentRoute == "exploration",
+                onClick = { onNavigate("exploration") },
+                icon = { Icon(Icons.Default.LocationOn, contentDescription = "Sitios recomendados") },
+                colors = NavigationRailItemDefaults.colors(
+                    selectedIconColor = EcoGuiaColors.Jade,
+                    unselectedIconColor = EcoGuiaColors.Muted,
+                    indicatorColor = Color.Transparent
+                )
+            )
+            NavigationRailItem(
+                selected = currentRoute == "search_experience" || currentRoute == "active_route",
+                onClick = { onNavigate(if (isRouteActive) "active_route" else "search_experience") },
+                icon = {
+                    Icon(
+                        imageVector = if (isRouteActive) Icons.Default.Navigation else Icons.Default.Map,
+                        contentDescription = "Las rutas"
+                    )
+                },
+                colors = NavigationRailItemDefaults.colors(
+                    selectedIconColor = if (isRouteActive) EcoGuiaColors.Gold else EcoGuiaColors.Jade,
+                    unselectedIconColor = if (isRouteActive) EcoGuiaColors.Gold else EcoGuiaColors.Muted,
+                    indicatorColor = Color.Transparent
+                )
+            )
+            NavigationRailItem(
+                selected = currentRoute == "collection",
+                onClick = { onNavigate("collection") },
+                icon = { Icon(Icons.Default.FavoriteBorder, contentDescription = "Mi Colección") },
+                colors = NavigationRailItemDefaults.colors(
+                    selectedIconColor = EcoGuiaColors.Jade,
+                    unselectedIconColor = EcoGuiaColors.Muted,
+                    indicatorColor = Color.Transparent
+                )
+            )
+            NavigationRailItem(
+                selected = false,
+                onClick = { onNavigate("logout") },
+                icon = { Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Salir") },
+                colors = NavigationRailItemDefaults.colors(
+                    unselectedIconColor = Color.Red.copy(alpha = 0.7f),
+                    indicatorColor = Color.Transparent
+                )
+            )
+            NavigationRailItem(
+                selected = false,
+                onClick = onOpenSidebar,
+                icon = { Icon(Icons.Default.Menu, contentDescription = "Menú") },
+                colors = NavigationRailItemDefaults.colors(
+                    unselectedIconColor = EcoGuiaColors.Muted,
+                    indicatorColor = Color.Transparent
+                )
+            )
+        }
     }
 }
 

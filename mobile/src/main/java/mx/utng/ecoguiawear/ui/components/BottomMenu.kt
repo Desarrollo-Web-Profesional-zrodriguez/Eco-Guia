@@ -45,11 +45,13 @@ data class ContextMenuItem(
 @Composable
 fun BottomMenuSheet(
     currentRoute: String,
-    isAdmin: Boolean,
+    isSuperAdmin: Boolean = false,
+    isModerator: Boolean = false,
     onDismiss: () -> Unit,
     onNavigate: (String) -> Unit
 ) {
-    val items = getContextItems(currentRoute, isAdmin)
+    val items = getContextItems(currentRoute, isSuperAdmin, isModerator)
+
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -128,25 +130,26 @@ fun ContextMenuItemRow(
 }
 
 /**
- * Obtiene las opciones del menú según la pantalla donde se encuentre el usuario.
+ * Obtiene las opciones del menú según la pantalla y el rol del usuario.
  */
-private fun getContextItems(route: String, isAdmin: Boolean): List<ContextMenuItem> {
+private fun getContextItems(route: String, isSuperAdmin: Boolean, isModerator: Boolean): List<ContextMenuItem> {
     val items = mutableListOf<ContextMenuItem>()
 
     // Opciones contextuales de perfil
     if (route == "profile" || route == "edit_profile") {
         items.add(ContextMenuItem("Seguridad", Icons.Default.Security, "security"))
-        items.add(ContextMenuItem("Editar Datos", Icons.Default.Edit, "edit_profile"))
     }
 
-    // Opciones base
-    items.add(ContextMenuItem("Mi Colección", Icons.Default.Favorite, "collection"))
-    items.add(ContextMenuItem("Miguel Hidalgo IA", Icons.Default.AutoAwesome, "chat_ia", enabled = isAdmin))
-    items.add(ContextMenuItem("Mi Perfil", Icons.Default.AccountCircle, "profile", enabled = isAdmin))
-    items.add(ContextMenuItem("Ajustes", Icons.Default.Settings, "settings", enabled = isAdmin))
+    // El BottomMenuSheet solo muestra el acceso directo al Centro de Navegación
+    items.add(ContextMenuItem("Centro de navegación", Icons.Default.GridView, "more_options", enabled = true))
+
+
 
     // Cerrar Sesión siempre presente
     items.add(ContextMenuItem("Cerrar Sesión", Icons.AutoMirrored.Filled.ExitToApp, "logout"))
 
     return items
 }
+
+
+

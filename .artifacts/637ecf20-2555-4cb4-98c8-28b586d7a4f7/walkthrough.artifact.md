@@ -1,42 +1,43 @@
-# Walkthrough: Perfil Flexible, Cámara Real y Notificaciones Centralizadas
+# Walkthrough: Módulo Extendido de Dispositivos (TV, Analítica y Portal 360)
 
-Se han implementado mejoras críticas en la gestión de usuario, se activó la funcionalidad de cámara real con CameraX y se centralizó el sistema de notificaciones reactivas, todo bajo el estándar de documentación solicitado.
+Se ha completado la expansión del sistema de gestión de dispositivos, integrando las capacidades de control de campañas para Smart TV, el dashboard de analítica de visitantes y el portal inmersivo de museos, cumpliendo con el estándar de documentación ZahirMora.
 
 ## Cambios Realizados
 
-### Gestión de Usuario (Nombre Flexible)
-- **[EditProfileScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/EditProfileScreen.kt):** Se reemplazaron los campos separados por un único campo de **"Nombre Completo"**. Esto permite registrar cualquier número de nombres y apellidos sin restricciones técnicas, guardándolos directamente en la base de datos Neon.
-- **Reactividad Inmediata:** Al guardar los cambios, el `AuthViewModel` actualiza el estado local al instante, permitiendo que el nuevo nombre se vea reflejado en todas las pantallas sin necesidad de reiniciar la app.
+### Nuevas Pantallas de Gestión (Paquete Admin)
+1.  **[TVCampaignScreen](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/admin/TVCampaignScreen.kt):**
+    *   Centro de programación "Salón de la Fama" para hoteles y museos.
+    *   Gestión de galerías en lobby, colecciones públicas y rankings semanales.
+2.  **[VisitorAnalyticsScreen](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/admin/VisitorAnalyticsScreen.kt):**
+    *   Dashboard con mapa de calor de exploración.
+    *   Métricas en tiempo real: Visitantes hoy (+15%), Cápsulas vistas y Reportes.
+3.  **[CampaignDevicesScreen](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/admin/CampaignDevicesScreen.kt):**
+    *   Selector de dispositivos activos para una campaña específica.
+    *   Control visual del estado (ON/OFF) por dispositivo.
+4.  **[MuseumPortal360Screen](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/admin/MuseumPortal360Screen.kt):**
+    *   Interfaz inmersiva apaisada para el recorrido 360.
+    *   Visualización de puntos de interés y soporte de IA guía.
 
-### Cámara y Captura (CameraX)
-- **[CameraGeoDropScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/CameraGeoDropScreen.kt):** Se implementó la lógica real de cámara utilizando la librería **CameraX**.
-    - Incluye gestión automática de permisos.
-    - Muestra un visor en vivo con la interfaz de Realidad Aumentada (AR) superpuesta.
-- **[AnchorPhotoScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/AnchorPhotoScreen.kt):** Se completó la lógica del formulario de publicación con notificaciones de éxito al anclar contenido.
-
-### Sistema de Notificaciones Centralizado
-- **[NotificationViewModel.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/viewmodel/NotificationViewModel.kt):** Centro de mensajes reactivo que dispara Snackbars globales.
-- **Eventos Notificados:**
-    *   **Login:** "¡Bienvenido, [Nombre]!" o "Credenciales no válidas".
-    *   **Perfil:** "Perfil actualizado con éxito".
-    *   **Sesión:** "Sesión cerrada".
-
-### Mejoras en Navegación y UI
-- **Cerrar Sesión Global:** Se añadió un icono de salida (ExitToApp) permanentemente visible en la barra inferior (color rojo suave) y en el menú desplegable. Al presionarlo, redirige inmediatamente a la pantalla de Login.
-- **Limpieza de Cabecera:** Se actualizó el tema del sistema para eliminar el nombre de la app ("Eco-Guía Control") de la barra superior, dejando una interfaz limpia y moderna.
+### Integración de Flujo
+- **Acceso Directo:** Se vinculó el botón **"TV"** de la pantalla de Dispositivos Vinculados para entrar directamente al flujo de campañas.
+- **Navegación Secuencial:**
+    *   Campaña -> Icono Estrella -> Analítica.
+    *   Campaña -> Item de Lista -> Dispositivos Seleccionados.
+    *   Dispositivos Seleccionados -> Botón "Gestionar Contenido" -> Portal 360.
 
 ## Estándar de Documentación ZahirMora
-Se ha verificado que todos los archivos (Repository, ViewModels, Components, Screens) cuentan con el encabezado de autoría: **Autor: ZahirMora | Fecha: 2026-07-21**.
+Todos los archivos han sido actualizados con el encabezado de autoría y descripción técnica: **Autor: ZahirMora | Fecha: 2026-07-22**.
 
-## Cómo verificar los cambios
+## Cómo verificar el ecosistema extendido
 
-1.  **Header:** Al abrir la app, nota que ya no aparece el título gris en la parte superior.
-2.  **Nombre Completo:** Ve a Perfil > Editar y cambia tu nombre completo incluyendo apellidos. Guarda y verifica la notificación de éxito y el cambio en la tarjeta de perfil.
-3.  **Cerrar Sesión:** Presiona el nuevo icono rojo en la barra inferior o la opción en el menú inferior. Serás llevado al inicio de sesión con un mensaje informativo.
-4.  **Cámara:** Desde la barra inferior, presiona el icono de Radar. Acepta el permiso de cámara y verás el visor real de tu dispositivo.
+1.  **Entrada:** Ve a Menú > Dispositivos.
+2.  **Campañas:** Presiona el botón circular **"TV"** en la parte superior derecha. Entrarás a la gestión de Smart TVs.
+3.  **Analítica:** Dentro de la pantalla de Campañas, toca el icono dorado de la estrella para ver las métricas y el mapa de calor.
+4.  **Selección:** Toca cualquier elemento de la programación (ej. Galería lobby) para ver qué dispositivos están proyectando ese contenido.
+5.  **Portal 360:** Desde la pantalla de dispositivos seleccionados, presiona el botón verde inferior para abrir el portal inmersivo del museo.
 
 > [!TIP]
-> El sistema de cámara ahora detecta si tienes permisos y te los solicita de forma elegante mediante Jetpack Compose.
+> La pantalla del Portal 360 está diseñada para visualizarse mejor en orientación horizontal o tablets, manteniendo la coherencia de datos del sistema.
 
 > [!IMPORTANT]
-> Se han normalizado los colores de alerta: Verde para éxitos, Rojo para errores/salida y Azul para información.
+> Se han normalizado los iconos (Tv, Star, Group, Phonelink) y los colores para asegurar que el administrador tenga una experiencia de control fluida.

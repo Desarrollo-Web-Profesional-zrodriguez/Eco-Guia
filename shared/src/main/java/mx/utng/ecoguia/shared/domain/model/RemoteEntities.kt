@@ -1,8 +1,9 @@
 /**
  * Archivo: RemoteEntities.kt
- * Autor: ZahirMora
- * Fecha de última actualización: 2026-07-20
- * Descripción: Define los modelos de datos para la comunicación con la base de datos remota Neon (PostgreSQL).
+ * Autor: Zahir Rodriguez
+ * Fecha de última actualización: 2026-07-24
+ * Descripción: Modelos de datos serializables para la comunicación con la base de datos remota.
+ * Incluye soporte para coordenadas geográficas necesarias en el flujo de exploración.
  */
 
 package mx.utng.ecoguia.shared.domain.model
@@ -24,6 +25,18 @@ data class RemoteUser(
 )
 
 /**
+ * Representa un elemento en la colección del usuario (Sitio, Foto, Ruta).
+ */
+@Serializable
+data class RemoteCollectionItem(
+    val id: String,
+    val title: String,
+    val subtitle: String,
+    val type: String, // 'site', 'photo', 'route'
+    @SerialName("created_at") val createdAt: String? = null
+)
+
+/**
  * Representa un sitio histórico o museo.
  */
 @Serializable
@@ -36,8 +49,20 @@ data class RemoteHistoricalSite(
     @SerialName("historical_description") val historicalDescription: String? = null,
     val address: String? = null,
     val location: String? = null,
+    val latitude: Double? = null,
+    val longitude: Double? = null,
     @SerialName("detection_radius_m") val detectionRadiusM: Int = 50,
     @SerialName("is_active") val isActive: Boolean = true
+)
+
+/**
+ * Representa una categoría de sitio (Catálogo).
+ */
+@Serializable
+data class RemoteCategory(
+    val id: String? = null,
+    val name: String,
+    val icon: String? = null
 )
 
 /**
@@ -67,7 +92,23 @@ data class RemoteGeoDrop(
     val type: String = "photo",
     @SerialName("media_url") val mediaUrl: String? = null,
     val location: String? = null,
+    val latitude: Double? = null,
+    val longitude: Double? = null,
     @SerialName("status") val status: String = "pending",
     @SerialName("likes_count") val likesCount: Int = 0,
     @SerialName("created_at") val createdAt: String? = null
 )
+
+/**
+ * Representa un artículo o pregunta/respuesta curada de conocimiento para la IA.
+ */
+@Serializable
+data class RemoteKnowledgeArticle(
+    val id: String? = null,
+    val title: String,
+    val content: String,
+    @SerialName("created_by") val createdBy: String? = null,
+    @SerialName("is_active") val isActive: Boolean = true,
+    @SerialName("created_at") val createdAt: String? = null
+)
+

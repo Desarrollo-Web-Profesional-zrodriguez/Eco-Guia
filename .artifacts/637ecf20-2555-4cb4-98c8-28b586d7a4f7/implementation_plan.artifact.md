@@ -1,58 +1,50 @@
-# Plan de Implementación: Integración de Firebase Storage para Imágenes
+# Plan de Implementación: Módulo Extendido de Dispositivos (TV & Analítica)
 
-Este plan detalla los pasos para integrar Firebase en el proyecto Eco-Guía, comenzando con el almacenamiento de imágenes (Geo-Drops) y preparando el terreno para futuras funcionalidades como 2FA y envío de correos.
+Este plan detalla la construcción de las interfaces avanzadas para el control de Smart TVs, analítica de visitantes y el portal inmersivo 360, integrándolos en el flujo del módulo "Dispositivos".
 
-## Pasos Previos (Acción del Usuario)
+## Análisis de Flujo
 
-Antes de modificar el código, es necesario configurar el proyecto en la consola de Firebase:
+Basado en las nuevas imágenes, el flujo de administración de dispositivos se expande:
+1.  **LinkedDevicesScreen:** Punto de entrada.
+2.  **TVCampaignScreen:** Gestión de campañas "Salón de la Fama" para Hoteles y Museos.
+3.  **VisitorAnalyticsScreen:** Visualización de métricas y mapa de calor de visitantes.
+4.  **CampaignDevicesScreen:** Selección y estado de dispositivos para una campaña específica.
+5.  **MuseumPortal360Screen:** Configuración del recorrido inmersivo 360 para lobby y casa.
 
-1.  **Crear Proyecto:** Ve a [Firebase Console](https://console.firebase.google.com/) y crea un nuevo proyecto llamado `EcoGuiaWear`.
-2.  **Registrar App:** Añade una aplicación Android con el package name: `mx.utng.ecoguiawear`.
-3.  **Descargar Configuración:** Descarga el archivo `google-services.json`.
-4.  **Colocar Archivo:** Mueve el archivo `google-services.json` a la carpeta `mobile/` de tu proyecto.
-5.  **Habilitar Storage:** En la consola de Firebase, ve a "Build" > "Storage" y presiona "Get Started" (usa las reglas por defecto en modo prueba por ahora).
+## Cambios Propuestos
 
-## Cambios Propuestos en el SDK
+### 1. Pantallas de Administración (admin package)
 
-### 1. Configuración de Dependencias
+#### [NEW] [TVCampaignScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/admin/TVCampaignScreen.kt)
+- Interfaz de programación para galerías en Smart TVs.
+- Secciones: Galería lobby, Colección pública, Ranking semanal.
 
-#### [MODIFY] [libs.versions.toml](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/gradle/libs.versions.toml)
-- Añadir versión para el plugin de Google Services (`4.4.2` o superior).
-- Añadir Firebase BoM (Bill of Materials) para gestionar versiones automáticamente.
-- Añadir librerías de Firebase Storage y Firebase Auth.
+#### [NEW] [VisitorAnalyticsScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/admin/VisitorAnalyticsScreen.kt)
+- Dashboard de métricas: Visitantes hoy, Cápsulas vistas, Reportes.
+- Card de "Mapa de calor".
 
-#### [MODIFY] [build.gradle.kts (Root)](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/build.gradle.kts)
-- Añadir el plugin de `google-services` en el bloque de `plugins`.
+#### [NEW] [CampaignDevicesScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/admin/CampaignDevicesScreen.kt)
+- Lista de dispositivos seleccionados con interruptores de estado.
+- Botón inferior "Gestionar contenido".
 
-#### [MODIFY] [mobile/build.gradle.kts](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/build.gradle.kts)
-- Aplicar el plugin de Google Services.
-- Añadir las dependencias de Firebase usando el BoM.
+#### [NEW] [MuseumPortal360Screen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/admin/MuseumPortal360Screen.kt)
+- Vista inmersiva apaisada (simulada) con indicadores de puntos e IA.
 
-### 2. Capa de Datos (Networking & Storage)
+### 2. Navegación y MainActivity
 
-#### [NEW] [FirebaseStorageClient.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/data/FirebaseStorageClient.kt)
-- Implementación de un cliente ligero para subir imágenes.
-- Función `uploadGeoDropImage(uri): String` que retorne la URL pública de Firebase.
+#### [MODIFY] [MainActivity.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/MainActivity.kt)
+- Registrar las nuevas rutas: `tv_campaign`, `visitor_analytics`, `campaign_devices`, `portal_360`.
 
-#### [MODIFY] [AuthViewModel.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/viewmodel/AuthViewModel.kt)
-- Preparar la integración con Firebase Auth para el futuro 2FA.
+#### [MODIFY] [LinkedDevicesScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/LinkedDevicesScreen.kt)
+- Vincular el botón "TV" (en la cabecera) para navegar a `tv_campaign`.
 
-### 3. Integración en el Flujo de Captura
-
-#### [MODIFY] [AnchorPhotoScreen.kt](file:///C:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/src/main/java/mx/utng/ecoguiawear/ui/screens/AnchorPhotoScreen.kt)
-- Al presionar "Anclar foto", se disparará la subida a Firebase.
-- La URL obtenida se guardará en el registro de Neon PostgreSQL.
-
-## Plan de Verificación
-
-1.  **Sincronización:** Ejecutar `gradle sync` para validar que el SDK se integró correctamente.
-2.  **Prueba de Subida:** Capturar una foto, intentar guardarla y verificar que el archivo aparece en el bucket de Firebase Console.
-3.  **Link Neon:** Confirmar que la URL de Firebase se guarda correctamente en la columna `media_url` de la tabla `geo_drops` en Neon.
+## Estándar de Documentación
+Cada archivo incluirá: **Autor: ZahirMora | Fecha: 2026-07-22**.
 
 ---
 
 > [!IMPORTANT]
-> El archivo `google-services.json` es **obligatorio** para que la app inicie. Sin él, la aplicación se cerrará al arrancar.
+> El diseño del Portal 360 se maquetará respetando la jerarquía visual de la imagen 4, enfocándose en la presentación de métricas inmersivas.
 
 > [!NOTE]
-> Autor: ZahirMora | Fecha: 2026-07-21
+> Autor: ZahirMora | Fecha: 2026-07-22

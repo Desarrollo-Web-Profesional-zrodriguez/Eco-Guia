@@ -1,9 +1,21 @@
 package mx.utng.ecoguiawear.presentation.screens
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Devices
@@ -30,6 +42,8 @@ fun RadarScreen(
     onOpenArrival: () -> Unit,
     onOpenSummary: () -> Unit,
     onOpenSettings: () -> Unit,
+    onSelectNextAutoTarget: () -> Unit = {},
+    onSelectPreviousAutoTarget: () -> Unit = {},
     onRefresh: () -> Unit = {},
     onOpenStealth: () -> Unit = {},
     onNavigateBack: () -> Unit = {},
@@ -44,26 +58,10 @@ fun RadarScreen(
                 subtitle = state.lastAlert
             )
         }
-        item {
-            Button(
-                label = { 
-                    Text(
-                        text = "Refrescar Neon",
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Center
-                    ) 
-                },
-                onClick = onRefresh,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = EcoGuiaColors.Gold,
-                    contentColor = EcoGuiaColors.Background
-                ),
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
+
         item {
             CompassArrow(
-                bearingDegrees = target.bearingDegrees,
+                bearingDegrees = target.bearingDegrees - state.currentHeading,
                 modifier = Modifier.size(108.dp)
             )
         }
@@ -75,6 +73,62 @@ fun RadarScreen(
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
             )
+        }
+        // Subtítulo del objetivo con flechas para alternar entre los 3 sitios más cercanos
+        if (target.subtitle.isNotBlank()) {
+            item {
+                if (target.isAutoTarget && state.nearbyAutoTargets.isNotEmpty()) {
+                    val count = state.nearbyAutoTargets.size
+                    val currentIndex = state.selectedAutoIndex
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 2.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Button(
+                            onClick = onSelectPreviousAutoTarget,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = EcoGuiaColors.Surface,
+                                contentColor = EcoGuiaColors.Jade
+                            ),
+                            modifier = Modifier.size(30.dp)
+                        ) {
+                            Text("<", fontSize = 12.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+                        }
+
+                        Text(
+                            text = "${currentIndex + 1}/$count · ${target.title.take(12)}",
+                            color = EcoGuiaColors.Jade,
+                            style = MaterialTheme.typography.bodySmall,
+                            textAlign = TextAlign.Center
+                        )
+
+                        Button(
+                            onClick = onSelectNextAutoTarget,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = EcoGuiaColors.Surface,
+                                contentColor = EcoGuiaColors.Jade
+                            ),
+                            modifier = Modifier.size(30.dp)
+                        ) {
+                            Text(">", fontSize = 12.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+                        }
+                    }
+                } else {
+                    Text(
+                        text = target.subtitle,
+                        color = EcoGuiaColors.Muted,
+                        style = MaterialTheme.typography.bodySmall,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 2.dp)
+                    )
+                }
+            }
         }
         item {
             Text(
@@ -89,12 +143,14 @@ fun RadarScreen(
             Button(
                 label = { 
                     Text(
-                        text = "Ver Geo-Drop",
+                        text = if (target.isAutoTarget) "📷 Capturar Geo-Drop" else "Ver Geo-Drop",
                         modifier = Modifier.fillMaxWidth(),
                         textAlign = TextAlign.Center
                     ) 
                 },
-                onClick = onOpenCompass,
+                onClick = {
+                    onOpenCompass()
+                },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = EcoGuiaColors.Jade,
                     contentColor = EcoGuiaColors.Background
@@ -102,23 +158,7 @@ fun RadarScreen(
                 modifier = Modifier.fillMaxWidth()
             )
         }
-        item {
-            Button(
-                label = { 
-                    Text(
-                        text = "Iniciar Ruta",
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Center
-                    ) 
-                },
-                onClick = onOpenSummary,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = EcoGuiaColors.Jade,
-                    contentColor = EcoGuiaColors.Background
-                ),
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
+
         item {
             Button(
                 label = { 

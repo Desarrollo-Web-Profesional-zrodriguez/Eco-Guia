@@ -24,7 +24,10 @@ data class RadarTarget(
     val subtitle: String,
     val type: TargetType,
     val distanceMeters: Int,
-    val bearingDegrees: Float
+    val bearingDegrees: Float,
+    val latitude: Double? = null,
+    val longitude: Double? = null,
+    val isAutoTarget: Boolean = false
 )
 
 data class RouteSummary(
@@ -32,7 +35,16 @@ data class RouteSummary(
     val visitedStops: Int,
     val totalStops: Int,
     val nextStop: String,
-    val estimatedMinutes: Int
+    val estimatedMinutes: Int,
+    val waypoints: List<Waypoint> = emptyList()
+)
+
+data class Waypoint(
+    val id: String,
+    val title: String,
+    val latitude: Double,
+    val longitude: Double,
+    val isReached: Boolean = false
 )
 
 data class HapticSettings(
@@ -54,21 +66,26 @@ data class RadarUiState(
     val isGpsEnabled: Boolean = true,
     val isCameraReady: Boolean = true,
     val alerts: List<AlertEntity> = emptyList(),
+    val currentHeading: Float = 0f,
     val target: RadarTarget = RadarTarget(
-        id = "geo-drop-museo-01",
-        title = "Geo-Drop Museo",
-        subtitle = "Museo de la Independencia Nacional",
-        type = TargetType.GEO_DROP,
-        distanceMeters = 64,
-        bearingDegrees = 34f
+        id = "none",
+        title = "Esperando objetivo",
+        subtitle = "Selecciona un sitio en el móvil",
+        type = TargetType.HISTORIC_SITE,
+        distanceMeters = 0,
+        bearingDegrees = 0f
     ),
     val routeSummary: RouteSummary = RouteSummary(
-        title = "Ruta Independencia",
+        title = "Sin ruta activa",
         visitedStops = 0,
-        totalStops = 3,
-        nextStop = "Punto 1",
-        estimatedMinutes = 15
+        totalStops = 0,
+        nextStop = "Esperando ruta desde móvil",
+        estimatedMinutes = 0,
+        waypoints = emptyList()
     ),
     val hapticSettings: HapticSettings = HapticSettings(),
-    val lastAlert: String = "Radar listo"
+    val lastAlert: String = "Radar listo",
+    val isRouteCompleted: Boolean = false,
+    val nearbyAutoTargets: List<RadarTarget> = emptyList(),
+    val selectedAutoIndex: Int = 0
 )

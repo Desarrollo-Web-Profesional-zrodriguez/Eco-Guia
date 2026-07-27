@@ -14,6 +14,7 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
 import mx.utng.ecoguia.shared.data.repository.EcoGuiaRepositoryImpl
 import mx.utng.ecoguia.shared.domain.model.RemoteUser
+import mx.utng.ecoguia.shared.domain.repository.EcoGuiaRepository
 
 /**
  * Representa los diferentes estados de un proceso de autenticación.
@@ -27,7 +28,7 @@ sealed class AuthState {
 }
 
 class AuthViewModel(
-    private val repository: EcoGuiaRepositoryImpl = EcoGuiaRepositoryImpl()
+    private val repository: EcoGuiaRepository = EcoGuiaRepositoryImpl()
 ) : ViewModel() {
 
     private val _authState = mutableStateOf<AuthState>(AuthState.Idle)
@@ -50,6 +51,32 @@ class AuthViewModel(
      */
     val currentUser: RemoteUser?
         get() = (authState.value as? AuthState.Success)?.user
+
+    /**
+     * Determina si el usuario autenticado es Super Admin (Desarrollador / Administrador total).
+     */
+    val isSuperAdmin: Boolean
+        get() = currentUser?.role?.lowercase() in listOf("super_admin", "admin", "administrator")
+
+    /**
+     * Determina si el usuario autenticado tiene rol de Moderador / Gestor Cultural.
+     */
+    val isModerator: Boolean
+        get() = isSuperAdmin || currentUser?.role?.lowercase() in listOf("moderator", "mod")
+
+    /**
+     * Determina si el usuario tiene privilegios administrativos o de gestión (SuperAdmin o Moderador).
+     */
+    val isAdmin: Boolean
+        get() = isSuperAdmin || isModerator
+
+    /**
+     * Determina si es un usuario normal (visitante/turista).
+     */
+    val isUser: Boolean
+        get() = currentUser != null
+
+
 
     /**
      * Intenta iniciar sesión con el correo y contraseña proporcionados.

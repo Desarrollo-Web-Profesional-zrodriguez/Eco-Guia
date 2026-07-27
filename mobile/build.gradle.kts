@@ -5,12 +5,12 @@ plugins {
 
 android {
     namespace = "mx.utng.ecoguiawear"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "mx.utng.ecoguiawear"
         minSdk = 24
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 1
         versionName = "1.0.0"
 
@@ -46,10 +46,15 @@ dependencies {
     implementation(platform(libs.compose.bom))
     implementation(libs.ui)
     implementation(libs.ui.graphics)
+    implementation(libs.compose.foundation)
     implementation(libs.ui.tooling.preview)
     implementation(libs.material3)
     implementation(libs.compose.material.icons.extended)
     implementation(libs.play.services.wearable)
+    implementation(libs.play.services.maps)
+    implementation(libs.play.services.location)
+    implementation(libs.maps.compose)
+    implementation(libs.google.places)
     implementation(libs.kotlinx.coroutines.play.services)
     implementation(libs.lifecycle.runtime.ktx)
     implementation(libs.lifecycle.viewmodel.compose)
@@ -62,6 +67,12 @@ dependencies {
     implementation(libs.androidx.camera.camera2)
     implementation(libs.androidx.camera.lifecycle)
     implementation(libs.androidx.camera.view)
+    
+    // IA Integration (Groq via Ktor)
+    implementation(libs.ktor.client.core)
+    implementation(libs.ktor.client.okhttp)
+    implementation(libs.ktor.client.content.negotiation)
+    implementation(libs.ktor.serialization.kotlinx.json)
     
     debugImplementation(libs.ui.tooling)
 }

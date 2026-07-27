@@ -1,8 +1,10 @@
 /**
  * Archivo: CameraGeoDropScreen.kt
- * Autor: ZahirMora
- * Fecha de última actualización: 2026-07-21
- * Descripción: Interfaz de cámara real para la detección y captura de Geo-Drops mediante CameraX.
+ * Autores: ZahirAndres, CesarEnrique
+ * Fecha de última actualización: 2026-07-26
+ * Descripción: Interfaz de cámara real (CameraX) con visor y retícula de Realidad Aumentada (AR Overlay).
+ * Calcula dinámicamente la distancia al Geo-Drop más cercano usando la ubicación GPS actual
+ * y permite capturar fotos para anclarlas a la ubicación física del usuario.
  */
 
 package mx.utng.ecoguiawear.ui.screens
@@ -12,6 +14,8 @@ import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.CameraSelector
+import androidx.camera.core.ImageCapture
+import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
@@ -21,6 +25,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.Camera
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -35,20 +40,38 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.viewmodel.compose.viewModel
 import mx.utng.ecoguiawear.ui.components.EcoButton
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
-import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
+import mx.utng.ecoguiawear.ui.viewmodel.GeoDropViewModel
+import mx.utng.ecoguiawear.ui.viewmodel.LocationViewModel
+import java.io.File
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 
 /**
- * Pantalla que integra CameraX para capturar cápsulas en el entorno.
+ * Pantalla que visualiza la cámara con retícula AR overlay reactiva a Geo-Drops cercanos.
+ *
+ * @param onCapture Callback cuando la foto se captura exitosamente.
+ * @param geoDropViewModel ViewModel de gestión de Geo-Drops y estado.
+ * @param locationViewModel ViewModel para obtener las coordenadas GPS actuales.
  */
 @Composable
 fun CameraGeoDropScreen(
-    onCapture: () -> Unit
+    onCapture: (File) -> Unit,
+    geoDropViewModel: GeoDropViewModel = viewModel(),
+    locationViewModel: LocationViewModel = viewModel()
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     var hasCameraPermission by remember { mutableStateOf(false) }
+
+    val currentLocation by locationViewModel.currentLocation
+    val closestGeoDrop by geoDropViewModel.closestGeoDrop
+    val distanceToClosest by geoDropViewModel.distanceToClosest
+
+    val imageCapture = remember { ImageCapture.Builder().build() }
+    val cameraExecutor: ExecutorService = remember { Executors.newSingleThreadExecutor() }
 
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
@@ -57,6 +80,16 @@ fun CameraGeoDropScreen(
 
     LaunchedEffect(Unit) {
         launcher.launch(Manifest.permission.CAMERA)
+        locationViewModel.startLocationUpdates(context)
+        geoDropViewModel.loadGeoDrops()
+    }
+
+    LaunchedEffect(currentLocation) {
+        geoDropViewModel.updateProximity(currentLocation)
+    }
+
+    DisposableEffect(Unit) {
+        onDispose { cameraExecutor.shutdown() }
     }
 
     Column(
@@ -72,18 +105,11 @@ fun CameraGeoDropScreen(
         ) {
             Column {
                 Text("Cámara", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                Text("Geo-Drops", color = Color.White.copy(alpha = 0.7f), fontSize = 14.sp)
-            }
-            
-            IconButton(
-                onClick = { },
-                modifier = Modifier.align(Alignment.TopEnd)
-            ) {
-                Icon(Icons.Default.AddCircle, null, tint = EcoGuiaColors.Gold)
+                Text("Geo-Drops & AR Target", color = Color.White.copy(alpha = 0.7f), fontSize = 14.sp)
             }
         }
 
-        // Camera Viewport
+        // Camera Viewport con Retícula AR Overlay
         Box(
             modifier = Modifier
                 .weight(1f)
@@ -108,10 +134,11 @@ fun CameraGeoDropScreen(
                                 cameraProvider.bindToLifecycle(
                                     lifecycleOwner,
                                     CameraSelector.DEFAULT_BACK_CAMERA,
-                                    preview
+                                    preview,
+                                    imageCapture
                                 )
                             } catch (e: Exception) {
-                                Log.e("EcoGuia", "Camera binding failed", e)
+                                Log.e("CameraGeoDrop", "Camera binding failed: ${e.message}", e)
                             }
                         }, ContextCompat.getMainExecutor(ctx))
                         previewView
@@ -119,26 +146,37 @@ fun CameraGeoDropScreen(
                     modifier = Modifier.fillMaxSize()
                 )
             } else {
-                Text("Permiso de cámara requerido", color = Color.White)
+                Text("Permiso de cámara requerido para AR", color = Color.White)
             }
 
-            // AR Target UI Overlay
+            // AR Overlay Retícula Dinámica
             Box(
                 modifier = Modifier
-                    .size(240.dp, 100.dp)
+                    .size(260.dp, 110.dp)
                     .border(2.dp, EcoGuiaColors.Jade, RoundedCornerShape(50.dp)),
                 contentAlignment = Alignment.Center
             ) {
                 Surface(
-                    color = EcoGuiaColors.DeepBlue.copy(alpha = 0.6f),
+                    color = EcoGuiaColors.DeepBlue.copy(alpha = 0.75f),
                     shape = RoundedCornerShape(20.dp)
                 ) {
-                    Text(
-                        "Geo-Drop a 8 m", 
-                        color = Color.White, 
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                        fontWeight = FontWeight.Bold
-                    )
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)
+                    ) {
+                        Text(
+                            text = closestGeoDrop?.title ?: "Buscando Geo-Drop...",
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp
+                        )
+                        Text(
+                            text = if (distanceToClosest != null) "📍 A $distanceToClosest metros" else "Escanear entorno",
+                            color = EcoGuiaColors.Gold,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp
+                        )
+                    }
                 }
             }
         }
@@ -149,33 +187,71 @@ fun CameraGeoDropScreen(
                 .fillMaxWidth()
                 .padding(24.dp)
         ) {
-            Text("Cápsula detectada", color = Color.White, fontWeight = FontWeight.Bold)
-            
+            Text("Cápsula en el entorno", color = Color.White, fontWeight = FontWeight.Bold)
+
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 shape = RoundedCornerShape(20.dp)
             ) {
-                Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    modifier = Modifier.padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Icon(Icons.Default.Info, null, tint = EcoGuiaColors.Jade)
-                    Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
-                        Text("Alinea el encuadre", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                        Text("Sigue la flecha hasta el punto exacto", color = Color.Gray, fontSize = 12.sp)
+                    Column(
+                        modifier = Modifier
+                            .padding(start = 12.dp)
+                            .weight(1f)
+                    ) {
+                        Text(
+                            "Alinea el encuadre con el objetivo",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            "Presiona capturar para anclar tu foto",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 12.sp
+                        )
                     }
-                    Text("8 m", color = EcoGuiaColors.Jade, fontWeight = FontWeight.Bold)
+                    Text(
+                        text = if (distanceToClosest != null) "$distanceToClosest m" else "--",
+                        color = EcoGuiaColors.Jade,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            
+
+            Spacer(modifier = Modifier.height(20.dp))
+
             EcoButton(
                 text = "Capturar Geo-Drop",
-                onClick = onCapture
+                onClick = {
+                    val photoFile = File(context.cacheDir, "geodrop_${System.currentTimeMillis()}.jpg")
+                    val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
+
+                    imageCapture.takePicture(
+                        outputOptions,
+                        ContextCompat.getMainExecutor(context),
+                        object : ImageCapture.OnImageSavedCallback {
+                            override fun onImageSaved(output: ImageCapture.OutputFileResults) {
+                                geoDropViewModel.setCapturedPhoto(photoFile)
+                                onCapture(photoFile)
+                            }
+
+                            override fun onError(exc: ImageCaptureException) {
+                                Log.e("CameraGeoDrop", "Error al capturar foto: ${exc.message}", exc)
+                            }
+                        }
+                    )
+                }
             )
-            
-            Spacer(modifier = Modifier.height(24.dp))
+
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
