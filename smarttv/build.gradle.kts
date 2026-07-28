@@ -54,6 +54,11 @@ dependencies {
     implementation(libs.zxing.core)
     implementation(libs.coil.compose)
 
+    // Ktor Server (Local P2P)
+    implementation(libs.ktor.server.core)
+    implementation(libs.ktor.server.netty)
+    implementation(libs.ktor.server.cors)
+
     implementation(libs.lifecycle.runtime.ktx)
     implementation(libs.compose.material.icons.extended)
     implementation(libs.navigation.compose)

@@ -25,6 +25,7 @@
         android:allowBackup="true"
         android:label="EcoGuia"
         android:supportsRtl="true"
+        android:usesCleartextTraffic="true"
         android:theme="@style/Theme.AppCompat.NoActionBar">
 
         <!-- Clave API de Google Maps -->

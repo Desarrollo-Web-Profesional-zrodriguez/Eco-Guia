@@ -2,6 +2,7 @@
 
 package mx.utng.smarttv.ui.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,11 +15,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Button
@@ -26,9 +33,24 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
+import mx.utng.smarttv.network.TvLocalServer
 
 @Composable
 fun GalleryScreen(onBack: () -> Unit) {
+    val context = LocalContext.current
+    val receivedImage by TvLocalServer.receivedImage.collectAsState()
+    val ip = remember { TvLocalServer.getLocalIpAddress(context) ?: "localhost" }
+
+    LaunchedEffect(Unit) {
+        TvLocalServer.startServer()
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            TvLocalServer.stopServer()
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -43,6 +65,11 @@ fun GalleryScreen(onBack: () -> Unit) {
             color = MaterialTheme.colorScheme.onBackground,
             fontWeight = FontWeight.Bold
         )
+        Text(
+            text = "Servidor activo en: $ip",
+            style = MaterialTheme.typography.bodyMedium,
+            color = Color.Green.copy(alpha = 0.8f)
+        )
         Spacer(modifier = Modifier.height(32.dp))
         
         Row(
@@ -50,10 +77,21 @@ fun GalleryScreen(onBack: () -> Unit) {
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Cuadrícula simulada de imágenes
+            // Cuadrícula de imágenes (Recibidas y simuladas)
             Column {
                 Row {
-                    Box(modifier = Modifier.size(150.dp).padding(4.dp).background(Color.Gray))
+                    if (receivedImage != null) {
+                        Image(
+                            bitmap = receivedImage!!.asImageBitmap(),
+                            contentDescription = "Foto recibida",
+                            modifier = Modifier.size(150.dp).padding(4.dp),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Box(modifier = Modifier.size(150.dp).padding(4.dp).background(Color.Gray)) {
+                            Text("Esperando foto...", color = Color.White, modifier = Modifier.align(Alignment.Center))
+                        }
+                    }
                     Box(modifier = Modifier.size(150.dp).padding(4.dp).background(Color.DarkGray))
                 }
                 Row {
@@ -69,9 +107,9 @@ fun GalleryScreen(onBack: () -> Unit) {
                 Text("Escanea para subir tu foto:", color = MaterialTheme.colorScheme.onBackground)
                 Spacer(modifier = Modifier.height(16.dp))
                 
-                val qrBitmap = rememberQrBitmap("ecoguia://tv/gallery")
+                val qrBitmap = rememberQrBitmap("ecoguia://tv/gallery?ip=$ip&port=8080")
                 if (qrBitmap != null) {
-                    androidx.compose.foundation.Image(
+                    Image(
                         bitmap = qrBitmap,
                         contentDescription = "QR para aplicación móvil",
                         modifier = Modifier
