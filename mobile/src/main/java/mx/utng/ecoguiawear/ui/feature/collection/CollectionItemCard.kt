@@ -14,14 +14,18 @@
 package mx.utng.ecoguiawear.ui.feature.collection
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Map
+import mx.utng.ecoguia.shared.data.repository.EcoGuiaRepositoryImpl
 import androidx.compose.material3.*
+
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -120,6 +124,136 @@ fun CollectionItemRow(
         }
     }
 
+    var showDetailDialog by remember { mutableStateOf(false) }
+
+    if (showDetailDialog) {
+        AlertDialog(
+            onDismissRequest = { showDetailDialog = false },
+            title = { Text(item.title, fontWeight = FontWeight.Bold) },
+            text = {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    if (!item.mediaUrl.isNullOrBlank()) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(220.dp)
+                                .background(Color.Black, RoundedCornerShape(16.dp)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            coil.compose.AsyncImage(
+                                model = item.mediaUrl,
+                                contentDescription = item.title,
+                                contentScale = androidx.compose.ui.layout.ContentScale.Fit,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
+                    }
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Text(
+                            text = "Tipo: ${when(item.type) { "site" -> "Sitio Histórico"; "photo" -> "Fotografía / Cápsula"; else -> "Ruta Turística" }}",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp,
+                            color = EcoGuiaColors.Jade
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = item.subtitle.ifBlank { "Sin descripción detallada." },
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        val createdDate = item.createdAt
+                        if (createdDate != null) {
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(
+                                text = "Guardado el: ${createdDate.take(10)}",
+                                fontSize = 11.sp,
+                                color = Color.Gray
+                            )
+                        }
+
+                        if (item.type == "route") {
+                            var stops by remember { mutableStateOf<List<mx.utng.ecoguia.shared.domain.model.RemoteRouteStop>>(emptyList()) }
+                            var isLoadingStops by remember { mutableStateOf(true) }
+
+                            LaunchedEffect(item.rawId, item.id) {
+                                val targetId = item.rawId ?: item.id.removePrefix("fav_").removePrefix("saved_")
+                                try {
+                                    stops = EcoGuiaRepositoryImpl().getRouteStops(targetId)
+                                } catch (e: Exception) {
+                                    android.util.Log.e("CollectionDialog", "Error al cargar paradas: ${e.message}")
+                                } finally {
+                                    isLoadingStops = false
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(12.dp))
+                            HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Text(
+                                text = "Sitios que componen la ruta:",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 12.sp,
+                                color = EcoGuiaColors.Gold
+                            )
+
+                            if (isLoadingStops) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(top = 4.dp)
+                                ) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(14.dp),
+                                        color = EcoGuiaColors.Jade,
+                                        strokeWidth = 2.dp
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text("Cargando sitios...", fontSize = 11.sp, color = Color.Gray)
+                                }
+                            } else if (stops.isEmpty()) {
+                                Text(
+                                    text = "• Recorrido turístico por zonas de interés histórico.",
+                                    fontSize = 11.sp,
+                                    color = Color.Gray,
+                                    modifier = Modifier.padding(top = 4.dp)
+                                )
+                            } else {
+                                Column(modifier = Modifier.padding(top = 4.dp)) {
+                                    stops.forEachIndexed { index, stop ->
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            modifier = Modifier.padding(vertical = 2.dp)
+                                        ) {
+                                            Text("${index + 1}. ", fontWeight = FontWeight.Bold, fontSize = 11.sp, color = EcoGuiaColors.Gold)
+                                            Text(
+                                                text = stop.siteName ?: "Sitio histórico",
+                                                fontSize = 12.sp,
+                                                fontWeight = FontWeight.SemiBold,
+                                                color = MaterialTheme.colorScheme.onSurface
+                                            )
+                                            if (!stop.instruction.isNullOrBlank()) {
+                                                Text(" — ${stop.instruction}", fontSize = 10.sp, color = Color.Gray)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showDetailDialog = false }) {
+                    Text("Cerrar", fontWeight = FontWeight.Bold)
+                }
+            }
+        )
+    }
+
     SwipeToDismissBox(
         state = dismissState,
         enableDismissFromStartToEnd = false,
@@ -141,7 +275,9 @@ fun CollectionItemRow(
         }
     ) {
         Card(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { showDetailDialog = true },
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
         ) {
@@ -149,10 +285,10 @@ fun CollectionItemRow(
                 modifier = Modifier.padding(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Ícono de tipo (sitio, foto, ruta)
+                // Ícono de tipo (sitio, foto, ruta) o Thumbnail si hay mediaUrl
                 Box(
                     modifier = Modifier
-                        .size(44.dp)
+                        .size(48.dp)
                         .background(
                             when (item.type) {
                                 "site" -> EcoGuiaColors.Jade.copy(alpha = 0.12f)
@@ -163,20 +299,31 @@ fun CollectionItemRow(
                         ),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = when (item.type) {
-                            "site" -> Icons.Default.AccountBalance
-                            "photo" -> Icons.Default.CameraAlt
-                            else -> Icons.Default.Map
-                        },
-                        contentDescription = null,
-                        tint = when (item.type) {
-                            "site" -> EcoGuiaColors.Jade
-                            "photo" -> EcoGuiaColors.Gold
-                            else -> MaterialTheme.colorScheme.onSurfaceVariant
-                        },
-                        modifier = Modifier.size(22.dp)
-                    )
+                    if (!item.mediaUrl.isNullOrBlank()) {
+                        coil.compose.AsyncImage(
+                            model = item.mediaUrl,
+                            contentDescription = null,
+                            contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Color.Gray, RoundedCornerShape(14.dp))
+                        )
+                    } else {
+                        Icon(
+                            imageVector = when (item.type) {
+                                "site" -> Icons.Default.AccountBalance
+                                "photo" -> Icons.Default.CameraAlt
+                                else -> Icons.Default.Map
+                            },
+                            contentDescription = null,
+                            tint = when (item.type) {
+                                "site" -> EcoGuiaColors.Jade
+                                "photo" -> EcoGuiaColors.Gold
+                                else -> MaterialTheme.colorScheme.onSurfaceVariant
+                            },
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
                 }
 
                 Column(
@@ -216,11 +363,12 @@ fun CollectionItemRow(
                     Text(
                         text = "${item.subtitle} · ${item.createdAt?.take(10) ?: ""}",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 12.sp
+                        fontSize = 12.sp,
+                        maxLines = 1
                     )
                 }
             }
         }
-
     }
 }
+

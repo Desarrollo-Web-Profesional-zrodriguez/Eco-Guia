@@ -30,12 +30,15 @@ data class RemoteUser(
 @Serializable
 data class RemoteCollectionItem(
     val id: String,
+    @SerialName("raw_id") val rawId: String? = null,
     val title: String,
     val subtitle: String,
     val type: String, // 'site', 'photo', 'route'
     val status: String? = "approved", // 'approved', 'pending', 'rejected'
+    @SerialName("media_url") val mediaUrl: String? = null,
     @SerialName("created_at") val createdAt: String? = null
 )
+
 
 
 /**

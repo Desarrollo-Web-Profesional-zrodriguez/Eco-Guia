@@ -47,6 +47,11 @@ class GeoDropViewModel(
     val isSaving: State<Boolean> = _isSaving
 
 
+    private val _nearbyGeoDrops = mutableStateOf<List<RemoteGeoDrop>>(emptyList())
+    val nearbyGeoDrops: State<List<RemoteGeoDrop>> = _nearbyGeoDrops
+
+    val collectedGeoDropIds = androidx.compose.runtime.mutableStateMapOf<String, Boolean>()
+
     /**
      * Carga todos los Geo-Drops registrados en la base de datos.
      */
@@ -62,13 +67,29 @@ class GeoDropViewModel(
     }
 
     /**
-     * Actualiza la distancia GPS hacia el Geo-Drop más cercano en tiempo real.
+     * Verifica si un GeoDrop específico ya fue capturado/guardado por el usuario.
      */
-    fun updateProximity(userLocation: Location?) {
+    fun checkGeoDropStatus(userId: String, dropId: String) {
+        if (dropId.isBlank()) return
+        viewModelScope.launch {
+            try {
+                val isCollected = repository.isGeoDropCollected(userId, dropId)
+                collectedGeoDropIds[dropId] = isCollected
+            } catch (e: Exception) {
+                android.util.Log.e("GeoDropVM", "Error verificando GeoDrop status: ${e.message}")
+            }
+        }
+    }
+
+    /**
+     * Actualiza la distancia GPS hacia todos los Geo-Drops cercanos y selecciona el más próximo.
+     */
+    fun updateProximity(userLocation: Location?, userId: String = "") {
         if (userLocation == null || _geoDrops.value.isEmpty()) return
 
+        val nearbyList = mutableListOf<RemoteGeoDrop>()
         var minDistance = Float.MAX_VALUE
-        var closest: RemoteGeoDrop? = null
+        var closest: RemoteGeoDrop? = _closestGeoDrop.value
 
         _geoDrops.value.forEach { drop ->
             val dropLat = drop.latitude ?: return@forEach
@@ -81,15 +102,41 @@ class GeoDropViewModel(
                 results
             )
             val dist = results[0]
+            val radius = drop.detectionRadiusM
+            if (dist <= radius) {
+                nearbyList.add(drop)
+                if (userId.isNotBlank()) {
+                    checkGeoDropStatus(userId, drop.id.orEmpty())
+                }
+            }
+
             if (dist < minDistance) {
                 minDistance = dist
-                closest = drop
+                if (closest == null) {
+                    closest = drop
+                }
             }
         }
 
-        _closestGeoDrop.value = closest
+        _nearbyGeoDrops.value = nearbyList
+        if (closest == null && _geoDrops.value.isNotEmpty()) {
+            closest = _geoDrops.value.first()
+        }
+        if (_closestGeoDrop.value == null || !nearbyList.contains(_closestGeoDrop.value)) {
+            _closestGeoDrop.value = nearbyList.firstOrNull() ?: closest
+        }
         _distanceToClosest.value = if (minDistance != Float.MAX_VALUE) minDistance.toInt() else null
     }
+
+    fun selectGeoDrop(drop: RemoteGeoDrop, userId: String = "") {
+        _closestGeoDrop.value = drop
+        val dropId = drop.id
+        if (userId.isNotBlank() && !dropId.isNullOrBlank()) {
+            checkGeoDropStatus(userId, dropId)
+        }
+    }
+
+
 
     /**
      * Guarda en memoria la fotografía capturada y el sitio destino obligatorio.

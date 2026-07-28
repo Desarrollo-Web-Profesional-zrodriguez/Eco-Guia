@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Archivo: DeviceStatusScreen.kt
  * Autor: ZahirMora
  * Fecha de Ãºltima actualizaciÃ³n: 2026-07-22
@@ -56,7 +56,7 @@ fun DeviceStatusScreen(
             Spacer(modifier = Modifier.height(48.dp))
             
             StatusDiagnosticItem(
-                title = "Eco-GuÃ­a mÃ³vil",
+                title = "Eco-Guía móvil",
                 icon = Icons.Default.Phonelink,
                 isConnected = true
             )
@@ -72,10 +72,11 @@ fun DeviceStatusScreen(
             Spacer(modifier = Modifier.height(16.dp))
             
             StatusDiagnosticItem(
-                title = "CÃ¡mara lista",
+                title = "Cámara lista",
                 icon = Icons.Default.CameraAlt,
                 isConnected = true
             )
+
         }
 
         // Close Button

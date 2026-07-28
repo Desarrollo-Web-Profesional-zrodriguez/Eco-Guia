@@ -317,10 +317,16 @@ fun AppNavHost(
                 viewModel = siteRegistrationViewModel,
                 onFinish = {
                     siteRegistrationViewModel.registerSite(
-                        onSuccess = {
+                        onSuccess = { createdSiteId ->
                             notificationViewModel.showNotification("Sitio publicado con éxito.", NotificationType.SUCCESS)
-                            navController.navigate("exploration") {
-                                popUpTo("exploration") { inclusive = true }
+                            if (createdSiteId != "SUCCESS" && createdSiteId.isNotBlank()) {
+                                navController.navigate("camera_capture/$createdSiteId") {
+                                    popUpTo("exploration")
+                                }
+                            } else {
+                                navController.navigate("exploration") {
+                                    popUpTo("exploration") { inclusive = true }
+                                }
                             }
                         },
                         onError = { msg ->
@@ -330,6 +336,7 @@ fun AppNavHost(
                 }
             )
         }
+
         composable("gallery_addition") {
             GalleryAdditionScreen(
                 onAddClick = { navController.popBackStack() },

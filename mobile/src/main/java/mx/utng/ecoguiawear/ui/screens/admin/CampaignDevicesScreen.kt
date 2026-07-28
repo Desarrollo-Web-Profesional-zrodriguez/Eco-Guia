@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Archivo: CampaignDevicesScreen.kt
  * Autor: ZahirMora
  * Fecha de Ãºltima actualizaciÃ³n: 2026-07-22
@@ -71,11 +71,11 @@ fun CampaignDevicesScreen(
 
         // Selected List
         Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-            Text("Seleccionados para campaÃ±a", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
+            Text("Seleccionados para campaña", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
             
             LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 item {
-                    DeviceItemToggle("Lobby Hotel Hidalgo", "Galeria de la Independencia", true)
+                    DeviceItemToggle("Lobby Hotel Hidalgo", "Galería de la Independencia", true)
                 }
                 item {
                     DeviceItemToggle("Wearables demo", "4 conectados", true)
@@ -85,6 +85,7 @@ fun CampaignDevicesScreen(
                 }
             }
         }
+
 
         Spacer(modifier = Modifier.weight(1f))
 

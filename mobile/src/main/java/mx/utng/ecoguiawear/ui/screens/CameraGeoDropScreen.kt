@@ -22,11 +22,16 @@ import androidx.camera.view.PreviewView
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Camera
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Info
+
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -87,8 +92,8 @@ fun CameraGeoDropScreen(
         geoDropViewModel.loadGeoDrops()
     }
 
-    LaunchedEffect(currentLocation) {
-        geoDropViewModel.updateProximity(currentLocation)
+    LaunchedEffect(currentLocation, userId) {
+        geoDropViewModel.updateProximity(currentLocation, userId)
     }
 
     DisposableEffect(Unit) {
@@ -144,7 +149,7 @@ fun CameraGeoDropScreen(
                             try {
                                 cameraProvider.unbindAll()
                                 cameraProvider.bindToLifecycle(
-                                    lifecycleOwner,
+                                    context as androidx.lifecycle.LifecycleOwner,
                                     cameraSelector,
                                     preview,
                                     imageCapture
@@ -169,7 +174,7 @@ fun CameraGeoDropScreen(
             // Retícula AR overlay
             Box(
                 modifier = Modifier
-                    .size(160.dp)
+                    .size(170.dp)
                     .align(Alignment.Center)
                     .border(2.dp, EcoGuiaColors.Gold, RoundedCornerShape(24.dp))
                     .padding(16.dp),
@@ -190,7 +195,7 @@ fun CameraGeoDropScreen(
                         fontSize = 14.sp
                     )
                     Text(
-                        text = if (distanceToClosest != null) "📍 A $distanceToClosest metros" else "Escanear entorno",
+                        text = if (distanceToClosest != null) "A $distanceToClosest metros" else "Escanear entorno",
                         color = EcoGuiaColors.Gold,
                         fontWeight = FontWeight.Bold,
                         fontSize = 12.sp
@@ -200,6 +205,9 @@ fun CameraGeoDropScreen(
         }
 
         // Action Panel
+        val nearbyList by geoDropViewModel.nearbyGeoDrops
+        val collectedMap = geoDropViewModel.collectedGeoDropIds
+
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -209,13 +217,43 @@ fun CameraGeoDropScreen(
             val isExistingNearby = closestGeoDrop != null && distanceToClosest != null && distanceToClosest!! <= detectionLimit
 
             Text(
-                text = if (isExistingNearby) "Cápsula detectada en el área" else "Anclar nueva cápsula",
+                text = if (nearbyList.size > 1) "Cápsulas detectadas (${nearbyList.size})" else if (isExistingNearby) "Cápsula detectada en el área" else "Anclar nueva cápsula",
                 color = Color.White,
                 fontWeight = FontWeight.Bold
             )
 
+            Spacer(modifier = Modifier.height(8.dp))
 
-            Spacer(modifier = Modifier.height(12.dp))
+            // Selector dinámico si hay múltiples GeoDrops cercanos
+            if (nearbyList.size > 1) {
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
+                ) {
+                    items(nearbyList) { drop ->
+                        val isSelected = drop.id == closestGeoDrop?.id
+                        val isAlreadyCaptured = collectedMap[drop.id] == true
+                        FilterChip(
+                            selected = isSelected,
+                            onClick = { geoDropViewModel.selectGeoDrop(drop, userId) },
+                            label = { 
+                                Text(
+                                    if (isAlreadyCaptured) "${drop.title} (Capturado)" else drop.title,
+                                    fontSize = 12.sp
+                                ) 
+                            },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = EcoGuiaColors.Gold,
+                                selectedLabelColor = EcoGuiaColors.DeepBlue,
+                                containerColor = MaterialTheme.colorScheme.surface,
+                                labelColor = Color.White
+                            )
+                        )
+                    }
+                }
+            }
+
+            val currentDropCaptured = closestGeoDrop?.id?.let { collectedMap[it] } == true
 
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -226,20 +264,24 @@ fun CameraGeoDropScreen(
                     modifier = Modifier.padding(12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.Default.Info, null, tint = EcoGuiaColors.Jade)
+                    Icon(
+                        imageVector = if (currentDropCaptured) Icons.Default.CheckCircle else Icons.Default.Info,
+                        contentDescription = null,
+                        tint = if (currentDropCaptured) EcoGuiaColors.Gold else EcoGuiaColors.Jade
+                    )
                     Column(
                         modifier = Modifier
                             .padding(start = 12.dp)
                             .weight(1f)
                     ) {
                         Text(
-                            text = if (isExistingNearby) "Existe un Geo-Drop a $distanceToClosest metros" else "Alinea el encuadre con el objetivo",
+                            text = if (currentDropCaptured) "¡Este Geo-Drop ya está capturado en tu colección!" else if (isExistingNearby) "Existe un Geo-Drop a $distanceToClosest metros" else "Alinea el encuadre con el objetivo",
                             fontWeight = FontWeight.Bold,
                             fontSize = 14.sp,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = if (isExistingNearby) "Puedes agregar este Geo-Drop a tu colección o crear una foto nueva" else "Presiona capturar para anclar tu foto",
+                            text = if (currentDropCaptured) "Ya tienes guardada esta cápsula. Puedes volver a verla en Mi Colección." else if (isExistingNearby) "Puedes agregar este Geo-Drop a tu colección o crear una foto nueva" else "Presiona capturar para anclar tu foto",
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 12.sp
                         )
@@ -251,8 +293,9 @@ fun CameraGeoDropScreen(
 
             if (isExistingNearby && closestGeoDrop != null) {
                 EcoButton(
-                    text = "📥 Coleccionar Geo-Drop (${closestGeoDrop?.title})",
+                    text = if (currentDropCaptured) "Geo-Drop Ya Capturado" else "Coleccionar Geo-Drop (${closestGeoDrop?.title})",
                     onClick = {
+                        if (currentDropCaptured) return@EcoButton
                         val drop = closestGeoDrop ?: return@EcoButton
                         geoDropViewModel.saveExistingGeoDropToCollection(
                             userId = userId,
@@ -261,13 +304,14 @@ fun CameraGeoDropScreen(
                             onError = { _ -> }
                         )
                     },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !currentDropCaptured
                 )
                 Spacer(modifier = Modifier.height(10.dp))
             }
 
             EcoButton(
-                text = if (isExistingNearby) "📸 Anclar una foto nueva propia" else "Capturar Geo-Drop",
+                text = if (isExistingNearby) "Anclar una foto nueva propia" else "Capturar Geo-Drop",
                 onClick = {
                     val photoFile = File(context.cacheDir, "geodrop_${System.currentTimeMillis()}.jpg")
                     val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()

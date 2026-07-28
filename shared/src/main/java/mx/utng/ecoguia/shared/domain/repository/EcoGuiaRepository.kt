@@ -37,7 +37,8 @@ interface EcoGuiaRepository {
         hours: String,
         cost: String,
         accessibility: String
-    ): Boolean
+    ): String
+
 
 
     /**
@@ -151,6 +152,12 @@ interface EcoGuiaRepository {
      * Verifica si un sitio ya fue guardado por el usuario.
      */
     suspend fun isSiteSaved(userId: String, siteId: String): Boolean
+
+    /**
+     * Verifica si un Geo-Drop ya está en la colección o fue creado por el usuario.
+     */
+    suspend fun isGeoDropCollected(userId: String, geoDropId: String): Boolean
+
 
     /**
      * Obtiene la lista ordenada de paradas de una ruta turística específica.

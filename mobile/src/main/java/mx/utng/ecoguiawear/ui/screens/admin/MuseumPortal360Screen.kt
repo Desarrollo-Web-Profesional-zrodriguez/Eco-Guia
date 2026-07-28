@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Archivo: MuseumPortal360Screen.kt
  * Autor: ZahirMora
  * Fecha de Ãºltima actualizaciÃ³n: 2026-07-22
@@ -46,7 +46,7 @@ fun MuseumPortal360Screen() {
         Spacer(modifier = Modifier.height(32.dp))
         
         Row(modifier = Modifier.fillMaxWidth()) {
-            // Simulated 360 Viewport
+            // Visor simulado 360
             Box(
                 modifier = Modifier
                     .weight(1.5f)
@@ -54,7 +54,6 @@ fun MuseumPortal360Screen() {
                     .clip(RoundedCornerShape(32.dp))
                     .background(Color(0xFFE8F5E9))
             ) {
-                // Background map/view simulation
                 Box(
                     modifier = Modifier
                         .align(Alignment.BottomStart)
@@ -62,22 +61,23 @@ fun MuseumPortal360Screen() {
                         .background(EcoGuiaColors.DeepBlue.copy(alpha = 0.6f), RoundedCornerShape(12.dp))
                         .padding(horizontal = 12.dp, vertical = 6.dp)
                 ) {
-                    Text("Dolores Hidalgo - Centro HistÃ³rico", color = Color.White, fontSize = 10.sp)
+                    Text("Dolores Hidalgo - Centro Histórico", color = Color.White, fontSize = 10.sp)
                 }
             }
             
             Spacer(modifier = Modifier.width(16.dp))
             
-            // Side Metrics
+            // Métricas laterales
             Column(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                PortalStatItem("360", "vista")
+                PortalStatItem("360°", "vista")
                 PortalStatItem("12", "puntos")
-                PortalStatItem("IA", "guÃ­a")
+                PortalStatItem("IA", "guía")
             }
         }
+
     }
 }
 

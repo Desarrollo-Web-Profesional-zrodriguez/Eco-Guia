@@ -49,23 +49,27 @@ class EcoGuiaRepositoryImpl(
         hours: String,
         cost: String,
         accessibility: String
-    ): Boolean {
+    ): String {
+
         val slug = name.lowercase().trim().replace(" ", "-").replace(Regex("[^a-z0-9-]"), "") + "-" + (System.currentTimeMillis() % 10000)
         val query = """
             INSERT INTO historical_sites (name, slug, site_type, address, short_description, historical_description, location, detection_radius_m, is_active)
             VALUES ($1, $2, $3, $4, $5, $6, ST_SetSRID(ST_MakePoint($7, $8), 4326)::geography, $9::integer, TRUE)
+            RETURNING id
         """.trimIndent()
         return try {
-            val rows = neonClient.executeCommand(
+            val result = neonClient.executeQuery<Map<String, String>>(
                 query,
                 listOf(name, slug, siteType, address, shortDesc, historyDesc, lng.toString(), lat.toString(), radiusM.toString())
             )
-            android.util.Log.d("EcoGuiaRepo", "Sitio registrado con éxito: $name ($rows filas)")
-            rows > 0
+            val newId = result.firstOrNull()?.get("id")?.toString()?.trim('"')
+            android.util.Log.d("EcoGuiaRepo", "Sitio registrado con éxito: $name (ID: $newId)")
+            if (!newId.isNullOrBlank()) newId else "SUCCESS"
         } catch (e: Exception) {
             android.util.Log.e("EcoGuiaRepo", "Error al crear sitio histórico: ${e.message}", e)
-            false
+            ""
         }
+
     }
 
 
@@ -190,10 +194,12 @@ class EcoGuiaRepositoryImpl(
                 -- 1. Fotografías/Geo-Drops creados por el usuario
                 SELECT 
                     'author_' || gd.id::text AS id,
+                    gd.id::text AS raw_id,
                     gd.title AS title,
                     COALESCE(gd.description, 'Fotografía anclada') AS subtitle,
                     'photo' AS type,
                     gd.status::text AS status,
+                    gd.media_url AS media_url,
                     gd.created_at AS created_at
                 FROM geo_drops gd
                 WHERE $1 <> '' AND gd.author_id::text = $1
@@ -203,10 +209,12 @@ class EcoGuiaRepositoryImpl(
                 -- 2. Geo-Drops de otros usuarios coleccionados/guardados por el usuario
                 SELECT 
                     'saved_' || usi.id::text AS id,
+                    gd.id::text AS raw_id,
                     gd.title AS title,
                     COALESCE(gd.description, 'Geo-Drop Coleccionado') AS subtitle,
                     'photo' AS type,
                     'approved' AS status,
+                    gd.media_url AS media_url,
                     usi.created_at AS created_at
                 FROM user_saved_items usi
                 JOIN geo_drops gd ON gd.id = usi.geo_drop_id
@@ -217,15 +225,18 @@ class EcoGuiaRepositoryImpl(
                 -- 3. Sitios o Rutas guardados explícitamente en favoritos
                 SELECT 
                     'fav_' || usi.id::text AS id,
+                    COALESCE(hs.id::text, r.id::text, usi.id::text) AS raw_id,
                     COALESCE(hs.name, r.title, 'Elemento Guardado') AS title,
-                    COALESCE(hs.site_type, r.description, 'Colección') AS subtitle,
+                    COALESCE(hs.historical_description, hs.short_description, r.description, 'Sin descripción disponible') AS subtitle,
                     CASE WHEN usi.route_id IS NOT NULL THEN 'route' ELSE 'site' END AS type,
                     'approved' AS status,
+                    NULL AS media_url,
                     usi.created_at AS created_at
                 FROM user_saved_items usi
                 LEFT JOIN historical_sites hs ON hs.id = usi.site_id
                 LEFT JOIN routes r ON r.id = usi.route_id
-                WHERE $1 <> '' AND usi.user_id::text = $1 AND usi.geo_drop_id IS NULL AND usi.site_id IS NOT NULL
+                WHERE $1 <> '' AND usi.user_id::text = $1 AND usi.geo_drop_id IS NULL AND (usi.site_id IS NOT NULL OR usi.route_id IS NOT NULL)
+
 
 
             ) combined_collection
@@ -411,20 +422,31 @@ class EcoGuiaRepositoryImpl(
      * Elimina un sitio de la colección del usuario en user_saved_items.
      */
     override suspend fun removeSavedSite(userId: String, siteId: String): Boolean {
-        val query = """
+        val cleanId = siteId.removePrefix("author_").removePrefix("saved_").removePrefix("fav_")
+        val querySavedItems = """
             DELETE FROM user_saved_items
-            WHERE user_id = $1::uuid 
-              AND (id = $2::uuid OR site_id = $2::uuid OR route_id = $2::uuid)
+            WHERE user_id::text = $1
+              AND (id::text = $2 OR site_id::text = $2 OR route_id::text = $2 OR geo_drop_id::text = $2)
         """.trimIndent()
+
+        val queryGeoDrops = """
+            DELETE FROM geo_drops
+            WHERE author_id::text = $1 AND id::text = $2
+        """.trimIndent()
+
         return try {
-            val rows = neonClient.executeCommand(query, listOf(userId, siteId))
-            android.util.Log.d("EcoGuiaRepo", "Elemento eliminado de colección: $siteId ($rows filas)")
+            val rows1 = neonClient.executeCommand(querySavedItems, listOf(userId, cleanId))
+            val rows2 = neonClient.executeCommand(queryGeoDrops, listOf(userId, cleanId))
+            android.util.Log.d("EcoGuiaRepo", "Elemento eliminado de colección: $cleanId (saved_items: $rows1, geo_drops: $rows2)")
             true
         } catch (e: Exception) {
             android.util.Log.e("EcoGuiaRepo", "Error al eliminar elemento de colección: ${e.message}", e)
             false
         }
     }
+
+
+
 
     /**
      * Verifica si un sitio ya está guardado por el usuario en user_saved_items.
@@ -440,11 +462,34 @@ class EcoGuiaRepositoryImpl(
             val count = result.firstOrNull()?.get("count")?.toString()?.trim('"')?.toLongOrNull() ?: 0L
             count > 0L
         } catch (e: Exception) {
-            android.util.Log.e("EcoGuiaRepo", "Error al verificar guardado: ${e.message}", e)
-            android.util.Log.e("EcoGuiaRepo", "Error al eliminar ruta: ${e.message}", e)
+            android.util.Log.e("EcoGuiaRepo", "Error al verificar guardado de sitio: ${e.message}", e)
             false
         }
     }
+
+    /**
+     * Verifica si un Geo-Drop ya fue coleccionado o es propiedad del usuario.
+     */
+    override suspend fun isGeoDropCollected(userId: String, geoDropId: String): Boolean {
+        if (userId.isBlank() || userId == "guest") return false
+        val query = """
+            SELECT COUNT(*) AS count
+            FROM (
+                SELECT 1 FROM user_saved_items WHERE user_id::text = $1 AND geo_drop_id::text = $2
+                UNION ALL
+                SELECT 1 FROM geo_drops WHERE author_id::text = $1 AND id::text = $2
+            ) c
+        """.trimIndent()
+        return try {
+            val result = neonClient.executeQuery<kotlinx.serialization.json.JsonObject>(query, listOf(userId, geoDropId))
+            val count = result.firstOrNull()?.get("count")?.toString()?.trim('"')?.toLongOrNull() ?: 0L
+            count > 0L
+        } catch (e: Exception) {
+            android.util.Log.e("EcoGuiaRepo", "Error al verificar guardado de GeoDrop: ${e.message}", e)
+            false
+        }
+    }
+
 
 
 

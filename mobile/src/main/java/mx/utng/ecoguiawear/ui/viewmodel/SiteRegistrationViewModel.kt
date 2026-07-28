@@ -138,7 +138,7 @@ class SiteRegistrationViewModel(
     /**
      * Envía los datos finales al repositorio para persistencia.
      */
-    fun registerSite(onSuccess: () -> Unit, onError: (String) -> Unit) {
+    fun registerSite(onSuccess: (String) -> Unit, onError: (String) -> Unit) {
         viewModelScope.launch {
             _isSaving.value = true
             
@@ -146,7 +146,7 @@ class SiteRegistrationViewModel(
             val finalCategory = if (siteType.value == "Otro") customCategory.value else siteType.value
             val finalAccessibility = selectedAccessibility.value.joinToString(", ")
 
-            val success = repository.createHistoricalSite(
+            val createdId = repository.createHistoricalSite(
                 name = name.value,
                 siteType = finalCategory,
                 address = address.value,
@@ -160,7 +160,8 @@ class SiteRegistrationViewModel(
                 accessibility = finalAccessibility
             )
             _isSaving.value = false
-            if (success) onSuccess() else onError("Error al guardar en el servidor.")
+            if (createdId.isNotBlank()) onSuccess(createdId) else onError("Error al guardar en el servidor.")
         }
     }
+
 }

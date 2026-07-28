@@ -66,10 +66,30 @@ fun AnchorPhotoScreen(
     val imageBitmap = remember(capturedPhoto) {
         capturedPhoto?.let { file ->
             if (file.exists()) {
-                BitmapFactory.decodeFile(file.absolutePath)?.asImageBitmap()
+                try {
+                    val bitmap = BitmapFactory.decodeFile(file.absolutePath) ?: return@remember null
+                    val exif = androidx.exifinterface.media.ExifInterface(file.absolutePath)
+                    val orientation = exif.getAttributeInt(
+                        androidx.exifinterface.media.ExifInterface.TAG_ORIENTATION,
+                        androidx.exifinterface.media.ExifInterface.ORIENTATION_UNDEFINED
+                    )
+                    val matrix = android.graphics.Matrix()
+                    when (orientation) {
+                        androidx.exifinterface.media.ExifInterface.ORIENTATION_ROTATE_90 -> matrix.postRotate(90f)
+                        androidx.exifinterface.media.ExifInterface.ORIENTATION_ROTATE_180 -> matrix.postRotate(180f)
+                        androidx.exifinterface.media.ExifInterface.ORIENTATION_ROTATE_270 -> matrix.postRotate(270f)
+                    }
+                    val rotatedBitmap = android.graphics.Bitmap.createBitmap(
+                        bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true
+                    )
+                    rotatedBitmap.asImageBitmap()
+                } catch (e: Exception) {
+                    BitmapFactory.decodeFile(file.absolutePath)?.asImageBitmap()
+                }
             } else null
         }
     }
+
 
     Column(
         modifier = Modifier
@@ -111,10 +131,11 @@ fun AnchorPhotoScreen(
                 )
             } else {
                 Text(
-                    text = "📸 Foto lista para anclaje",
+                    text = "Foto lista para anclaje",
                     color = Color.White.copy(alpha = 0.7f),
                     fontWeight = FontWeight.Bold
                 )
+
             }
         }
 

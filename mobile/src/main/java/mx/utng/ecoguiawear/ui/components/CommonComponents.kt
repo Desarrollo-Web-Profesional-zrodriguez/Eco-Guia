@@ -198,13 +198,16 @@ fun EcoButton(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    useGradient: Boolean = true
+    useGradient: Boolean = true,
+    enabled: Boolean = true
 ) {
     Button(
         onClick = onClick,
+        enabled = enabled,
         modifier = modifier
             .fillMaxWidth()
             .height(50.dp),
+
         colors = if (!useGradient) ButtonDefaults.buttonColors(containerColor = Color.White) 
                  else ButtonDefaults.buttonColors(containerColor = Color.Transparent),
         contentPadding = PaddingValues(0.dp),

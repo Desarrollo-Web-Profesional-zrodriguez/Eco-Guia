@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Archivo: TVCampaignScreen.kt
  * Autor: ZahirMora
  * Fecha de Ãºltima actualizaciÃ³n: 2026-07-22
@@ -47,7 +47,7 @@ fun TVCampaignScreen(
                 .padding(top = 48.dp, start = 24.dp, end = 24.dp, bottom = 16.dp)
         ) {
             Column {
-                Text("CampaÃ±as", color = Color.White, fontSize = 14.sp)
+                Text("Campañas", color = Color.White, fontSize = 14.sp)
                 Text("Hoteles y museos", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
             }
             
@@ -72,9 +72,9 @@ fun TVCampaignScreen(
             shape = RoundedCornerShape(24.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text("SalÃ³n de la Fama", color = Color.White, fontWeight = FontWeight.Bold)
+                Text("Salón de la Fama", color = Color.White, fontWeight = FontWeight.Bold)
                 Text(
-                    "Programa quÃ© cÃ¡psulas aparecerÃ¡n en Smart TV durante el dÃ­a.", 
+                    "Programa qué cápsulas aparecerán en Smart TV durante el día.", 
                     color = Color.White.copy(alpha = 0.7f), 
                     fontSize = 12.sp
                 )
@@ -83,12 +83,12 @@ fun TVCampaignScreen(
 
         // Programming List
         Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-            Text("ProgramaciÃ³n", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
+            Text("Programación", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
             
             LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 item {
                     CampaignItem(
-                        title = "GalerÃ­a lobby",
+                        title = "Galería lobby",
                         subtitle = "Activo hasta 20:00",
                         icon = Icons.Default.Tv,
                         onClick = onManageDevicesClick
@@ -96,7 +96,7 @@ fun TVCampaignScreen(
                 }
                 item {
                     CampaignItem(
-                        title = "ColecciÃ³n pÃºblica",
+                        title = "Colección pública",
                         subtitle = "Descargas habilitadas",
                         icon = Icons.Default.QrCode,
                         onClick = onManageDevicesClick
@@ -105,13 +105,14 @@ fun TVCampaignScreen(
                 item {
                     CampaignItem(
                         title = "Ranking semanal",
-                        subtitle = "Fotos mÃ¡s visitadas",
+                        subtitle = "Fotos más visitadas",
                         icon = Icons.Default.AccountTree,
                         onClick = onManageDevicesClick
                     )
                 }
             }
         }
+
     }
 }
 

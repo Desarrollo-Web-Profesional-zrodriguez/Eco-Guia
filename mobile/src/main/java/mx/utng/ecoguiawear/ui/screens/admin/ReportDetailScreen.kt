@@ -83,13 +83,44 @@ fun ReportDetailScreen(
             Column(modifier = Modifier.padding(16.dp)) {
                 // Visualizador de Fotografía Capturada / Media
                 val mediaUrl = selectedDrop?.mediaUrl
+                var showZoomDialog by remember { mutableStateOf(false) }
+
+                if (showZoomDialog && !mediaUrl.isNullOrBlank()) {
+                    AlertDialog(
+                        onDismissRequest = { showZoomDialog = false },
+                        title = { Text(selectedDrop?.title ?: "Vista previa", fontWeight = FontWeight.Bold) },
+                        text = {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(300.dp)
+                                    .background(Color.Black, RoundedCornerShape(16.dp)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                coil.compose.AsyncImage(
+                                    model = mediaUrl,
+                                    contentDescription = "Foto ampliada",
+                                    contentScale = androidx.compose.ui.layout.ContentScale.Fit,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
+                        },
+                        confirmButton = {
+                            TextButton(onClick = { showZoomDialog = false }) {
+                                Text("Cerrar", fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    )
+                }
+
                 if (!mediaUrl.isNullOrBlank()) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(220.dp)
                             .clip(RoundedCornerShape(16.dp))
-                            .background(Color.Black.copy(alpha = 0.1f)),
+                            .background(Color.Black.copy(alpha = 0.1f))
+                            .clickable { showZoomDialog = true },
                         contentAlignment = Alignment.Center
                     ) {
                         coil.compose.AsyncImage(
@@ -101,6 +132,7 @@ fun ReportDetailScreen(
                     }
                     Spacer(modifier = Modifier.height(12.dp))
                 } else {
+
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()

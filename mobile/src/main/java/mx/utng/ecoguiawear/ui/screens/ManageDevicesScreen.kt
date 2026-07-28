@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Archivo: ManageDevicesScreen.kt
  * Autor: ZahirMora
  * Fecha de Ãºltima actualizaciÃ³n: 2026-07-22
@@ -67,9 +67,9 @@ fun ManageDevicesScreen(
             shape = RoundedCornerShape(24.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text("GestiÃ³n de dispositivos", color = Color.White, fontWeight = FontWeight.Bold)
+                Text("Gestión de dispositivos", color = Color.White, fontWeight = FontWeight.Bold)
                 Text(
-                    "Esta acciÃ³n cortarÃ¡ la conexiÃ³n en tiempo real con el dispositivo seleccionado del proyecto.", 
+                    "Esta acción cortará la conexión en tiempo real con el dispositivo seleccionado del proyecto.", 
                     color = Color.White.copy(alpha = 0.7f), 
                     fontSize = 12.sp
                 )
@@ -92,6 +92,7 @@ fun ManageDevicesScreen(
                 }
             }
         }
+
 
         Spacer(modifier = Modifier.weight(1f))
 

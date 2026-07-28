@@ -18,7 +18,8 @@ import androidx.compose.material.icons.filled.Tv
 import androidx.compose.material.icons.filled.Watch
 import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
+
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -36,6 +37,22 @@ fun LinkedDevicesScreen(
     onManageClick: () -> Unit,
     onStatusClick: () -> Unit
 ) {
+    val repository = remember { mx.utng.ecoguia.shared.data.repository.EcoGuiaRepositoryImpl() }
+    val realSites = remember { mutableStateListOf<mx.utng.ecoguia.shared.domain.model.RemoteHistoricalSite>() }
+    var isLoading by remember { mutableStateOf(true) }
+
+    LaunchedEffect(Unit) {
+        try {
+            val sites = repository.getHistoricalSites()
+            realSites.clear()
+            realSites.addAll(sites)
+        } catch (e: Exception) {
+            android.util.Log.e("LinkedDevices", "Error cargando sitios: ${e.message}")
+        } finally {
+            isLoading = false
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -59,7 +76,7 @@ fun LinkedDevicesScreen(
             Column(modifier = Modifier.padding(16.dp)) {
                 Text("Ecosistema activo", color = Color.White, fontWeight = FontWeight.Bold)
                 Text(
-                    "Administra Smart TVs de hoteles, relojes demo y pantallas de museos.", 
+                    "Puntos de emisión activos en la base de datos Neon PostgreSQL.", 
                     color = Color.White.copy(alpha = 0.7f), 
                     fontSize = 12.sp
                 )
@@ -73,44 +90,43 @@ fun LinkedDevicesScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Estado", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
+                Text(
+                    text = "Dispositivos & Puntos (${realSites.size})",
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(vertical = 12.dp)
+                )
                 TextButton(onClick = onManageClick) {
                     Text("Gestionar", color = EcoGuiaColors.Jade)
                 }
             }
             
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                item {
-                    DeviceItem(
-                        title = "Lobby Hotel Hidalgo",
-                        subtitle = "Online - Salón de la fama",
-                        icon = Icons.Default.Tv,
-                        statusColor = EcoGuiaColors.Jade,
-                        onClick = onStatusClick
-                    )
+            if (isLoading) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(100.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = EcoGuiaColors.Jade)
                 }
-                item {
-                    DeviceItem(
-                        title = "Wearables demo",
-                        subtitle = "4 vinculados",
-                        icon = Icons.Default.Watch,
-                        statusColor = EcoGuiaColors.Jade,
-                        onClick = onStatusClick
-                    )
-                }
-                item {
-                    DeviceItem(
-                        title = "Sesiones QR",
-                        subtitle = "2 activas hoy",
-                        icon = Icons.Default.QrCode,
-                        statusColor = Color.White,
-                        onClick = onStatusClick
-                    )
+            } else {
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    items(realSites.size) { index ->
+                        val site = realSites[index]
+                        DeviceItem(
+                            title = site.name,
+                            subtitle = "Punto activo - Radio ${site.detectionRadiusM}m (${site.siteType ?: "Sitio"})",
+                            icon = if (index % 2 == 0) Icons.Default.Tv else Icons.Default.Watch,
+                            statusColor = EcoGuiaColors.Jade,
+                            onClick = onStatusClick
+                        )
+                    }
                 }
             }
         }
     }
 }
+
 
 @Composable
 fun DeviceItem(

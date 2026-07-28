@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Archivo: SiteLocationScreen.kt
  * Autor: Zahir Rodriguez
  * Fecha de última actualización: 2026-07-24
@@ -127,8 +127,20 @@ fun SiteLocationScreen(
                     onValueChange = { }, 
                     label = "COORDENADAS"
                 )
-                EcoTextField(value = radius.toString(), onValueChange = { radius = it.toIntOrNull() ?: 50 }, label = "RADIO DE LLEGADA (Metros)")
+                var radiusText by remember { mutableStateOf(radius.toString()) }
+                EcoTextField(
+                    value = radiusText,
+                    onValueChange = { input ->
+                        radiusText = input
+                        val parsed = input.toIntOrNull()
+                        if (parsed != null && parsed > 0) {
+                            radius = parsed
+                        }
+                    },
+                    label = "RADIO DE LLEGADA (Metros)"
+                )
                 EcoTextField(value = visibility, onValueChange = { visibility = it }, label = "VISIBILIDAD EN TV/SMART")
+
             }
         }
 
