@@ -25,6 +25,7 @@
         android:allowBackup="true"
         android:label="EcoGuia"
         android:supportsRtl="true"
+        android:usesCleartextTraffic="true"
         android:theme="@style/Theme.AppCompat.NoActionBar">
 
         <!-- Clave API de Google Maps -->
@@ -39,6 +40,13 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <!-- Deep Link para escanear QR desde la TV -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="ecoguia" android:host="tv" android:path="/gallery" />
             </intent-filter>
         </activity>
 
