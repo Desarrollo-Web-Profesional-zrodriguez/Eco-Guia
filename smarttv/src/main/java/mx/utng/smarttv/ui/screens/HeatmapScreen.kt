@@ -1,3 +1,5 @@
+@file:OptIn(androidx.tv.material3.ExperimentalTvMaterial3Api::class)
+
 package mx.utng.smarttv.ui.screens
 
 import androidx.compose.foundation.background
