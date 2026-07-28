@@ -2,6 +2,7 @@
 
 package mx.utng.smarttv.ui.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.horizontalScroll
@@ -27,13 +28,14 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Button
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
-import coil.compose.AsyncImage
 import kotlinx.coroutines.launch
+import mx.utng.smarttv.R
 
 @Composable
 fun Portal360Screen(onBack: () -> Unit) {
@@ -88,9 +90,9 @@ fun Portal360Screen(onBack: () -> Unit) {
                     }
                 }
         ) {
-            AsyncImage(
-                model = "https://images.unsplash.com/photo-1506744626753-1fa44df14d28?q=80&w=3000&auto=format&fit=crop",
-                contentDescription = "Panorámica 360",
+            Image(
+                painter = painterResource(id = R.drawable.panorama),
+                contentDescription = "Panorámica inmersiva",
                 modifier = Modifier
                     .height(350.dp)
                     .width(3000.dp),

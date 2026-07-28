@@ -69,7 +69,7 @@ fun GalleryScreen(onBack: () -> Unit) {
                 Text("Escanea para subir tu foto:", color = MaterialTheme.colorScheme.onBackground)
                 Spacer(modifier = Modifier.height(16.dp))
                 
-                val qrBitmap = rememberQrBitmap("https://play.google.com/store/apps/details?id=mx.utng.ecoguiawear")
+                val qrBitmap = rememberQrBitmap("ecoguia://tv/gallery")
                 if (qrBitmap != null) {
                     androidx.compose.foundation.Image(
                         bitmap = qrBitmap,
