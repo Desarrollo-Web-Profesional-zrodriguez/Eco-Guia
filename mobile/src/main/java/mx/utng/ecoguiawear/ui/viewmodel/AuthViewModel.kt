@@ -87,10 +87,10 @@ class AuthViewModel(
             val user = repository.login(email, password_hash)
             if (user != null) {
                 _authState.value = AuthState.Success(user)
-                notificationViewModel?.showNotification("¡Bienvenido, ${user.displayName}!", NotificationType.SUCCESS)
+                notificationViewModel?.showNotification("Bienvenido, ${user.displayName}", NotificationType.SUCCESS)
             } else {
                 _authState.value = AuthState.Error("Credenciales incorrectas o usuario inactivo.")
-                notificationViewModel?.showNotification("Error de acceso: Credenciales no válidas.", NotificationType.ERROR)
+                notificationViewModel?.showNotification("Credenciales no válidas", NotificationType.ERROR)
             }
         }
     }
@@ -135,8 +135,9 @@ class AuthViewModel(
      */
     fun logout() {
         _authState.value = AuthState.Idle
-        notificationViewModel?.showNotification("Sesión cerrada.", NotificationType.INFO)
+        notificationViewModel?.showNotification("Sesión cerrada", NotificationType.INFO)
     }
+
 
     /**
      * Reinicia el estado de autenticación a Idle.

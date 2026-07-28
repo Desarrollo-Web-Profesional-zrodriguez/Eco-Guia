@@ -147,30 +147,31 @@ class EcoGuiaRepositoryImpl(
      * Verifica la validez de las llaves foráneas para evitar violaciones de restricción en cuentas de prueba o UUIDs sintéticos.
      */
     override suspend fun createGeoDrop(title: String, description: String, lat: Double, lng: Double, userId: String?, siteId: String?, mediaUrl: String?): Boolean {
-        val cleanUserId = if (userId == "guest") "" else userId.orEmpty()
+        val cleanUserId = if (userId.isNullOrEmpty() || userId == "guest") "" else userId
+        val cleanSiteId = siteId.orEmpty()
         val insertGeoDropQuery = """
             INSERT INTO geo_drops (title, description, location, status, type, author_id, site_id, media_url) 
             VALUES ($1, $2, ST_SetSRID(ST_MakePoint($3, $4), 4326)::geography, 'pending', 'photo', 
-                    CASE WHEN EXISTS (SELECT 1 FROM users WHERE id::text = $5) THEN $5::uuid ELSE NULL END, 
-                    CASE WHEN EXISTS (SELECT 1 FROM historical_sites WHERE id::text = $6) THEN $6::uuid ELSE NULL END,
+                    CASE WHEN $5 <> '' AND EXISTS (SELECT 1 FROM users WHERE id::text = $5) THEN $5::uuid ELSE NULL END, 
+                    CASE WHEN $6 <> '' AND EXISTS (SELECT 1 FROM historical_sites WHERE id::text = $6) THEN $6::uuid ELSE NULL END,
                     CASE WHEN $7 = '' THEN NULL ELSE $7 END)
             RETURNING id::text
         """.trimIndent()
         return try {
             val response = neonClient.executeQuery<kotlinx.serialization.json.JsonObject>(
                 query = insertGeoDropQuery, 
-                params = listOf(title, description, lng.toString(), lat.toString(), cleanUserId, siteId.orEmpty(), mediaUrl.orEmpty())
+                params = listOf(title, description, lng.toString(), lat.toString(), cleanUserId, cleanSiteId, mediaUrl.orEmpty())
             )
+
             val newGeoDropId = response.firstOrNull()?.get("id")?.toString()?.replace("\"", "")
             
-            if (newGeoDropId != null && cleanUserId.isNotBlank()) {
-                val saveItemQuery = """
-                    INSERT INTO user_saved_items (user_id, geo_drop_id, site_id)
-                    SELECT $1::uuid, $2::uuid, CASE WHEN EXISTS (SELECT 1 FROM historical_sites WHERE id::text = $3) THEN $3::uuid ELSE NULL END
-                    WHERE EXISTS (SELECT 1 FROM users WHERE id::text = $1)
-                """.trimIndent()
-                neonClient.executeCommand(saveItemQuery, listOf(cleanUserId, newGeoDropId, siteId.orEmpty()))
-            }
+            true
+
+
+
+
+
+
             true
         } catch (e: Exception) {
             android.util.Log.e("EcoGuiaRepo", "Error al crear Geo-Drop: ${e.message}", e)
@@ -185,22 +186,50 @@ class EcoGuiaRepositoryImpl(
      */
     override suspend fun getUserCollection(userId: String): List<RemoteCollectionItem> {
         val query = """
-            SELECT
-                COALESCE(gd.id::text, hs.id::text, r.id::text, usi.id::text) AS id,
-                COALESCE(gd.title, hs.name, r.title, 'Elemento Guardado')    AS title,
-                COALESCE(gd.description, hs.site_type, r.description, 'Colección') AS subtitle,
-                CASE 
-                    WHEN usi.geo_drop_id IS NOT NULL THEN 'photo'
-                    WHEN usi.route_id IS NOT NULL THEN 'route' 
-                    ELSE 'site' 
-                END AS type,
-                usi.created_at
-            FROM user_saved_items usi
-            LEFT JOIN geo_drops gd ON gd.id = usi.geo_drop_id
-            LEFT JOIN historical_sites hs ON hs.id = usi.site_id
-            LEFT JOIN routes r ON r.id = usi.route_id
-            WHERE usi.user_id = $1::uuid
-            ORDER BY usi.created_at DESC
+            SELECT * FROM (
+                -- 1. Fotografías/Geo-Drops creados por el usuario
+                SELECT 
+                    'author_' || gd.id::text AS id,
+                    gd.title AS title,
+                    COALESCE(gd.description, 'Fotografía anclada') AS subtitle,
+                    'photo' AS type,
+                    gd.status::text AS status,
+                    gd.created_at AS created_at
+                FROM geo_drops gd
+                WHERE $1 <> '' AND gd.author_id::text = $1
+
+                UNION ALL
+
+                -- 2. Geo-Drops de otros usuarios coleccionados/guardados por el usuario
+                SELECT 
+                    'saved_' || usi.id::text AS id,
+                    gd.title AS title,
+                    COALESCE(gd.description, 'Geo-Drop Coleccionado') AS subtitle,
+                    'photo' AS type,
+                    'approved' AS status,
+                    usi.created_at AS created_at
+                FROM user_saved_items usi
+                JOIN geo_drops gd ON gd.id = usi.geo_drop_id
+                WHERE $1 <> '' AND usi.user_id::text = $1 AND usi.geo_drop_id IS NOT NULL
+
+                UNION ALL
+
+                -- 3. Sitios o Rutas guardados explícitamente en favoritos
+                SELECT 
+                    'fav_' || usi.id::text AS id,
+                    COALESCE(hs.name, r.title, 'Elemento Guardado') AS title,
+                    COALESCE(hs.site_type, r.description, 'Colección') AS subtitle,
+                    CASE WHEN usi.route_id IS NOT NULL THEN 'route' ELSE 'site' END AS type,
+                    'approved' AS status,
+                    usi.created_at AS created_at
+                FROM user_saved_items usi
+                LEFT JOIN historical_sites hs ON hs.id = usi.site_id
+                LEFT JOIN routes r ON r.id = usi.route_id
+                WHERE $1 <> '' AND usi.user_id::text = $1 AND usi.geo_drop_id IS NULL AND usi.site_id IS NOT NULL
+
+
+            ) combined_collection
+            ORDER BY created_at DESC
         """.trimIndent()
         return try {
             neonClient.executeQuery<RemoteCollectionItem>(query, listOf(userId))
@@ -209,6 +238,10 @@ class EcoGuiaRepositoryImpl(
             emptyList()
         }
     }
+
+
+
+
     /**
      * Busca sitios cercanos utilizando ST_DWithin de PostGIS.
      */
@@ -516,4 +549,57 @@ class EcoGuiaRepositoryImpl(
             false
         }
     }
+
+    /**
+     * Guarda un Geo-Drop público existente en la colección personal del usuario (user_saved_items).
+     */
+    override suspend fun saveGeoDropToCollection(userId: String, geoDropId: String, siteId: String?): Boolean {
+        val insertQuery = """
+            INSERT INTO user_saved_items (user_id, geo_drop_id, site_id)
+            SELECT 
+                $1::uuid, 
+                $2::uuid, 
+                COALESCE(
+                    (SELECT site_id FROM geo_drops WHERE id = $2::uuid AND site_id IS NOT NULL),
+                    CASE WHEN $3 <> '' AND EXISTS (SELECT 1 FROM historical_sites WHERE id::text = $3) THEN $3::uuid ELSE NULL END,
+                    (SELECT id FROM historical_sites WHERE is_active = TRUE ORDER BY created_at ASC LIMIT 1)
+                )
+            ON CONFLICT DO NOTHING
+        """.trimIndent()
+
+        val fallbackQuery = """
+            INSERT INTO user_saved_items (user_id, geo_drop_id)
+            VALUES ($1::uuid, $2::uuid)
+            ON CONFLICT DO NOTHING
+        """.trimIndent()
+
+        return try {
+            val rows = neonClient.executeCommand(insertQuery, listOf(userId, geoDropId, siteId.orEmpty()))
+            if (rows == 0) {
+                // Si la BD tenia la exclusion estricta activa y 0 filas fueron modificadas, ejecutamos el fallback
+                neonClient.executeCommand(fallbackQuery, listOf(userId, geoDropId))
+            }
+            android.util.Log.d("EcoGuiaRepo", "GeoDrop $geoDropId guardado en colección para usuario $userId ($rows filas)")
+            true
+        } catch (e: Exception) {
+            try {
+                neonClient.executeCommand(fallbackQuery, listOf(userId, geoDropId))
+                true
+            } catch (fallbackEx: Exception) {
+                android.util.Log.e("EcoGuiaRepo", "Error al guardar GeoDrop en colección: ${fallbackEx.message}", fallbackEx)
+                false
+            }
+        }
+    }
+
+
+
+
+
+
+
+
+
+
 }
+

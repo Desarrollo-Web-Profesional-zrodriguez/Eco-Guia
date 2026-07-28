@@ -78,6 +78,12 @@ fun MiguelHidalgoChatScreen(
     val messages = viewModel.messages
     val isLoading by viewModel.isLoading
 
+    // Refrescar el contexto e historia del chat automáticamente al abrir la pantalla para asegurar que incluye el último entrenamiento
+    LaunchedEffect(Unit) {
+        viewModel.resetConversation()
+    }
+
+
     Column(
         modifier = Modifier
             .fillMaxSize()

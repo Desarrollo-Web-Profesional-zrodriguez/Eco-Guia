@@ -174,7 +174,13 @@ interface EcoGuiaRepository {
     suspend fun deleteRoute(routeId: String): Boolean
 
     /**
+     * Guarda un Geo-Drop público existente en la colección personal del usuario (user_saved_items).
+     */
+    suspend fun saveGeoDropToCollection(userId: String, geoDropId: String, siteId: String? = null): Boolean
+
+    /**
      * Guarda una ruta completada en la colección personal del usuario (user_saved_items).
      */
     suspend fun saveRouteToCollection(userId: String, routeId: String): Boolean
 }
+

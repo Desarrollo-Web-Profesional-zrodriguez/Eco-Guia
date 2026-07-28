@@ -33,8 +33,10 @@ data class RemoteCollectionItem(
     val title: String,
     val subtitle: String,
     val type: String, // 'site', 'photo', 'route'
+    val status: String? = "approved", // 'approved', 'pending', 'rejected'
     @SerialName("created_at") val createdAt: String? = null
 )
+
 
 /**
  * Representa un sitio histórico o museo.
@@ -94,10 +96,12 @@ data class RemoteGeoDrop(
     val location: String? = null,
     val latitude: Double? = null,
     val longitude: Double? = null,
+    @SerialName("detection_radius_m") val detectionRadiusM: Int = 50,
     @SerialName("status") val status: String = "pending",
     @SerialName("likes_count") val likesCount: Int = 0,
     @SerialName("created_at") val createdAt: String? = null
 )
+
 
 /**
  * Representa un artículo o pregunta/respuesta curada de conocimiento para la IA.

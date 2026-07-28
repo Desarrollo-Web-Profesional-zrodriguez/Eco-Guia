@@ -83,27 +83,17 @@ fun ReportDetailScreen(
             Column(modifier = Modifier.padding(16.dp)) {
                 // Visualizador de Fotografía Capturada / Media
                 val mediaUrl = selectedDrop?.mediaUrl
-                val bitmapState = remember(mediaUrl) {
-                    if (!mediaUrl.isNullOrBlank() && java.io.File(mediaUrl).exists()) {
-                        try {
-                            android.graphics.BitmapFactory.decodeFile(mediaUrl)?.asImageBitmap()
-                        } catch (e: Exception) {
-                            null
-                        }
-                    } else null
-                }
-
-                if (bitmapState != null) {
+                if (!mediaUrl.isNullOrBlank()) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(190.dp)
+                            .height(220.dp)
                             .clip(RoundedCornerShape(16.dp))
                             .background(Color.Black.copy(alpha = 0.1f)),
                         contentAlignment = Alignment.Center
                     ) {
-                        androidx.compose.foundation.Image(
-                            bitmap = bitmapState,
+                        coil.compose.AsyncImage(
+                            model = mediaUrl,
                             contentDescription = "Fotografía a moderar",
                             contentScale = androidx.compose.ui.layout.ContentScale.Crop,
                             modifier = Modifier.fillMaxSize()
@@ -123,7 +113,7 @@ fun ReportDetailScreen(
                             Icon(Icons.Default.Place, null, tint = EcoGuiaColors.Jade)
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                if (mediaUrl.isNullOrBlank()) "Cápsula de texto sin foto adjunta" else "Imagen no encontrada o vista previa simulada",
+                                "Cápsula de texto sin foto adjunta",
                                 fontSize = 12.sp,
                                 color = Color.Gray
                             )
@@ -131,6 +121,7 @@ fun ReportDetailScreen(
                     }
                     Spacer(modifier = Modifier.height(12.dp))
                 }
+
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.Place, null, tint = EcoGuiaColors.Jade)

@@ -65,11 +65,12 @@ import mx.utng.ecoguiawear.ui.viewmodel.LocationViewModel
 fun ExplorationScreen(
     onAdminClick: () -> Unit,
     onOpenRoutes: () -> Unit = {},
-    onOpenGeoDrop: () -> Unit = {},
-    userId: String = "guest",
+    onOpenGeoDropWithSite: (String) -> Unit = {},
+    userId: String = "",
     locationViewModel: LocationViewModel = viewModel(),
     collectionViewModel: CollectionViewModel = viewModel()
 ) {
+
 
     val context = LocalContext.current
     val currentLocation by locationViewModel.currentLocation
@@ -202,8 +203,9 @@ fun ExplorationScreen(
             ExplorationMapContent(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(260.dp),
+                    .height(340.dp),
                 nearbySites = nearbySites,
+
                 currentLocation = currentLocation,
                 cameraPositionState = cameraPositionState,
                 isFollowingUser = isFollowingUser,
@@ -282,15 +284,16 @@ fun ExplorationScreen(
                     selectedSite = null
                 },
                 onGeoDropClick = {
+                    val siteId = site.id
                     selectedSite = null
-                    onOpenGeoDrop()
+                    onOpenGeoDropWithSite(siteId)
                 },
                 onDismiss = { selectedSite = null }
             )
         }
-
     }
 }
+
 
 
 @Preview(showBackground = true)

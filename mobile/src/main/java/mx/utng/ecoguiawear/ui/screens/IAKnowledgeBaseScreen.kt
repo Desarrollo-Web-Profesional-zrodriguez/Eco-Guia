@@ -102,8 +102,9 @@ fun IAKnowledgeBaseScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(EcoGuiaColors.DeepBlue)
-                    .padding(top = 40.dp, start = 16.dp, end = 24.dp, bottom = 20.dp)
+                    .padding(top = 8.dp, start = 16.dp, end = 24.dp, bottom = 12.dp)
             ) {
+
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Volver", tint = Color.White)
@@ -179,13 +180,13 @@ fun IAKnowledgeBaseScreen(
                                                 trainedQAList.add(0, QAPair(q, a))
                                                 questionInput = ""
                                                 answerInput = ""
-                                                snackbarHostState.showSnackbar("✅ Guardado en la base de datos Neon")
+                                                snackbarHostState.showSnackbar("Guardado en la base de datos Neon")
                                             } else {
-                                                snackbarHostState.showSnackbar("❌ Error guardando en Neon DB")
+                                                snackbarHostState.showSnackbar("Error guardando en Neon DB")
                                             }
                                         }
                                     } else {
-                                        scope.launch { snackbarHostState.showSnackbar("⚠️ Completa ambos campos") }
+                                        scope.launch { snackbarHostState.showSnackbar("Completa ambos campos") }
                                     }
                                 },
                                 colors = ButtonDefaults.buttonColors(containerColor = EcoGuiaColors.Jade),
@@ -283,9 +284,9 @@ fun IAKnowledgeBaseScreen(
                                 jsonBuilder.append("  ]\n}")
                                 android.util.Log.d("IATraining", "JSON generado e inyectado desde Neon DB:\n$jsonBuilder")
 
-                                snackbarHostState.showSnackbar("🎉 ¡Base de IA re-entrenada e inyectada con datos de Neon DB!")
+                                snackbarHostState.showSnackbar("Base de IA re-entrenada e inyectada con datos de Neon DB")
                             } catch (e: Exception) {
-                                snackbarHostState.showSnackbar("❌ Error durante entrenamiento: ${e.message}")
+                                snackbarHostState.showSnackbar("Error durante entrenamiento: ${e.message}")
                             } finally {
                                 isTraining = false
                             }
@@ -295,6 +296,7 @@ fun IAKnowledgeBaseScreen(
             }
         }
     }
+
 
 }
 

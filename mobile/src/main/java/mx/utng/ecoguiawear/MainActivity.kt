@@ -174,8 +174,18 @@ fun MainAppContainer(activity: ComponentActivity, repository: EcoGuiaRepositoryI
 
         Scaffold(
             modifier = Modifier.weight(1f),
-            snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
+            snackbarHost = {
+                SnackbarHost(hostState = snackbarHostState) { data ->
+                    Snackbar(
+                        snackbarData = data,
+                        containerColor = mx.utng.ecoguiawear.ui.theme.EcoGuiaColors.Jade,
+                        contentColor = Color.White,
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
+                    )
+                }
+            },
             bottomBar = {
+
                 if (showNav && !isLandscape) {
                     EcoBottomBar(
                         currentRoute = currentRoute,

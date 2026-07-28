@@ -37,8 +37,15 @@ class GeoDropViewModel(
     private val _capturedPhoto = mutableStateOf<File?>(null)
     val capturedPhoto: State<File?> = _capturedPhoto
 
+    private val _targetSiteId = mutableStateOf<String?>(null)
+    val targetSiteId: State<String?> = _targetSiteId
+
+    private val _targetSiteName = mutableStateOf<String?>(null)
+    val targetSiteName: State<String?> = _targetSiteName
+
     private val _isSaving = mutableStateOf(false)
     val isSaving: State<Boolean> = _isSaving
+
 
     /**
      * Carga todos los Geo-Drops registrados en la base de datos.
@@ -85,15 +92,28 @@ class GeoDropViewModel(
     }
 
     /**
-     * Guarda en memoria la fotografía capturada con CameraX.
+     * Guarda en memoria la fotografía capturada y el sitio destino obligatorio.
      */
-    fun setCapturedPhoto(file: File) {
+    fun setCapturedPhoto(file: File, siteId: String? = null, siteName: String? = null) {
         _capturedPhoto.value = file
+        if (siteId != null) _targetSiteId.value = siteId
+        if (siteName != null) _targetSiteName.value = siteName
     }
 
     /**
-     * Ancla la fotografía capturada creando un nuevo Geo-Drop en la nube.
+     * Establece el sitio obligatorio al que pertenecerá el Geo-Drop.
      */
+    fun setTargetSite(siteId: String, siteName: String) {
+        _targetSiteId.value = siteId
+        _targetSiteName.value = siteName
+    }
+
+    private val firebaseStorageRepo = mx.utng.ecoguiawear.data.remote.FirebaseStorageRepository()
+
+    /**
+     * Ancla la fotografía capturada subiéndola a Firebase Storage e insertándola en Neon con su site_id obligatorio.
+     */
+
     fun anchorGeoDrop(
         title: String,
         description: String,
@@ -107,19 +127,34 @@ class GeoDropViewModel(
             return
         }
 
+        val siteId = _targetSiteId.value
+        if (siteId.isNullOrBlank()) {
+            onError("La cápsula debe estar asociada obligatoriamente a un sitio histórico.")
+            return
+        }
+
         viewModelScope.launch {
             _isSaving.value = true
             try {
-                val photoPath = _capturedPhoto.value?.absolutePath
+                val photoFile = _capturedPhoto.value
+                var mediaUrl: String? = null
+
+                if (photoFile != null && photoFile.exists()) {
+                    val uri = android.net.Uri.fromFile(photoFile)
+                    // 1. Subir fotografía capturada a Firebase Storage
+                    mediaUrl = firebaseStorageRepo.uploadImage(uri, folder = "geo_drops")
+                }
+
+                // 2. Guardar registro en Neon PostgreSQL asignando explícitamente el siteId
                 val success = repository.createGeoDrop(
                     title = title,
                     description = description,
                     lat = location.latitude,
                     lng = location.longitude,
                     userId = userId,
-                    mediaUrl = photoPath
+                    siteId = siteId,
+                    mediaUrl = mediaUrl
                 )
-
 
                 if (success) {
                     loadGeoDrops()
@@ -135,4 +170,36 @@ class GeoDropViewModel(
         }
     }
 
+
+
+    /**
+     * Guarda un Geo-Drop público detectado en el entorno a la colección personal del usuario.
+     */
+    fun saveExistingGeoDropToCollection(
+        userId: String,
+        geoDrop: RemoteGeoDrop,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        viewModelScope.launch {
+            _isSaving.value = true
+            try {
+                val success = repository.saveGeoDropToCollection(
+                    userId = userId,
+                    geoDropId = geoDrop.id.orEmpty(),
+                    siteId = geoDrop.siteId
+                )
+                if (success) {
+                    onSuccess()
+                } else {
+                    onError("No se pudo agregar el Geo-Drop a tu colección.")
+                }
+            } catch (e: Exception) {
+                onError("Error: ${e.message}")
+            } finally {
+                _isSaving.value = false
+            }
+        }
+    }
 }
+

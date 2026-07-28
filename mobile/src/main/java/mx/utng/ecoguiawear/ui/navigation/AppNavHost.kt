@@ -109,10 +109,11 @@ fun AppNavHost(
             ExplorationScreen(
                 onAdminClick = { navController.navigate("more_options") },
                 onOpenRoutes = { navController.navigate("search_experience") },
-                onOpenGeoDrop = { navController.navigate("camera_capture") },
-                userId = authViewModel.currentUser?.id ?: "guest"
+                onOpenGeoDropWithSite = { siteId -> navController.navigate("camera_capture/$siteId") },
+                userId = authViewModel.currentUser?.id.orEmpty()
             )
         }
+
         composable("collection") {
             MyCollectionScreen(userId = authViewModel.currentUser?.id ?: "guest")
         }
@@ -178,35 +179,62 @@ fun AppNavHost(
         composable("proximity_alerts") {
             ProximityAlertsScreen()
         }
-        composable("camera_capture") {
-            val parentEntry = remember(it) { navController.getBackStackEntry("camera_capture") }
-            val geoDropViewModel: mx.utng.ecoguiawear.ui.viewmodel.GeoDropViewModel = viewModel(parentEntry)
+        composable("camera_capture/{siteId}") { backStackEntry ->
+            val siteId = backStackEntry.arguments?.getString("siteId").orEmpty()
+            val geoDropViewModel: mx.utng.ecoguiawear.ui.viewmodel.GeoDropViewModel = viewModel(backStackEntry)
+            if (siteId.isNotBlank()) {
+                geoDropViewModel.setTargetSite(siteId, "")
+            }
             CameraGeoDropScreen(
-                onCapture = { _ -> navController.navigate("anchor_photo") },
+                onCapture = { _ -> 
+                    navController.navigate("anchor_photo") 
+                },
+                userId = authViewModel.currentUser?.id.orEmpty(),
+                onSavedToCollection = {
+                    notificationViewModel.showNotification("¡Cápsula agregada a tu colección!", NotificationType.SUCCESS)
+                    navController.navigate("collection") {
+                        popUpTo("exploration")
+                    }
+                },
                 geoDropViewModel = geoDropViewModel
             )
         }
-        composable("anchor_photo") {
-            val parentEntry = remember(it) {
-                try {
-                    navController.getBackStackEntry("camera_capture")
-                } catch (e: Exception) {
-                    it
-                }
-            }
-            val geoDropViewModel: mx.utng.ecoguiawear.ui.viewmodel.GeoDropViewModel = viewModel(parentEntry)
+
+        composable("camera_capture") { backStackEntry ->
+            val geoDropViewModel: mx.utng.ecoguiawear.ui.viewmodel.GeoDropViewModel = viewModel(backStackEntry)
+            CameraGeoDropScreen(
+                onCapture = { _ -> navController.navigate("anchor_photo") },
+                userId = authViewModel.currentUser?.id.orEmpty(),
+                onSavedToCollection = {
+                    notificationViewModel.showNotification("¡Cápsula agregada a tu colección!", NotificationType.SUCCESS)
+                    navController.navigate("collection") {
+                        popUpTo("exploration")
+                    }
+                },
+                geoDropViewModel = geoDropViewModel
+            )
+        }
+
+        composable("anchor_photo") { backStackEntry ->
+            val prevEntry = remember(backStackEntry) { navController.previousBackStackEntry }
+            val geoDropViewModel: mx.utng.ecoguiawear.ui.viewmodel.GeoDropViewModel = 
+                if (prevEntry != null) viewModel(prevEntry) else viewModel(backStackEntry)
+                
             AnchorPhotoScreen(
                 onAnchorClick = {
-                    notificationViewModel.showNotification("🎉 ¡Foto anclada al mapa con éxito!", NotificationType.SUCCESS)
+                    notificationViewModel.showNotification("Foto anclada al sitio con éxito", NotificationType.SUCCESS)
                     navController.navigate("exploration") {
                         popUpTo("exploration") { inclusive = true }
                     }
                 },
-                userId = authViewModel.currentUser?.id ?: "guest",
+                userId = authViewModel.currentUser?.id.orEmpty(),
                 geoDropViewModel = geoDropViewModel
             )
-
         }
+
+
+
+
 
 
         // ── Rutas turísticas ──────────────────────────────────────────────────
@@ -223,14 +251,14 @@ fun AppNavHost(
             ActiveRouteScreen(
                 onFinishRoute = {
                     val route = routeViewModel.activeRoute.value
-                    val userId = authViewModel.currentUser?.id ?: "guest"
-                    if (route != null) {
+                    val userId = authViewModel.currentUser?.id.orEmpty()
+                    if (route != null && userId.isNotBlank()) {
                         routeViewModel.viewModelScope.launch {
                             val ok = EcoGuiaRepositoryImpl().saveRouteToCollection(userId, route.id)
                             android.util.Log.d("AppNavHost", "Guardado de ruta: $ok para routeId=${route.id}")
                             routeViewModel.completeActiveRoute()
                             notificationViewModel.showNotification(
-                                "🎉 ¡Ruta completada y guardada en Mi Colección!",
+                                "Ruta completada y guardada en Mi Colección",
                                 NotificationType.SUCCESS
                             )
                             navController.navigate("exploration") {
@@ -244,6 +272,7 @@ fun AppNavHost(
                         }
                     }
                 },
+
 
                 routeViewModel = routeViewModel
             )

@@ -1,9 +1,11 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.google.services)
 }
 
 android {
+
     namespace = "mx.utng.ecoguiawear"
     compileSdk = 37
 
@@ -74,5 +76,11 @@ dependencies {
     implementation(libs.ktor.client.content.negotiation)
     implementation(libs.ktor.serialization.kotlinx.json)
     
+    // Firebase Storage & Coil para imágenes
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.storage)
+    implementation(libs.coil.compose)
+    
     debugImplementation(libs.ui.tooling)
 }
+

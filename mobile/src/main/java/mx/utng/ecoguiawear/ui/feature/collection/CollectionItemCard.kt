@@ -184,12 +184,35 @@ fun CollectionItemRow(
                         .padding(horizontal = 12.dp)
                         .weight(1f)
                 ) {
-                    Text(
-                        text = highlightedTitle,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = highlightedTitle,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.weight(1f, fill = false)
+                        )
+                        if (item.type == "photo") {
+                            Spacer(modifier = Modifier.width(6.dp))
+                            val (statusText, statusBg, statusColor) = when (item.status) {
+                                "approved", "active" -> Triple("Aprobada", EcoGuiaColors.Jade.copy(alpha = 0.2f), EcoGuiaColors.Jade)
+                                "rejected" -> Triple("Rechazada", MaterialTheme.colorScheme.error.copy(alpha = 0.2f), MaterialTheme.colorScheme.error)
+                                else -> Triple("Pendiente", EcoGuiaColors.Gold.copy(alpha = 0.2f), EcoGuiaColors.Gold)
+                            }
+                            Surface(
+                                color = statusBg,
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Text(
+                                    text = statusText,
+                                    color = statusColor,
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+                    }
                     Text(
                         text = "${item.subtitle} · ${item.createdAt?.take(10) ?: ""}",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -198,5 +221,6 @@ fun CollectionItemRow(
                 }
             }
         }
+
     }
 }
