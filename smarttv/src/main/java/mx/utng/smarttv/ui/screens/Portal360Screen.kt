@@ -3,26 +3,48 @@
 package mx.utng.smarttv.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.focusable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Button
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
+import coil.compose.AsyncImage
+import kotlinx.coroutines.launch
 
 @Composable
 fun Portal360Screen(onBack: () -> Unit) {
+    val scrollState = rememberScrollState()
+    val coroutineScope = rememberCoroutineScope()
+    val focusRequester = remember { FocusRequester() }
+
+    LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -37,26 +59,42 @@ fun Portal360Screen(onBack: () -> Unit) {
             color = MaterialTheme.colorScheme.onBackground,
             fontWeight = FontWeight.Bold
         )
-        Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = "Experimenta Dolores Hidalgo de forma inmersiva",
-            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f)
+            text = "Usa las flechas ← y → de tu control para explorar",
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
         )
-        
         Spacer(modifier = Modifier.height(32.dp))
         
-        // Simulación de visor 360
         Box(
             modifier = Modifier
-                .fillMaxWidth(0.8f)
-                .height(300.dp)
-                .background(Color(0xFF0F5A3E)),
-            contentAlignment = Alignment.Center
+                .width(800.dp)
+                .height(350.dp)
+                .background(Color.Black)
+                .horizontalScroll(scrollState)
+                .focusRequester(focusRequester)
+                .focusable()
+                .onKeyEvent { event ->
+                    when (event.key) {
+                        Key.DirectionRight -> {
+                            coroutineScope.launch { scrollState.animateScrollTo(scrollState.value + 150) }
+                            true
+                        }
+                        Key.DirectionLeft -> {
+                            coroutineScope.launch { scrollState.animateScrollTo(scrollState.value - 150) }
+                            true
+                        }
+                        else -> false
+                    }
+                }
         ) {
-            Text(
-                text = "Visor Panorámico 360° (Simulación)",
-                style = MaterialTheme.typography.titleLarge,
-                color = Color.White
+            AsyncImage(
+                model = "https://images.unsplash.com/photo-1506744626753-1fa44df14d28?q=80&w=3000&auto=format&fit=crop",
+                contentDescription = "Panorámica 360",
+                modifier = Modifier
+                    .height(350.dp)
+                    .width(3000.dp),
+                contentScale = ContentScale.Crop
             )
         }
 

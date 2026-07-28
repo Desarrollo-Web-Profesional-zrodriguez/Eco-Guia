@@ -19,6 +19,11 @@
         android:theme="@android:style/Theme.DeviceDefault.NoActionBar"
         android:banner="@mipmap/ic_launcher">
         
+        <!-- Clave API de Google Maps -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyDexgWI7fqzfP8s4k_nkEvMFfYQz1qyWng" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"

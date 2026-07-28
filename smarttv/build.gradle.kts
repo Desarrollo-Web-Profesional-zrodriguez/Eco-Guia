@@ -45,6 +45,15 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.tv.foundation)
     implementation(libs.androidx.tv.material)
+
+    // Maps
+    implementation(libs.play.services.maps)
+    implementation(libs.maps.compose)
+
+    // QR & Images
+    implementation(libs.zxing.core)
+    implementation(libs.coil.compose)
+
     implementation(libs.lifecycle.runtime.ktx)
     implementation(libs.compose.material.icons.extended)
     implementation(libs.navigation.compose)
