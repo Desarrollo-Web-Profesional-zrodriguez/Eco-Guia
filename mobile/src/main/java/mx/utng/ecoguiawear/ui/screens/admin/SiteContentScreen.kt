@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Archivo: SiteContentScreen.kt
  * Autor: Zahir Rodriguez
  * Fecha de última actualización: 2026-07-24
@@ -33,7 +33,7 @@ fun SiteContentScreen(
     viewModel: SiteRegistrationViewModel,
     onNext: () -> Unit
 ) {
-    var historyTitle by remember { mutableStateOf("Memoria viva de la Independencia") }
+    var historyTitle by remember { mutableStateOf("") }
     var shortDesc by viewModel.shortDesc
     var detailedDesc by viewModel.historyDesc
 

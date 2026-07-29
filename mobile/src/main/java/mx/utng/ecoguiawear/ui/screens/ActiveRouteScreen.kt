@@ -124,7 +124,7 @@ fun ActiveRouteScreen(
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(
-                    text = if (completedCount == totalStops && stops.isNotEmpty()) "🎉 ¡Ruta completada!" else "Progreso del recorrido",
+                    text = if (completedCount == totalStops && stops.isNotEmpty()) "¡Ruta completada!" else "Progreso del recorrido",
                     color = Color.White,
                     fontWeight = FontWeight.Bold
                 )
@@ -159,7 +159,7 @@ fun ActiveRouteScreen(
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("🏆 Completar y ver en Mi Colección", fontWeight = FontWeight.Bold)
+                        Text("Completar y ver en Mi Colección", fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -181,7 +181,12 @@ fun ActiveRouteScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("🗺️", fontSize = 40.sp)
+                        Icon(
+                            imageVector = Icons.Default.Navigation,
+                            contentDescription = null,
+                            tint = EcoGuiaColors.Jade,
+                            modifier = Modifier.size(40.dp)
+                        )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text = "No hay ruta seleccionada.",
@@ -195,7 +200,8 @@ fun ActiveRouteScreen(
                         )
                     }
                 }
-            } else {
+            }
+ else {
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     items(stops) { stop ->
                         val isDone = routeViewModel.completedStops[stop.id] == true

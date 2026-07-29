@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Archivo: VisitorAnalyticsScreen.kt
  * Autor: ZahirMora
  * Fecha de Ãºltima actualizaciÃ³n: 2026-07-22
@@ -41,7 +41,7 @@ fun VisitorAnalyticsScreen() {
                 .padding(top = 48.dp, start = 24.dp, end = 24.dp, bottom = 16.dp)
         ) {
             Column {
-                Text("AnalÃ­tica", color = Color.White, fontSize = 14.sp)
+                Text("Analítica", color = Color.White, fontSize = 14.sp)
                 Text("Visitantes", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
             }
             
@@ -63,13 +63,13 @@ fun VisitorAnalyticsScreen() {
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text("Mapa de calor", color = Color.White, fontWeight = FontWeight.Bold)
-                Text("Pico de exploraciÃ³n entre 12:00 y 17:00 en centro histÃ³rico.", color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp)
+                Text("Pico de exploración entre 12:00 y 17:00 en centro histórico.", color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp)
             }
         }
 
         // Metrics Section
         Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-            Text("MÃ©tricas", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
+            Text("Métricas", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
             
             LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 item {
@@ -82,7 +82,7 @@ fun VisitorAnalyticsScreen() {
                 item {
                     MetricItem(
                         value = "42",
-                        label = "CÃ¡psulas vistas",
+                        label = "Cápsulas vistas",
                         subLabel = "Top: Museos"
                     )
                 }
@@ -95,6 +95,7 @@ fun VisitorAnalyticsScreen() {
                 }
             }
         }
+
     }
 }
 

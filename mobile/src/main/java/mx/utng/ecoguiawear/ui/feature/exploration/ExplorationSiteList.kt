@@ -69,13 +69,11 @@ fun ExplorationSiteList(
 ) {
     Column(modifier = modifier.padding(horizontal = 16.dp)) {
 
-        // Encabezado: contador de sitios y botón "Ver Rutas"
-        Row(
+        // Encabezado: contador de sitios
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+                .padding(bottom = 8.dp)
         ) {
             Text(
                 text = if (sortedSites.isEmpty()) "Buscando sitios..."
@@ -83,10 +81,8 @@ fun ExplorationSiteList(
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
-            TextButton(onClick = onOpenRoutes) {
-                Text("Ver Rutas", color = EcoGuiaColors.Gold, fontWeight = FontWeight.Bold)
-            }
         }
+
 
         if (isLoading) {
             // Esqueleto de carga — 3 tarjetas grises animadas

@@ -140,15 +140,11 @@ private fun getContextItems(route: String, isSuperAdmin: Boolean, isModerator: B
         items.add(ContextMenuItem("Seguridad", Icons.Default.Security, "security"))
     }
 
-    // El BottomMenuSheet solo muestra el acceso directo al Centro de Navegación
-    items.add(ContextMenuItem("Centro de navegación", Icons.Default.GridView, "more_options", enabled = true))
-
-
-
     // Cerrar Sesión siempre presente
     items.add(ContextMenuItem("Cerrar Sesión", Icons.AutoMirrored.Filled.ExitToApp, "logout"))
 
     return items
+
 }
 
 

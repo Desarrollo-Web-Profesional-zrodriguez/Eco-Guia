@@ -67,21 +67,23 @@ fun EcoBottomBar(
             )
         )
         NavigationBarItem(
+            selected = currentRoute == "more_options",
+            onClick = { onNavigate("more_options") },
+            icon = { Icon(Icons.Default.GridView, contentDescription = "Centro de navegación") },
+            colors = NavigationBarItemDefaults.colors(
+                selectedIconColor = EcoGuiaColors.Gold,
+                unselectedIconColor = EcoGuiaColors.Muted,
+                indicatorColor = Color.Transparent
+            )
+        )
+
+        NavigationBarItem(
             selected = currentRoute == "collection",
             onClick = { onNavigate("collection") },
             icon = { Icon(Icons.Default.FavoriteBorder, contentDescription = "Mi Colección") },
             colors = NavigationBarItemDefaults.colors(
                 selectedIconColor = EcoGuiaColors.Jade,
                 unselectedIconColor = EcoGuiaColors.Muted,
-                indicatorColor = Color.Transparent
-            )
-        )
-        NavigationBarItem(
-            selected = false,
-            onClick = { onNavigate("logout") },
-            icon = { Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Salir") },
-            colors = NavigationBarItemDefaults.colors(
-                unselectedIconColor = Color.Red.copy(alpha = 0.7f),
                 indicatorColor = Color.Transparent
             )
         )
@@ -95,6 +97,7 @@ fun EcoBottomBar(
             )
         )
     }
+
 }
 
 /**
@@ -142,21 +145,22 @@ fun EcoNavigationRail(
                 )
             )
             NavigationRailItem(
+                selected = currentRoute == "more_options",
+                onClick = { onNavigate("more_options") },
+                icon = { Icon(Icons.Default.GridView, contentDescription = "Centro de navegación") },
+                colors = NavigationRailItemDefaults.colors(
+                    selectedIconColor = EcoGuiaColors.Gold,
+                    unselectedIconColor = EcoGuiaColors.Muted,
+                    indicatorColor = Color.Transparent
+                )
+            )
+            NavigationRailItem(
                 selected = currentRoute == "collection",
                 onClick = { onNavigate("collection") },
                 icon = { Icon(Icons.Default.FavoriteBorder, contentDescription = "Mi Colección") },
                 colors = NavigationRailItemDefaults.colors(
                     selectedIconColor = EcoGuiaColors.Jade,
                     unselectedIconColor = EcoGuiaColors.Muted,
-                    indicatorColor = Color.Transparent
-                )
-            )
-            NavigationRailItem(
-                selected = false,
-                onClick = { onNavigate("logout") },
-                icon = { Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Salir") },
-                colors = NavigationRailItemDefaults.colors(
-                    unselectedIconColor = Color.Red.copy(alpha = 0.7f),
                     indicatorColor = Color.Transparent
                 )
             )
@@ -169,8 +173,10 @@ fun EcoNavigationRail(
                     indicatorColor = Color.Transparent
                 )
             )
+
         }
     }
+
 }
 
 /**

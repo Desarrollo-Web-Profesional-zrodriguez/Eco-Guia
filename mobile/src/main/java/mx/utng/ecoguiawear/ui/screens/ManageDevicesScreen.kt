@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Archivo: ManageDevicesScreen.kt
  * Autor: ZahirMora
  * Fecha de Ãºltima actualizaciÃ³n: 2026-07-22
@@ -17,7 +17,8 @@ import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Tv
 import androidx.compose.material.icons.filled.Watch
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
+
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -67,28 +68,43 @@ fun ManageDevicesScreen(
             shape = RoundedCornerShape(24.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text("GestiÃ³n de dispositivos", color = Color.White, fontWeight = FontWeight.Bold)
+                Text("Gestión de dispositivos", color = Color.White, fontWeight = FontWeight.Bold)
                 Text(
-                    "Esta acciÃ³n cortarÃ¡ la conexiÃ³n en tiempo real con el dispositivo seleccionado del proyecto.", 
+                    "Esta acción cortará la conexión en tiempo real con el dispositivo seleccionado del proyecto.", 
                     color = Color.White.copy(alpha = 0.7f), 
                     fontSize = 12.sp
                 )
             }
         }
 
-        // Editable Device List
+        // Lista de Dispositivos Editables
         Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-            Text("Toca \"Quitar\" para desvincular", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
+            Text("Sesiones y Dispositivos Conectados", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
             
             LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 item {
-                    ManageDeviceItem(title = "Lobby Hotel Hidalgo", icon = Icons.Default.Tv)
+                    ManageDeviceItem(
+                        title = "Reloj Wear OS (Galaxy Watch)",
+                        subtitle = "Sesión: mus@ecoguia.com",
+                        icon = Icons.Default.Watch,
+                        actionText = "Cerrar sesión en Reloj"
+                    )
                 }
                 item {
-                    ManageDeviceItem(title = "Museo pasillo 2", icon = Icons.Default.Tv)
+                    ManageDeviceItem(
+                        title = "Smart TV - Lobby Hotel Hidalgo",
+                        subtitle = "Sesión: mus@ecoguia.com",
+                        icon = Icons.Default.Tv,
+                        actionText = "Desvincular TV"
+                    )
                 }
                 item {
-                    ManageDeviceItem(title = "Reloj demo DG", icon = Icons.Default.Watch)
+                    ManageDeviceItem(
+                        title = "Smart TV - Sala 2 Museo",
+                        subtitle = "Sesión activa en red local",
+                        icon = Icons.Default.Tv,
+                        actionText = "Desvincular TV"
+                    )
                 }
             }
         }
@@ -98,7 +114,7 @@ fun ManageDevicesScreen(
         // Action Button
         Box(modifier = Modifier.padding(24.dp)) {
             EcoButton(
-                text = "Confirmar cambios",
+                text = "Guardar y confirmar cambios",
                 onClick = onConfirmChanges
             )
         }
@@ -108,8 +124,14 @@ fun ManageDevicesScreen(
 @Composable
 fun ManageDeviceItem(
     title: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector
+    subtitle: String = "Sesión activa",
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    actionText: String = "Quitar"
 ) {
+    var isRemoved by remember { mutableStateOf(false) }
+
+    if (isRemoved) return
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -121,26 +143,26 @@ fun ManageDeviceItem(
         ) {
             Box(
                 modifier = Modifier
-                    .size(32.dp)
-                    .background(MaterialTheme.colorScheme.background, RoundedCornerShape(8.dp)),
+                    .size(36.dp)
+                    .background(MaterialTheme.colorScheme.background, RoundedCornerShape(10.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(imageVector = icon, contentDescription = null, tint = EcoGuiaColors.Jade, modifier = Modifier.size(16.dp))
+                Icon(imageVector = icon, contentDescription = null, tint = EcoGuiaColors.Jade, modifier = Modifier.size(18.dp))
             }
             
             Column(modifier = Modifier.padding(horizontal = 12.dp).weight(1f)) {
-                Text(title, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
-                Text("Cerca de Dolores Hidalgo", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
+                Text(title, fontWeight = FontWeight.Bold, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
+                Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
             }
             
             Surface(
                 color = Color(0xFFFFEBEE),
                 shape = RoundedCornerShape(8.dp),
-                modifier = androidx.compose.ui.Modifier.clickable { }
+                modifier = androidx.compose.ui.Modifier.clickable { isRemoved = true }
             ) {
                 Text(
-                    text = "Quitar",
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                    text = actionText,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.Red
@@ -149,6 +171,7 @@ fun ManageDeviceItem(
         }
     }
 }
+
 
 @Preview(showBackground = true)
 @Composable

@@ -182,10 +182,11 @@ fun SiteDetailSheet(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "📷 Capturar / Escanear Geo-Drop (AR)",
+                        text = "Capturar / Escanear Geo-Drop (AR)",
                         fontWeight = FontWeight.Bold,
                         fontSize = 13.sp
                     )
+
                 }
             }
 

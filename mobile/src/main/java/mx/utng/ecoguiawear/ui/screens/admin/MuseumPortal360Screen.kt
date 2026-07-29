@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Archivo: MuseumPortal360Screen.kt
  * Autor: ZahirMora
  * Fecha de Ãºltima actualizaciÃ³n: 2026-07-22
@@ -10,7 +10,12 @@ package mx.utng.ecoguiawear.ui.screens.admin
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.*
+
+
+
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -46,38 +51,67 @@ fun MuseumPortal360Screen() {
         Spacer(modifier = Modifier.height(32.dp))
         
         Row(modifier = Modifier.fillMaxWidth()) {
-            // Simulated 360 Viewport
+            // Visor simulado 360 y Mapa AR
             Box(
                 modifier = Modifier
                     .weight(1.5f)
-                    .height(240.dp)
+                    .height(260.dp)
                     .clip(RoundedCornerShape(32.dp))
-                    .background(Color(0xFFE8F5E9))
+                    .background(Color(0xFF1E293B)),
+                contentAlignment = Alignment.Center
             ) {
-                // Background map/view simulation
+                // Simulación de marcadores de GeoDrop con ícono de Ojo 👁️
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    androidx.compose.material3.Surface(
+                        color = EcoGuiaColors.Jade,
+                        shape = androidx.compose.foundation.shape.CircleShape
+                    ) {
+                        Box(modifier = Modifier.padding(10.dp)) {
+                            androidx.compose.material3.Icon(
+                                imageVector = androidx.compose.material.icons.Icons.Default.Visibility,
+                                contentDescription = "GeoDrop visible",
+                                tint = Color.White,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = "Geo-Drop Activo en Radio",
+                        color = EcoGuiaColors.Gold,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
                 Box(
                     modifier = Modifier
                         .align(Alignment.BottomStart)
                         .padding(16.dp)
-                        .background(EcoGuiaColors.DeepBlue.copy(alpha = 0.6f), RoundedCornerShape(12.dp))
+                        .background(EcoGuiaColors.DeepBlue.copy(alpha = 0.8f), RoundedCornerShape(12.dp))
                         .padding(horizontal = 12.dp, vertical = 6.dp)
                 ) {
-                    Text("Dolores Hidalgo - Centro HistÃ³rico", color = Color.White, fontSize = 10.sp)
+                    Text("Dolores Hidalgo - Centro Histórico", color = Color.White, fontSize = 10.sp)
                 }
             }
             
             Spacer(modifier = Modifier.width(16.dp))
             
-            // Side Metrics
+            // Métricas laterales
             Column(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                PortalStatItem("360", "vista")
-                PortalStatItem("12", "puntos")
-                PortalStatItem("IA", "guÃ­a")
+                PortalStatItem("360°", "vista AR")
+                PortalStatItem("12", "GeoDrops 👁️")
+                PortalStatItem("IA", "guía activa")
             }
         }
+
+
     }
 }
 

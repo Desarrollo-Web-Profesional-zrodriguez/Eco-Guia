@@ -1,6 +1,6 @@
 @file:OptIn(androidx.tv.material3.ExperimentalTvMaterial3Api::class)
 
-package mx.utng.smarttv.ui.theme
+package mx.utng.ecoguiawear.tv.ui.theme
 
 import androidx.compose.runtime.Composable
 import androidx.tv.material3.MaterialTheme

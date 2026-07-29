@@ -50,6 +50,8 @@ class ChatViewModel(
         viewModelScope.launch {
             _isLoading.value = true
             try {
+                groqHistory.clear()
+                
                 // 1. Obtener sitios reales y artículos de conocimiento curados desde Neon DB (RAG)
                 val sites = repository.getHistoricalSites().filter { it.isActive }
                 val sitesContext = sites.joinToString("\n") { 
@@ -85,12 +87,10 @@ class ChatViewModel(
                 """.trimIndent()
 
                 groqHistory.add(GroqMessage(role = "system", content = systemPrompt))
-
                 
-                // Actualizar mensaje inicial
-                if (_messages.isNotEmpty()) {
-                    _messages[0] = ChatMessage("¡Salve, patriota! Mis memorias han sido refrescadas. ¿Qué deseas saber sobre nuestra amada Dolores?", false)
-                }
+                // Reiniciar lista de mensajes visibles
+                _messages.clear()
+                _messages.add(ChatMessage("¡Salve, patriota! Mis memorias han sido refrescadas con el nuevo entrenamiento. ¿En qué puedo serviros?", false))
                 
             } catch (e: Exception) {
                 android.util.Log.e("ChatVM", "Error al cargar contexto: ${e.message}")
@@ -100,6 +100,14 @@ class ChatViewModel(
             }
         }
     }
+
+    /**
+     * Fuerza el reinicio del chat y la recarga inmediata de la base de conocimientos desde Neon DB.
+     */
+    fun resetConversation() {
+        loadContextAndInitialize()
+    }
+
 
     fun sendMessage(userText: String) {
         if (userText.isBlank()) return

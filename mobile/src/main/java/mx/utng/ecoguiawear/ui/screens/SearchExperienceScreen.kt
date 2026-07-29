@@ -162,7 +162,12 @@ fun SearchExperienceScreen(
                 filteredRoutes.isEmpty() -> {
                     Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("🗺️", fontSize = 40.sp)
+                            Icon(
+                                imageVector = Icons.Default.Map,
+                                contentDescription = null,
+                                tint = EcoGuiaColors.Jade,
+                                modifier = Modifier.size(40.dp)
+                            )
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
                                 if (searchQuery.isNotEmpty()) "Sin resultados para \"$searchQuery\""
@@ -170,6 +175,7 @@ fun SearchExperienceScreen(
                                 color = Color.Gray,
                                 fontSize = 14.sp
                             )
+
                         }
                     }
                 }

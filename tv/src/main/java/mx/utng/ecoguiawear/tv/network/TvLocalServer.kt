@@ -1,4 +1,4 @@
-package mx.utng.smarttv.network
+package mx.utng.ecoguiawear.tv.network
 
 import android.content.Context
 import android.graphics.Bitmap

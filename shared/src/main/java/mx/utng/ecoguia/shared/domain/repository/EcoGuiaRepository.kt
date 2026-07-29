@@ -37,7 +37,8 @@ interface EcoGuiaRepository {
         hours: String,
         cost: String,
         accessibility: String
-    ): Boolean
+    ): String
+
 
 
     /**
@@ -54,6 +55,17 @@ interface EcoGuiaRepository {
      * Obtiene la lista de cápsulas de información (Geo-Drops) aprobadas.
      */
     suspend fun getGeoDrops(): List<RemoteGeoDrop>
+
+    /**
+     * Obtiene las cápsulas asociadas a un sitio histórico específico.
+     */
+    suspend fun getGeoDropsBySite(siteId: String): List<RemoteGeoDrop>
+
+    /**
+     * Obtiene el ranking semanal de cápsulas con mayor número de interacciones/likes.
+     */
+    suspend fun getTopRankingGeoDrops(limit: Int = 10): List<RemoteGeoDrop>
+
 
 
     /**
@@ -127,9 +139,58 @@ interface EcoGuiaRepository {
     suspend fun updateUserRole(userId: String, newRole: String): Boolean
 
     /**
+     * Obtiene los dispositivos o sesiones reales registrados para un usuario desde la tabla devices de Neon PostgreSQL.
+     */
+    suspend fun getUserDevices(userId: String): List<RemoteDevice>
+
+    /**
+     * Registra un nuevo dispositivo o sesión activa para el usuario en la tabla devices.
+     */
+    suspend fun registerDevice(userId: String, name: String, type: String, deviceIdentifier: String): Boolean
+
+    /**
+     * Desvincula / elimina la sesión de un dispositivo específico de la tabla devices.
+     */
+    suspend fun unlinkDevice(deviceId: String): Boolean
+
+    /**
+     * Inicia sesión o vincula un dispositivo mediante código / QR rápido en device_pairings.
+     */
+    suspend fun pairDeviceByCode(userId: String, pairingCode: String): Boolean
+
+    /**
+     * Consulta si un código PIN de Smart TV ya fue vinculado por un usuario en device_pairings.
+     */
+    suspend fun getPairingStatus(pairingCode: String): RemoteUser?
+
+    /**
+     * Obtiene el Sitio Histórico asociado / administrado por el usuario (Opción A).
+     */
+    suspend fun getSiteByOwner(userId: String): RemoteHistoricalSite?
+
+    /**
+     * Transmite una orden de programa (gallery, public, ranking) a una Smart TV en tv_displays.
+     */
+    suspend fun setTvTransmissionProgram(pairingCode: String, programType: String): Boolean
+
+    /**
+     * Consulta el programa de transmisión actual ordenado remotamente para la Smart TV.
+     */
+    suspend fun getTvActiveProgram(pairingCode: String): String?
+
+    /**
+     * Asigna un Sitio Histórico a un Usuario (Encargado / Museo / Hotel) en historical_sites.
+     */
+    suspend fun assignSiteOwner(siteId: String, userId: String): Boolean
+
+    /**
      * Prueba la conexión con el servidor de base de datos.
      */
+
+
+
     suspend fun testConnection(): String
+
 
 
     /**
@@ -153,6 +214,12 @@ interface EcoGuiaRepository {
     suspend fun isSiteSaved(userId: String, siteId: String): Boolean
 
     /**
+     * Verifica si un Geo-Drop ya está en la colección o fue creado por el usuario.
+     */
+    suspend fun isGeoDropCollected(userId: String, geoDropId: String): Boolean
+
+
+    /**
      * Obtiene la lista ordenada de paradas de una ruta turística específica.
      */
     suspend fun getRouteStops(routeId: String): List<RemoteRouteStop>
@@ -174,7 +241,13 @@ interface EcoGuiaRepository {
     suspend fun deleteRoute(routeId: String): Boolean
 
     /**
+     * Guarda un Geo-Drop público existente en la colección personal del usuario (user_saved_items).
+     */
+    suspend fun saveGeoDropToCollection(userId: String, geoDropId: String, siteId: String? = null): Boolean
+
+    /**
      * Guarda una ruta completada en la colección personal del usuario (user_saved_items).
      */
     suspend fun saveRouteToCollection(userId: String, routeId: String): Boolean
 }
+

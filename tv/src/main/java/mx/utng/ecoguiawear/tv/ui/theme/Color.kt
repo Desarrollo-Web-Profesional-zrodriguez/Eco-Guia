@@ -1,4 +1,4 @@
-package mx.utng.smarttv.ui.theme
+package mx.utng.ecoguiawear.tv.ui.theme
 
 import androidx.compose.ui.graphics.Color
 

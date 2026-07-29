@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Archivo: CampaignDevicesScreen.kt
  * Autor: ZahirMora
  * Fecha de Ãºltima actualizaciÃ³n: 2026-07-22
@@ -8,13 +8,17 @@
 package mx.utng.ecoguiawear.ui.screens.admin
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Tv
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import kotlinx.coroutines.launch
+
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -30,8 +34,38 @@ import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 
 @Composable
 fun CampaignDevicesScreen(
+    userId: String = "",
+    currentUserEmail: String = "mus@ecoguia.com",
+    programType: String = "gallery",
     onManageContentClick: () -> Unit
 ) {
+    val repository = remember { mx.utng.ecoguia.shared.data.repository.EcoGuiaRepositoryImpl() }
+    val tvDevices = remember { mutableStateListOf<mx.utng.ecoguia.shared.domain.model.RemoteDevice>() }
+    var isLoading by remember { mutableStateOf(true) }
+    var selectedTVIndex by remember { mutableStateOf(0) }
+    val coroutineScope = rememberCoroutineScope()
+
+    LaunchedEffect(userId) {
+        try {
+            isLoading = true
+            val devices = repository.getUserDevices(userId)
+            tvDevices.clear()
+            // Filtrar solo dispositivos de tipo TV o emisor
+            val tvsOnly = devices.filter { it.type.lowercase().contains("tv") || it.name.lowercase().contains("tv") }
+            tvDevices.addAll(tvsOnly)
+        } catch (e: Exception) {
+            android.util.Log.e("CampaignDevices", "Error cargando TVs: ${e.message}")
+        } finally {
+            isLoading = false
+        }
+    }
+
+    val programTitle = when (programType) {
+        "public" -> "Colección Pública (Mapa AR)"
+        "ranking" -> "Ranking Semanal (Top Likes)"
+        else -> "Galería Móvil (Hotel / Museo)"
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -45,8 +79,8 @@ fun CampaignDevicesScreen(
                 .padding(top = 48.dp, start = 24.dp, end = 24.dp, bottom = 16.dp)
         ) {
             Column {
-                Text("Dispositivos", color = Color.White, fontSize = 14.sp)
-                Text("Seleccionados", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text("Pantallas Conectadas", color = Color.White, fontSize = 14.sp)
+                Text(programTitle, color = EcoGuiaColors.Gold, fontSize = 18.sp, fontWeight = FontWeight.Bold)
             }
             
             IconButton(
@@ -57,31 +91,68 @@ fun CampaignDevicesScreen(
             }
         }
 
-        // Map/Graphic Section
-        Box(
+        // Card explicativa
+        Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(140.dp)
-                .padding(16.dp)
-                .clip(RoundedCornerShape(24.dp))
-                .background(Color(0xFFE8F5E9))
+                .padding(16.dp),
+            colors = CardDefaults.cardColors(containerColor = EcoGuiaColors.Surface),
+            shape = RoundedCornerShape(24.dp)
         ) {
-            Text("Mapa de disponibilidad", modifier = Modifier.align(Alignment.Center), color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("Smart TVs con Sesión Iniciada", color = Color.White, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Selecciona la pantalla donde deseas transmitir la programación '$programTitle'. Solo se permite una transmisión activa por TV.", 
+                    color = Color.White.copy(alpha = 0.7f), 
+                    fontSize = 12.sp
+                )
+            }
         }
 
-        // Selected List
+        // TV Sessions List
         Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-            Text("Seleccionados para campaÃ±a", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
+            Text("Pantallas Vinculadas ($currentUserEmail)", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
             
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                item {
-                    DeviceItemToggle("Lobby Hotel Hidalgo", "Galeria de la Independencia", true)
+            if (isLoading) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(100.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = EcoGuiaColors.Jade)
                 }
-                item {
-                    DeviceItemToggle("Wearables demo", "4 conectados", true)
+            } else if (tvDevices.isEmpty()) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 12.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Box(
+                        modifier = Modifier.padding(20.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "No tienes ninguna Smart TV vinculada en Neon DB actualmente. Vincula tu Smart TV ingresando su código PIN de 6 dígitos en 'Mis Dispositivos'.",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 12.sp
+                        )
+                    }
                 }
-                item {
-                    DeviceItemToggle("Pasillo 2", "TV de bienvenida hoy", true)
+            } else {
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    items(tvDevices.size) { index ->
+                        val tv = tvDevices[index]
+                        DeviceItemToggle(
+                            title = tv.name,
+                            subtitle = "Sesión activa · ${tv.deviceIdentifier ?: "Conectada"}",
+                            isSelected = selectedTVIndex == index,
+                            onSelect = { selectedTVIndex = index }
+                        )
+                    }
                 }
             }
         }
@@ -89,58 +160,86 @@ fun CampaignDevicesScreen(
         Spacer(modifier = Modifier.weight(1f))
 
         // Action Button
-        Box(modifier = Modifier.padding(24.dp)) {
-            EcoButton(
-                text = "Gestionar contenido",
-                onClick = onManageContentClick
-            )
+        if (tvDevices.isNotEmpty()) {
+            Box(modifier = Modifier.padding(24.dp)) {
+                EcoButton(
+                    text = "Iniciar Transmisión en TV",
+                    onClick = {
+                        val selectedTv = tvDevices.getOrNull(selectedTVIndex)
+                        if (selectedTv != null) {
+                            val pairingCode = selectedTv.deviceIdentifier?.removePrefix("TV-PIN-") ?: ""
+                            coroutineScope.launch {
+                                repository.setTvTransmissionProgram(pairingCode, programType)
+                                onManageContentClick()
+                            }
+                        } else {
+                            onManageContentClick()
+                        }
+                    }
+                )
+            }
         }
+
     }
 }
+
 
 @Composable
 fun DeviceItemToggle(
     title: String,
     subtitle: String,
-    initialValue: Boolean
+    isSelected: Boolean,
+    onSelect: () -> Unit
 ) {
-    var isChecked by remember { mutableStateOf(initialValue) }
-    
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onSelect() },
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSelected) EcoGuiaColors.Jade.copy(alpha = 0.08f) else MaterialTheme.colorScheme.surface
+        ),
+        border = if (isSelected) androidx.compose.foundation.BorderStroke(2.dp, EcoGuiaColors.Jade) else null
     ) {
         Row(
             modifier = Modifier.padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Icon placeholder
-            Box(modifier = Modifier.size(32.dp).background(MaterialTheme.colorScheme.background, RoundedCornerShape(8.dp)))
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(
+                        if (isSelected) EcoGuiaColors.Jade.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant,
+                        RoundedCornerShape(10.dp)
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Default.Tv, null, tint = if (isSelected) EcoGuiaColors.Jade else Color.Gray, modifier = Modifier.size(20.dp))
+            }
             
             Column(modifier = Modifier.padding(horizontal = 12.dp).weight(1f)) {
-                Text(title, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
+                Text(title, fontWeight = FontWeight.Bold, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
                 Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
             }
             
-            Text(
-                text = "ON", 
-                color = EcoGuiaColors.Jade, 
-                fontWeight = FontWeight.Bold, 
-                fontSize = 12.sp,
-                modifier = Modifier.padding(end = 8.dp)
+            RadioButton(
+                selected = isSelected,
+                onClick = onSelect,
+                colors = RadioButtonDefaults.colors(selectedColor = EcoGuiaColors.Jade)
             )
         }
     }
 }
 
+
 @Preview(showBackground = true)
 @Composable
 fun CampaignDevicesScreenPreview() {
     EcoGuiaMobileTheme {
-        CampaignDevicesScreen({})
+        CampaignDevicesScreen(programType = "gallery", onManageContentClick = {})
     }
 }
+
 
 
 
