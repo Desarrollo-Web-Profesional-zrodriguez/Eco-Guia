@@ -167,14 +167,30 @@ fun CampaignDevicesScreen(
                     onClick = {
                         val selectedTv = tvDevices.getOrNull(selectedTVIndex)
                         if (selectedTv != null) {
-                            val pairingCode = selectedTv.deviceIdentifier?.removePrefix("TV-PIN-") ?: ""
+                            val rawIdentifier = selectedTv.deviceIdentifier.orEmpty()
+                            val pairingCode = if (rawIdentifier.contains("TV-PIN-")) {
+                                rawIdentifier.substringAfter("TV-PIN-")
+                            } else {
+                                rawIdentifier
+                            }
                             coroutineScope.launch {
-                                repository.setTvTransmissionProgram(pairingCode, programType)
+                                // 1. Transmitir a la TV seleccionada
+                                if (pairingCode.isNotBlank()) {
+                                    repository.setTvTransmissionProgram(pairingCode, programType)
+                                }
+                                // 2. Transmitir a todas las demás TVs vinculadas del usuario como respaldo
+                                tvDevices.forEach { tv ->
+                                    val code = tv.deviceIdentifier?.removePrefix("TV-PIN-").orEmpty()
+                                    if (code.isNotBlank() && code != pairingCode) {
+                                        repository.setTvTransmissionProgram(code, programType)
+                                    }
+                                }
                                 onManageContentClick()
                             }
                         } else {
                             onManageContentClick()
                         }
+
                     }
                 )
             }

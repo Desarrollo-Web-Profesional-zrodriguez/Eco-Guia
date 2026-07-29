@@ -4,158 +4,244 @@ package mx.utng.ecoguiawear.tv.ui.screens
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.Place
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.tv.material3.Button
+import androidx.tv.material3.Card
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
-import com.google.zxing.BarcodeFormat
-import com.google.zxing.qrcode.QRCodeWriter
-import mx.utng.ecoguiawear.tv.network.TvLocalServer
+import coil.compose.rememberAsyncImagePainter
+import mx.utng.ecoguia.shared.data.repository.EcoGuiaRepositoryImpl
+import mx.utng.ecoguia.shared.domain.model.RemoteGeoDrop
+import mx.utng.ecoguiawear.tv.ui.theme.BackgroundDark
+import mx.utng.ecoguiawear.tv.ui.theme.BrushedGold
+import mx.utng.ecoguiawear.tv.ui.theme.DeepBlue
+import mx.utng.ecoguiawear.tv.ui.theme.JadeGreen
+import mx.utng.ecoguiawear.tv.ui.theme.SurfaceDark
 
 @Composable
 fun GalleryScreen(onBack: () -> Unit) {
-    val context = LocalContext.current
-    val receivedImage by TvLocalServer.receivedImage.collectAsState()
-    val ip = remember { TvLocalServer.getLocalIpAddress(context) ?: "localhost" }
+    val repository = remember { EcoGuiaRepositoryImpl() }
+    var geoDrops by remember { mutableStateOf<List<RemoteGeoDrop>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
+    var currentIndex by remember { mutableStateOf(0) }
 
     LaunchedEffect(Unit) {
-        TvLocalServer.startServer()
+        try {
+            val drops = repository.getGeoDrops()
+            geoDrops = drops
+        } catch (e: Exception) {
+            android.util.Log.e("TVGallery", "Error cargando GeoDrops: ${e.message}")
+        } finally {
+            isLoading = false
+        }
     }
 
-    DisposableEffect(Unit) {
-        onDispose {
-            TvLocalServer.stopServer()
+    // Transición automática cada 5 segundos si hay Geo-Drops
+    LaunchedEffect(geoDrops) {
+        if (geoDrops.isNotEmpty()) {
+            while (true) {
+                kotlinx.coroutines.delay(5000)
+                currentIndex = (currentIndex + 1) % geoDrops.size
+            }
         }
     }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+            .background(BackgroundDark)
             .padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(
-            text = "Galería Comunitaria",
-            style = MaterialTheme.typography.displaySmall,
-            color = MaterialTheme.colorScheme.onBackground,
-            fontWeight = FontWeight.Bold
-        )
-        Text(
-            text = "Servidor activo en: $ip",
-            style = MaterialTheme.typography.bodyMedium,
-            color = Color.Green.copy(alpha = 0.8f)
-        )
-        Spacer(modifier = Modifier.height(32.dp))
-        
+        // Header
         Row(
-            modifier = Modifier.padding(16.dp),
-            horizontalArrangement = Arrangement.Center,
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Cuadrícula de imágenes (Recibidas y simuladas)
             Column {
-                Row {
-                    if (receivedImage != null) {
+                Text(
+                    text = "Galería Móvil & Geo-Drops",
+                    style = MaterialTheme.typography.headlineLarge,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "Presentación de fotos e información capturada por visitantes",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = BrushedGold
+                )
+            }
+
+            Button(onClick = onBack) {
+                Text("Volver al Lobby")
+            }
+        }
+
+        if (isLoading) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text("Cargando cápsulas de información...", color = Color.White)
+            }
+        } else if (geoDrops.isEmpty()) {
+            // Pantalla de No Hay Geo-Drops -> Crear Geo-Drops
+            Card(
+                onClick = {},
+                modifier = Modifier
+                    .fillMaxWidth(0.85f)
+                    .padding(24.dp),
+                colors = androidx.tv.material3.CardDefaults.colors(containerColor = SurfaceDark)
+            ) {
+                Column(
+                    modifier = Modifier.padding(32.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    androidx.tv.material3.Icon(
+                        imageVector = Icons.Default.AddCircle,
+                        contentDescription = "Sin GeoDrops",
+                        tint = BrushedGold,
+                        modifier = Modifier.size(64.dp)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "¡Aún no hay Geo-Drops creados en este sitio!",
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 22.sp
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Escanea y usa tu aplicación Eco-Guía Móvil para capturar y publicar la primera foto o cápsula histórica aquí.",
+                        color = Color.White.copy(alpha = 0.7f),
+                        fontSize = 14.sp
+                    )
+                }
+            }
+        } else {
+            val currentDrop = geoDrops[currentIndex]
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .padding(vertical = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(24.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Panel Izquierdo: Foto Principal
+                Box(
+                    modifier = Modifier
+                        .weight(1.2f)
+                        .fillMaxHeight()
+                        .clip(RoundedCornerShape(24.dp))
+                        .background(SurfaceDark),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (!currentDrop.mediaUrl.isNull_or_empty_ext()) {
                         Image(
-                            bitmap = receivedImage!!.asImageBitmap(),
-                            contentDescription = "Foto recibida",
-                            modifier = Modifier.size(150.dp).padding(4.dp),
+                            painter = rememberAsyncImagePainter(currentDrop.mediaUrl),
+                            contentDescription = currentDrop.title,
+                            modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Crop
                         )
                     } else {
-                        Box(modifier = Modifier.size(150.dp).padding(4.dp).background(Color.Gray)) {
-                            Text("Esperando foto...", color = Color.White, modifier = Modifier.align(Alignment.Center))
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            androidx.tv.material3.Icon(
+                                imageVector = Icons.Default.Place,
+                                contentDescription = "GeoDrop",
+                                tint = JadeGreen,
+                                modifier = Modifier.size(80.dp)
+                            )
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text("Geo-Drop Sin Imagen Directa", color = Color.White.copy(alpha = 0.6f))
                         }
                     }
-                    Box(modifier = Modifier.size(150.dp).padding(4.dp).background(Color.DarkGray))
                 }
-                Row {
-                    Box(modifier = Modifier.size(150.dp).padding(4.dp).background(Color.DarkGray))
-                    Box(modifier = Modifier.size(150.dp).padding(4.dp).background(Color.Gray))
-                }
-            }
-            
-            Spacer(modifier = Modifier.width(64.dp))
-            
-            // QR Real
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("Escanea para subir tu foto:", color = MaterialTheme.colorScheme.onBackground)
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                val qrBitmap = rememberQrBitmap("ecoguia://tv/gallery?ip=$ip&port=8080")
-                if (qrBitmap != null) {
-                    Image(
-                        bitmap = qrBitmap,
-                        contentDescription = "QR para aplicación móvil",
+
+                // Panel Derecho: Información del Geo-Drop
+                Card(
+                    onClick = {},
+                    modifier = Modifier
+                        .weight(0.8f)
+                        .fillMaxHeight(),
+                    colors = androidx.tv.material3.CardDefaults.colors(containerColor = SurfaceDark)
+                ) {
+                    Column(
                         modifier = Modifier
-                            .size(150.dp)
-                            .background(Color.White)
-                    )
-                } else {
-                    Box(
-                        modifier = Modifier
-                            .size(150.dp)
-                            .background(Color.White),
-                        contentAlignment = Alignment.Center
+                            .fillMaxSize()
+                            .padding(28.dp),
+                        verticalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("Error QR", color = Color.Black)
+                        Column {
+                            Box(
+                                modifier = Modifier
+                                    .background(DeepBlue, RoundedCornerShape(12.dp))
+                                    .padding(horizontal = 12.dp, vertical = 6.dp)
+                            ) {
+                                Text(
+                                    text = "Geo-Drop ${currentIndex + 1} de ${geoDrops.size}",
+                                    color = BrushedGold,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            Text(
+                                text = currentDrop.title,
+                                color = Color.White,
+                                fontSize = 24.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            Text(
+                                text = currentDrop.description ?: "Sin descripción adicional registrada para esta cápsula.",
+                                color = Color.White.copy(alpha = 0.8f),
+                                fontSize = 15.sp,
+                                lineHeight = 22.sp
+                            )
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "❤️ ${currentDrop.likesCount} Likes de Visitantes",
+                                color = Color(0xFFF59E0B),
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp
+                            )
+
+                            Text(
+                                text = "Radio: ${currentDrop.detectionRadiusM}m",
+                                color = Color.White.copy(alpha = 0.5f),
+                                fontSize = 12.sp
+                            )
+                        }
                     }
                 }
             }
         }
-
-        Spacer(modifier = Modifier.height(48.dp))
-        Button(onClick = onBack) {
-            Text("Volver al Inicio")
-        }
     }
 }
 
-@Composable
-fun rememberQrBitmap(content: String, size: Int = 512): androidx.compose.ui.graphics.ImageBitmap? {
-    return remember(content) {
-        try {
-            val bitMatrix = QRCodeWriter().encode(content, BarcodeFormat.QR_CODE, size, size)
-            val width = bitMatrix.width
-            val height = bitMatrix.height
-            val bitmap = android.graphics.Bitmap.createBitmap(width, height, android.graphics.Bitmap.Config.RGB_565)
-            for (x in 0 until width) {
-                for (y in 0 until height) {
-                    bitmap.setPixel(
-                        x,
-                        y,
-                        if (bitMatrix.get(x, y)) android.graphics.Color.BLACK else android.graphics.Color.WHITE
-                    )
-                }
-            }
-            bitmap.asImageBitmap()
-        } catch (e: Exception) {
-            null
-        }
-    }
-}
+private fun String?.isNull_or_empty_ext(): Boolean = this == null || this.trim().isEmpty()
+

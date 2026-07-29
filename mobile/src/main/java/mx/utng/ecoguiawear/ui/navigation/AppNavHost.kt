@@ -436,10 +436,11 @@ fun AppNavHost(
                 programType = programType,
                 onManageContentClick = {
                     notificationViewModel.showNotification("¡Transmisión iniciada en Smart TV!", NotificationType.SUCCESS)
-                    navController.navigate("portal_360")
+                    navController.popBackStack()
                 }
             )
         }
+
 
         composable("portal_360") {
             MuseumPortal360Screen()
