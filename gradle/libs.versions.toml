@@ -1,5 +1,5 @@
 [versions]
-agp = "9.3.1"
+agp = "9.2.1"
 kotlin = "2.4.10"
 activityCompose = "1.13.0"
 composeBom = "2024.09.00"
@@ -27,11 +27,17 @@ camerax = "1.4.0"
 googleServices = "4.4.2"
 firebaseBom = "33.7.0"
 coil = "2.7.0"
+coreKtx = "1.19.0"
+appcompat = "1.7.1"
+tvFoundation = "1.0.0-alpha07"
+tvMaterial = "1.0.0-alpha07"
+zxing = "3.5.3"
 
 [libraries]
 firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
 firebase-storage = { group = "com.google.firebase", name = "firebase-storage-ktx" }
 coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }
+
 androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
 
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
@@ -69,12 +75,22 @@ ktor-client-okhttp = { group = "io.ktor", name = "ktor-client-okhttp", version.r
 ktor-client-content-negotiation = { group = "io.ktor", name = "ktor-client-content-negotiation", version.ref = "ktor" }
 ktor-client-json = { group = "io.ktor", name = "ktor-client-json", version.ref = "ktor" }
 ktor-serialization-kotlinx-json = { group = "io.ktor", name = "ktor-serialization-kotlinx-json", version.ref = "ktor" }
+ktor-server-core = { group = "io.ktor", name = "ktor-server-core", version.ref = "ktor" }
+ktor-server-netty = { group = "io.ktor", name = "ktor-server-netty", version.ref = "ktor" }
+ktor-server-cors = { group = "io.ktor", name = "ktor-server-cors", version.ref = "ktor" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
 navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
 androidx-camera-core = { group = "androidx.camera", name = "camera-core", version.ref = "camerax" }
 androidx-camera-camera2 = { group = "androidx.camera", name = "camera-camera2", version.ref = "camerax" }
 androidx-camera-lifecycle = { group = "androidx.camera", name = "camera-lifecycle", version.ref = "camerax" }
 androidx-camera-view = { group = "androidx.camera", name = "camera-view", version.ref = "camerax" }
+androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
+androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
+androidx-tv-foundation = { group = "androidx.tv", name = "tv-foundation", version.ref = "tvFoundation" }
+androidx-tv-material = { group = "androidx.tv", name = "tv-material", version.ref = "tvMaterial" }
+zxing-core = { group = "com.google.zxing", name = "core", version.ref = "zxing" }
+
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

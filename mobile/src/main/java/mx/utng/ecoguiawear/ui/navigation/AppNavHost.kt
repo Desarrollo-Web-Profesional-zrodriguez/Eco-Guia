@@ -176,6 +176,19 @@ fun AppNavHost(
 
 
         // ── Cámara y GeoDrop ─────────────────────────────────────────────────
+        composable(
+            route = "tv_camera?ip={ip}&port={port}",
+            deepLinks = listOf(androidx.navigation.navDeepLink { uriPattern = "ecoguia://tv/gallery?ip={ip}&port={port}" })
+        ) { backStackEntry ->
+            val ip = backStackEntry.arguments?.getString("ip") ?: ""
+            val port = backStackEntry.arguments?.getString("port") ?: "8080"
+            TvCameraScreen(
+                ip = ip,
+                port = port,
+                onBack = { navController.popBackStack() }
+            )
+        }
+        
         composable("proximity_alerts") {
             ProximityAlertsScreen()
         }
