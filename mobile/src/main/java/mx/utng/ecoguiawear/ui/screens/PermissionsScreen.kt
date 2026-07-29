@@ -55,6 +55,12 @@ fun PermissionsScreen(
     locationViewModel: LocationViewModel = viewModel()
 ) {
     val context = LocalContext.current
+    
+    // Leer estado real desde SharedPreferences al componer
+    LaunchedEffect(Unit) {
+        locationViewModel.syncProximityState(context)
+    }
+    
     val isProximityActive by locationViewModel.isProximityServiceActive
 
     // Launcher para ACCESS_BACKGROUND_LOCATION
@@ -125,7 +131,7 @@ fun PermissionsScreen(
                         title = "Ubicación precisa",
                         subtitle = "Geo-rutas y llegadas a sitios históricos",
                         icon = Icons.Default.Place,
-                        initialValue = true
+                        permission = Manifest.permission.ACCESS_FINE_LOCATION
                     )
                 }
                 item {
@@ -133,7 +139,7 @@ fun PermissionsScreen(
                         title = "Cámara",
                         subtitle = "Para ver Geo-Drops en realidad aumentada",
                         icon = Icons.Default.CameraAlt,
-                        initialValue = true
+                        permission = Manifest.permission.CAMERA
                     )
                 }
                 item {
@@ -241,10 +247,22 @@ fun PermissionToggleItem(
     title: String,
     subtitle: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
-    initialValue: Boolean
+    permission: String
 ) {
-    var isChecked by remember { mutableStateOf(initialValue) }
     val context = androidx.compose.ui.platform.LocalContext.current
+    
+    // Verifica estado real en el sistema
+    val isGranted = androidx.core.content.ContextCompat.checkSelfPermission(
+        context, permission
+    ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+    
+    var isChecked by remember(isGranted) { mutableStateOf(isGranted) }
+    
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        isChecked = granted
+    }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -277,9 +295,12 @@ fun PermissionToggleItem(
             Switch(
                 checked = isChecked,
                 onCheckedChange = { newVal -> 
-                    isChecked = newVal 
-                    if (!newVal) {
-                        // Si lo apagan, lanzar Settings del sistema
+                    if (newVal && !isGranted) {
+                        // Solicitar permiso si no lo tiene
+                        permissionLauncher.launch(permission)
+                    } else if (!newVal) {
+                        // Si lo apagan o ya lo tenía y lo quiere apagar, lanzar Settings del sistema
+                        isChecked = false
                         val intent = android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
                             data = android.net.Uri.fromParts("package", context.packageName, null)
                             flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK

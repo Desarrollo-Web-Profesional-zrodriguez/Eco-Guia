@@ -187,6 +187,7 @@ class LocationViewModel(
             context.startService(intent)
         }
         _isProximityServiceActive.value = true
+        context.getSharedPreferences("eco_prefs", Context.MODE_PRIVATE).edit().putBoolean("proximity_active", true).apply()
         Log.d("LocationViewModel", "ProximityService iniciado.")
     }
 
@@ -198,7 +199,17 @@ class LocationViewModel(
         if (!_isProximityServiceActive.value) return
         context.stopService(Intent(context, ProximityService::class.java))
         _isProximityServiceActive.value = false
+        context.getSharedPreferences("eco_prefs", Context.MODE_PRIVATE).edit().putBoolean("proximity_active", false).apply()
         Log.d("LocationViewModel", "ProximityService detenido.")
+    }
+
+    /**
+     * Sincroniza el estado visual con las preferencias guardadas, para que el Toggle
+     * no se reinicie si el usuario sale y vuelve a la pantalla.
+     */
+    fun syncProximityState(context: Context) {
+        val isActive = context.getSharedPreferences("eco_prefs", Context.MODE_PRIVATE).getBoolean("proximity_active", false)
+        _isProximityServiceActive.value = isActive
     }
 
     override fun onCleared() {
