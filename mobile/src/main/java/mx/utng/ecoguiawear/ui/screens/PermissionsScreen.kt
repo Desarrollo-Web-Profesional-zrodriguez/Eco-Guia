@@ -275,7 +275,18 @@ fun PermissionToggleItem(
 
             Switch(
                 checked = isChecked,
-                onCheckedChange = { isChecked = it },
+                onCheckedChange = { newVal -> 
+                    isChecked = newVal 
+                    if (!newVal) {
+                        // Si lo apagan, lanzar Settings del sistema
+                        val context = androidx.compose.ui.platform.LocalContext.current
+                        val intent = android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                            data = android.net.Uri.fromParts("package", context.packageName, null)
+                            flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK
+                        }
+                        context.startActivity(intent)
+                    }
+                },
                 colors = SwitchDefaults.colors(
                     checkedThumbColor = Color.White,
                     checkedTrackColor = EcoGuiaColors.Jade,

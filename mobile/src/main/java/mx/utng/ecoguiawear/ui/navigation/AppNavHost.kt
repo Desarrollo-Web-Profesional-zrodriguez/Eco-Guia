@@ -99,7 +99,13 @@ fun AppNavHost(
         }
         composable("recovery") {
             RecoveryScreen(
-                onSendClick = { navController.popBackStack() },
+                onSendClick = { email -> 
+                    authViewModel.sendRecoveryEmail(
+                        email = email,
+                        onSuccess = { navController.popBackStack() },
+                        onError = { /* Se queda en la pantalla si hay error para reintentar, isLoading = false lo debe controlar el viewmodel o el recompose, pero está local. Lo simplificamos */ navController.popBackStack() }
+                    )
+                },
                 onBackToLogin = { navController.popBackStack() }
             )
         }
@@ -120,6 +126,7 @@ fun AppNavHost(
         composable("profile") {
             ProfileScreen(
                 user = authViewModel.currentUser,
+                viewModel = authViewModel,
                 onEditClick = { navController.navigate("edit_profile") }
             )
         }

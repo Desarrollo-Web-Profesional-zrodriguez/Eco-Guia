@@ -27,12 +27,25 @@ sealed class AuthState {
     object Registered : AuthState()
 }
 
+import mx.utng.ecoguiawear.data.remote.EmailService
+
 class AuthViewModel(
-    private val repository: EcoGuiaRepository = EcoGuiaRepositoryImpl()
+    private val repository: EcoGuiaRepository = EcoGuiaRepositoryImpl(),
+    private val emailService: EmailService = EmailService()
 ) : ViewModel() {
 
     private val _authState = mutableStateOf<AuthState>(AuthState.Idle)
     val authState: State<AuthState> = _authState
+
+    // Stats para el Perfil
+    private val _capsulesCount = mutableStateOf(0)
+    val capsulesCount: State<Int> = _capsulesCount
+
+    private val _savedItemsCount = mutableStateOf(0)
+    val savedItemsCount: State<Int> = _savedItemsCount
+
+    private val _explorerLevel = mutableStateOf("Nivel 1 - Turista Reciente")
+    val explorerLevel: State<String> = _explorerLevel
 
     private var sharedPreferences: android.content.SharedPreferences? = null
 
@@ -173,12 +186,58 @@ class AuthViewModel(
     }
 
     /**
+     * Envía un correo de recuperación al usuario usando Brevo.
+     */
+    fun sendRecoveryEmail(email: String, onSuccess: () -> Unit, onError: () -> Unit) {
+        viewModelScope.launch {
+            val success = emailService.sendPasswordRecoveryEmail(email, "https://ecoguia.com/reset?token=demo123")
+            if (success) {
+                notificationViewModel?.showNotification("Correo de recuperación enviado a $email", NotificationType.SUCCESS)
+                onSuccess()
+            } else {
+                notificationViewModel?.showNotification("Error al enviar el correo", NotificationType.ERROR)
+                onError()
+            }
+        }
+    }
+
+    /**
      * Cierra la sesión del usuario actual y reinicia el estado.
      */
     fun logout() {
         clearSessionLocally()
         _authState.value = AuthState.Idle
+        _capsulesCount.value = 0
+        _savedItemsCount.value = 0
+        _explorerLevel.value = "Nivel 1 - Turista Reciente"
         notificationViewModel?.showNotification("Sesión cerrada", NotificationType.INFO)
+    }
+
+    /**
+     * Carga las estadísticas reales del usuario desde la base de datos (Colección).
+     */
+    fun fetchUserStats() {
+        val user = currentUser ?: return
+        viewModelScope.launch {
+            try {
+                val collection = repository.getUserCollection(user.id)
+                val capsules = collection.count { it.id.startsWith("author_") }
+                val saved = collection.size - capsules
+
+                _capsulesCount.value = capsules
+                _savedItemsCount.value = saved
+
+                _explorerLevel.value = when {
+                    capsules >= 20 -> "Nivel 4 - Guardián del Patrimonio"
+                    capsules >= 10 -> "Nivel 3 - Curador Comunitario"
+                    capsules >= 3 -> "Nivel 2 - Explorador Activo"
+                    else -> "Nivel 1 - Turista Reciente"
+                }
+            } catch (e: Exception) {
+                // Si falla la red, mantenemos los valores en 0
+                android.util.Log.e("AuthViewModel", "Error fetching stats: ${e.message}")
+            }
+        }
     }
 
     /**

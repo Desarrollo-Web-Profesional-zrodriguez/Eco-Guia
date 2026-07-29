@@ -145,15 +145,22 @@ class ProximityService : Service() {
         }
     }
 
-    /**
-     * Emite la notificación de alerta al sistema con el nombre del sitio y la distancia.
-     * Usa un notificationId único por sitio para que cada alerta sea independiente.
-     *
-     * @param siteId UUID del sitio (usado como notificationId hash).
-     * @param siteName Nombre del sitio histórico para mostrar en la notificación.
-     * @param distanceM Distancia aproximada en metros al sitio.
-     */
     private fun emitSiteAlert(siteId: String, siteName: String, distanceM: Int) {
+        // Enviar Broadcast para mostrar Snackbar en la App (In-App notification)
+        val localIntent = Intent("mx.utng.ecoguiawear.PROXIMITY_ALERT").apply {
+            putExtra("siteName", siteName)
+            putExtra("distance", distanceM)
+        }
+        sendBroadcast(localIntent)
+
+        // Verificar permiso para notificación del sistema en Android 13+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                Log.w(TAG, "Permiso POST_NOTIFICATIONS no concedido. Solo se mostrará alerta In-App.")
+                return
+            }
+        }
+
         val notificationManager = getSystemService(NOTIFICATION_SERVICE) as android.app.NotificationManager
         val notification = ProximityNotificationHelper.buildSiteAlertNotification(
             context = this,

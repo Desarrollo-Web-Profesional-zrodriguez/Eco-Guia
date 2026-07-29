@@ -28,14 +28,26 @@ import mx.utng.ecoguiawear.ui.components.EcoTopBar
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 
+import androidx.compose.runtime.LaunchedEffect
+import mx.utng.ecoguiawear.ui.viewmodel.AuthViewModel
+
 /**
  * Composable que representa la pantalla de perfil.
  */
 @Composable
 fun ProfileScreen(
     user: RemoteUser?,
+    viewModel: AuthViewModel? = null,
     onEditClick: () -> Unit
 ) {
+    LaunchedEffect(user?.id) {
+        viewModel?.fetchUserStats()
+    }
+
+    val capsulesCount = viewModel?.capsulesCount?.value ?: 0
+    val savedItemsCount = viewModel?.savedItemsCount?.value ?: 0
+    val explorerLevel = viewModel?.explorerLevel?.value ?: "Nivel 1 - Turista Reciente"
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -96,7 +108,7 @@ fun ProfileScreen(
             
             StatItem(
                 title = "Nivel de explorador",
-                subtitle = "Nivel 3 - Curador comunitario",
+                subtitle = explorerLevel,
                 icon = Icons.Default.Star,
                 trailing = "Ver"
             )
@@ -105,18 +117,18 @@ fun ProfileScreen(
             
             StatItem(
                 title = "Cápsulas publicadas",
-                subtitle = "24 aportes en la comunidad",
+                subtitle = "$capsulesCount aportes en la comunidad",
                 icon = Icons.Default.AddCircle,
-                trailing = "24"
+                trailing = capsulesCount.toString()
             )
             
             Spacer(modifier = Modifier.height(12.dp))
             
             StatItem(
                 title = "Colección guardada",
-                subtitle = "18 fotos y 4 rutas",
+                subtitle = "$savedItemsCount elementos guardados",
                 icon = Icons.Default.Favorite,
-                trailing = "18"
+                trailing = savedItemsCount.toString()
             )
         }
     }
