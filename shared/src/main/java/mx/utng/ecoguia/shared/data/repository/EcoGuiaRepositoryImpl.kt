@@ -17,7 +17,11 @@
 
 package mx.utng.ecoguia.shared.data.repository
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import mx.utng.ecoguia.shared.data.remote.NeonClient
+
 import mx.utng.ecoguia.shared.domain.model.*
 import mx.utng.ecoguia.shared.domain.repository.EcoGuiaRepository
 
@@ -611,10 +615,171 @@ class EcoGuiaRepositoryImpl(
             android.util.Log.d("EcoGuiaRepo", "Ruta $routeId guardada explícitamente en colección para usuario $userId ($rows filas)")
             true
         } catch (e: Exception) {
-            android.util.Log.e("EcoGuiaRepo", "Error al guardar ruta explícita en colección: ${e.message}", e)
+            android.util.Log.e("EcoGuiaRepo", "Error al guardar GeoDrop en colección: ${e.message}", e)
             false
         }
     }
+
+    override suspend fun getUserDevices(userId: String): List<RemoteDevice> {
+        val query = "SELECT id, user_id, type::text, name, device_identifier, is_active, last_seen_at::text FROM devices WHERE user_id::text = $1 AND is_active = TRUE ORDER BY created_at DESC"
+        return try {
+            neonClient.executeQuery(query, listOf(userId))
+        } catch (e: Exception) {
+            android.util.Log.e("EcoGuiaRepo", "Error al obtener dispositivos del usuario: ${e.message}", e)
+            emptyList()
+        }
+    }
+
+    override suspend fun registerDevice(userId: String, name: String, type: String, deviceIdentifier: String): Boolean {
+        val query = """
+            INSERT INTO devices (user_id, name, type, device_identifier, is_active, last_seen_at)
+            VALUES ($1::uuid, $2, $3::device_type, $4, TRUE, NOW())
+            ON CONFLICT DO NOTHING
+        """.trimIndent()
+        return try {
+            val rows = neonClient.executeCommand(query, listOf(userId, name, type, deviceIdentifier))
+            rows > 0
+        } catch (e: Exception) {
+            android.util.Log.e("EcoGuiaRepo", "Error al registrar dispositivo: ${e.message}", e)
+            false
+        }
+    }
+
+    override suspend fun unlinkDevice(deviceId: String): Boolean {
+        val query = "DELETE FROM devices WHERE id::text = $1"
+        return try {
+            val rows = neonClient.executeCommand(query, listOf(deviceId))
+            rows > 0
+        } catch (e: Exception) {
+            android.util.Log.e("EcoGuiaRepo", "Error al desvincular dispositivo: ${e.message}", e)
+            false
+        }
+    }
+
+    override suspend fun pairDeviceByCode(userId: String, pairingCode: String): Boolean {
+        val insertTvDevice = """
+            INSERT INTO devices (user_id, name, type, device_identifier, is_active, last_seen_at)
+            VALUES ($1::uuid, 'Smart TV - Emisión Lobby', 'tv'::device_type, 'TV-PIN-' || $2, TRUE, NOW())
+            ON CONFLICT DO NOTHING
+        """.trimIndent()
+
+        val insertPairing = """
+            INSERT INTO device_pairings (user_id, pairing_code, is_active)
+            VALUES ($1::uuid, $2, TRUE)
+        """.trimIndent()
+
+        return try {
+            if (userId.isNotBlank()) {
+                neonClient.executeCommand(insertTvDevice, listOf(userId, pairingCode))
+            }
+            neonClient.executeCommand(insertPairing, listOf(if (userId.isBlank()) "2603b469-aa27-4eed-a6aa-dbce7fc145f5" else userId, pairingCode))
+            true
+        } catch (e: Exception) {
+            android.util.Log.e("EcoGuiaRepo", "Error al registrar vinculación QR: ${e.message}", e)
+            false
+        }
+    }
+
+
+    override suspend fun getPairingStatus(pairingCode: String): RemoteUser? {
+        val query = """
+            SELECT u.id, u.email, u.display_name, u.role::text, u.avatar_url, u.created_at::text
+            FROM device_pairings dp
+            JOIN users u ON dp.user_id = u.id
+            WHERE dp.pairing_code = $1 AND dp.is_active = TRUE
+            LIMIT 1
+        """.trimIndent()
+        return try {
+            val users: List<RemoteUser> = neonClient.executeQuery(query, listOf(pairingCode))
+            users.firstOrNull()
+        } catch (e: Exception) {
+            android.util.Log.e("EcoGuiaRepo", "Error al obtener estado de pairing: ${e.message}", e)
+            null
+        }
+    }
+
+    override suspend fun getSiteByOwner(userId: String): RemoteHistoricalSite? {
+        val queryByOwner = """
+            SELECT id, name, slug, site_type::text, short_description, historical_description, address,
+                   ST_AsText(location) as location, detection_radius_m, is_active
+            FROM historical_sites
+            WHERE created_by::text = $1 AND is_active = TRUE
+            LIMIT 1
+        """.trimIndent()
+
+        val queryDefault = """
+            SELECT id, name, slug, site_type::text, short_description, historical_description, address,
+                   ST_AsText(location) as location, detection_radius_m, is_active
+            FROM historical_sites
+            WHERE is_active = TRUE
+            ORDER BY created_at ASC
+            LIMIT 1
+        """.trimIndent()
+
+        return try {
+            val sites: List<RemoteHistoricalSite> = neonClient.executeQuery(queryByOwner, listOf(userId))
+            if (sites.isNotEmpty()) {
+                sites.first()
+            } else {
+                val fallback: List<RemoteHistoricalSite> = neonClient.executeQuery(queryDefault, emptyList())
+                fallback.firstOrNull()
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("EcoGuiaRepo", "Error obteniendo sitio por dueño: ${e.message}", e)
+            null
+        }
+    }
+
+    override suspend fun setTvTransmissionProgram(pairingCode: String, programType: String): Boolean {
+        // 1. Enviar vía canal MQTT de alta velocidad (HiveMQ Cloud)
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+            mx.utng.ecoguia.shared.data.remote.HiveMQManager.publishProgramCommand(pairingCode, programType)
+        }
+
+
+        // 2. Guardar en Neon DB como respaldo de persistencia
+        val query = """
+            INSERT INTO tv_displays (name, location_label, is_online, active_program)
+            VALUES ($1, 'Lobby Principal', TRUE, $2)
+            ON CONFLICT (name) DO UPDATE SET active_program = EXCLUDED.active_program, is_online = TRUE
+        """.trimIndent()
+
+        return try {
+            neonClient.executeCommand(query, listOf("TV-" + pairingCode, programType))
+            true
+        } catch (e: Exception) {
+            android.util.Log.e("EcoGuiaRepo", "Error enviando transmisión a TV en DB: ${e.message}", e)
+            true // Se retorna true porque el canal MQTT ya envió la orden
+        }
+    }
+
+
+    override suspend fun getTvActiveProgram(pairingCode: String): String? {
+        val query = "SELECT active_program FROM tv_displays WHERE name = $1 LIMIT 1"
+        return try {
+            val rows: List<Map<String, String>> = neonClient.executeQuery(query, listOf("TV-" + pairingCode))
+            val prog = rows.firstOrNull()?.get("active_program")
+            if (!prog.isNull_or_blank_helper()) prog else null
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    override suspend fun assignSiteOwner(siteId: String, userId: String): Boolean {
+        val query = "UPDATE historical_sites SET created_by = $1::uuid, updated_at = NOW() WHERE id = $2::uuid"
+        return try {
+            neonClient.executeCommand(query, listOf(userId, siteId))
+            true
+        } catch (e: Exception) {
+            android.util.Log.e("EcoGuiaRepo", "Error al asignar encargado al sitio: ${e.message}", e)
+            false
+        }
+    }
+
+    private fun String?.isNull_or_blank_helper(): Boolean = this == null || this.trim().isEmpty()
+
+
+
 
     /**
      * Guarda un Geo-Drop público existente en la colección personal del usuario (user_saved_items).

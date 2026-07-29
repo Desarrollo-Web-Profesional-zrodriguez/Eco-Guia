@@ -86,12 +86,19 @@ class MainActivity : ComponentActivity() {
 @SuppressLint("ContextCastToActivity")
 @Composable
 fun MainAppContainer(activity: ComponentActivity, repository: EcoGuiaRepositoryImpl) {
+    val context = LocalContext.current
     val navController = rememberNavController()
     val authViewModel: AuthViewModel = viewModel()
     val notificationViewModel: NotificationViewModel = viewModel()
     val siteRegistrationViewModel: SiteRegistrationViewModel = viewModel()
     val routeViewModel: RouteViewModel = viewModel()
     val isRouteActive by routeViewModel.activeRoute.run { remember { derivedStateOf { value != null } } }
+
+    // Cargar sesión persistente al abrir la aplicación
+    LaunchedEffect(Unit) {
+        authViewModel.initSessionPersistence(context)
+    }
+
 
     // Solicitar permisos de GPS al iniciar
     val permissionLauncher = rememberLauncherForActivityResult(

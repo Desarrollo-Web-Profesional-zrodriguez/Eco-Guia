@@ -25,9 +25,35 @@ data class RemoteUser(
 )
 
 /**
+ * Representa un dispositivo o sesión activa en la base de datos Neon PostgreSQL.
+ */
+@Serializable
+data class RemoteDevice(
+    val id: String,
+    @SerialName("user_id") val userId: String,
+    val type: String, // 'phone', 'wearable', 'tv'
+    val name: String,
+    @SerialName("device_identifier") val deviceIdentifier: String? = null,
+    @SerialName("is_active") val isActive: Boolean = true,
+    @SerialName("last_seen_at") val lastSeenAt: String? = null
+)
+
+/**
+ * Representa una vinculación o pairing vía código/QR entre dispositivos.
+ */
+@Serializable
+data class RemoteDevicePairing(
+    val id: String,
+    @SerialName("user_id") val userId: String,
+    @SerialName("pairing_code") val pairingCode: String,
+    @SerialName("is_active") val isActive: Boolean = true
+)
+
+/**
  * Representa un elemento en la colección del usuario (Sitio, Foto, Ruta).
  */
 @Serializable
+
 data class RemoteCollectionItem(
     val id: String,
     @SerialName("raw_id") val rawId: String? = null,

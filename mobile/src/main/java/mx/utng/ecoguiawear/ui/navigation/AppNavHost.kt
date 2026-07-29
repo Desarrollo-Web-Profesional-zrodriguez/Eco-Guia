@@ -396,11 +396,16 @@ fun AppNavHost(
         // ── Dispositivos ──────────────────────────────────────────────────────
         composable("linked_devices") {
             LinkedDevicesScreen(
+                userId = authViewModel.currentUser?.id.orEmpty(),
+                currentUserEmail = authViewModel.currentUser?.email ?: "usuario@ecoguia.com",
+                currentUserName = authViewModel.currentUser?.displayName ?: "Usuario EcoGuía",
                 onTVCampaignClick = { navController.navigate("tv_campaign") },
                 onManageClick = { navController.navigate("manage_devices") },
                 onStatusClick = { navController.navigate("device_status") }
             )
         }
+
+
         composable("manage_devices") {
             ManageDevicesScreen(
                 onConfirmChanges = {
@@ -426,6 +431,8 @@ fun AppNavHost(
         composable("campaign_devices/{programType}") { backStackEntry ->
             val programType = backStackEntry.arguments?.getString("programType") ?: "gallery"
             CampaignDevicesScreen(
+                userId = authViewModel.currentUser?.id.orEmpty(),
+                currentUserEmail = authViewModel.currentUser?.email ?: "mus@ecoguia.com",
                 programType = programType,
                 onManageContentClick = {
                     notificationViewModel.showNotification("¡Transmisión iniciada en Smart TV!", NotificationType.SUCCESS)
@@ -433,6 +440,7 @@ fun AppNavHost(
                 }
             )
         }
+
         composable("portal_360") {
             MuseumPortal360Screen()
         }

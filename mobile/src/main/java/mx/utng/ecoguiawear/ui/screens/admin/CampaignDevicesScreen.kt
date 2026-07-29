@@ -17,6 +17,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Tv
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import kotlinx.coroutines.launch
+
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -32,10 +34,31 @@ import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 
 @Composable
 fun CampaignDevicesScreen(
+    userId: String = "",
+    currentUserEmail: String = "mus@ecoguia.com",
     programType: String = "gallery",
     onManageContentClick: () -> Unit
 ) {
+    val repository = remember { mx.utng.ecoguia.shared.data.repository.EcoGuiaRepositoryImpl() }
+    val tvDevices = remember { mutableStateListOf<mx.utng.ecoguia.shared.domain.model.RemoteDevice>() }
+    var isLoading by remember { mutableStateOf(true) }
     var selectedTVIndex by remember { mutableStateOf(0) }
+    val coroutineScope = rememberCoroutineScope()
+
+    LaunchedEffect(userId) {
+        try {
+            isLoading = true
+            val devices = repository.getUserDevices(userId)
+            tvDevices.clear()
+            // Filtrar solo dispositivos de tipo TV o emisor
+            val tvsOnly = devices.filter { it.type.lowercase().contains("tv") || it.name.lowercase().contains("tv") }
+            tvDevices.addAll(tvsOnly)
+        } catch (e: Exception) {
+            android.util.Log.e("CampaignDevices", "Error cargando TVs: ${e.message}")
+        } finally {
+            isLoading = false
+        }
+    }
 
     val programTitle = when (programType) {
         "public" -> "Colección Pública (Mapa AR)"
@@ -89,32 +112,47 @@ fun CampaignDevicesScreen(
 
         // TV Sessions List
         Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-            Text("Pantallas en Red Local (mus@ecoguia.com)", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
+            Text("Pantallas Vinculadas ($currentUserEmail)", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
             
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                item {
-                    DeviceItemToggle(
-                        title = "Smart TV - Lobby Hotel Hidalgo",
-                        subtitle = "Sesión activa · Resolución 4K",
-                        isSelected = selectedTVIndex == 0,
-                        onSelect = { selectedTVIndex = 0 }
-                    )
+            if (isLoading) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(100.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = EcoGuiaColors.Jade)
                 }
-                item {
-                    DeviceItemToggle(
-                        title = "Smart TV - Sala 2 Museo Cuna",
-                        subtitle = "Sesión activa · Pantalla Táctil",
-                        isSelected = selectedTVIndex == 1,
-                        onSelect = { selectedTVIndex = 1 }
-                    )
+            } else if (tvDevices.isEmpty()) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 12.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Box(
+                        modifier = Modifier.padding(20.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "No tienes ninguna Smart TV vinculada en Neon DB actualmente. Vincula tu Smart TV ingresando su código PIN de 6 dígitos en 'Mis Dispositivos'.",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 12.sp
+                        )
+                    }
                 }
-                item {
-                    DeviceItemToggle(
-                        title = "Totem TV - Recepción Principal",
-                        subtitle = "Sesión activa · Modo Standby",
-                        isSelected = selectedTVIndex == 2,
-                        onSelect = { selectedTVIndex = 2 }
-                    )
+            } else {
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    items(tvDevices.size) { index ->
+                        val tv = tvDevices[index]
+                        DeviceItemToggle(
+                            title = tv.name,
+                            subtitle = "Sesión activa · ${tv.deviceIdentifier ?: "Conectada"}",
+                            isSelected = selectedTVIndex == index,
+                            onSelect = { selectedTVIndex = index }
+                        )
+                    }
                 }
             }
         }
@@ -122,14 +160,29 @@ fun CampaignDevicesScreen(
         Spacer(modifier = Modifier.weight(1f))
 
         // Action Button
-        Box(modifier = Modifier.padding(24.dp)) {
-            EcoButton(
-                text = "Iniciar Transmisión en TV",
-                onClick = onManageContentClick
-            )
+        if (tvDevices.isNotEmpty()) {
+            Box(modifier = Modifier.padding(24.dp)) {
+                EcoButton(
+                    text = "Iniciar Transmisión en TV",
+                    onClick = {
+                        val selectedTv = tvDevices.getOrNull(selectedTVIndex)
+                        if (selectedTv != null) {
+                            val pairingCode = selectedTv.deviceIdentifier?.removePrefix("TV-PIN-") ?: ""
+                            coroutineScope.launch {
+                                repository.setTvTransmissionProgram(pairingCode, programType)
+                                onManageContentClick()
+                            }
+                        } else {
+                            onManageContentClick()
+                        }
+                    }
+                )
+            }
         }
+
     }
 }
+
 
 @Composable
 fun DeviceItemToggle(

@@ -8,17 +8,24 @@
 package mx.utng.ecoguiawear.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.Phonelink
+import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.Tv
 import androidx.compose.material.icons.filled.Watch
-import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material3.*
+
+
 import androidx.compose.runtime.*
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+
 
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,24 +40,41 @@ import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 
 @Composable
 fun LinkedDevicesScreen(
+    userId: String = "",
+    currentUserEmail: String = "mus@ecoguia.com",
+    currentUserName: String = "Usuario",
     onTVCampaignClick: () -> Unit,
     onManageClick: () -> Unit,
     onStatusClick: () -> Unit
 ) {
     val repository = remember { mx.utng.ecoguia.shared.data.repository.EcoGuiaRepositoryImpl() }
-    val realSites = remember { mutableStateListOf<mx.utng.ecoguia.shared.domain.model.RemoteHistoricalSite>() }
+    val userDevices = remember { mutableStateListOf<mx.utng.ecoguia.shared.domain.model.RemoteDevice>() }
     var isLoading by remember { mutableStateOf(true) }
+    var showQrDialog by remember { mutableStateOf(false) }
+    var pairingCodeInput by remember { mutableStateOf("") }
+    var pairingMessage by remember { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(Unit) {
-        try {
-            val sites = repository.getHistoricalSites()
-            realSites.clear()
-            realSites.addAll(sites)
-        } catch (e: Exception) {
-            android.util.Log.e("LinkedDevices", "Error cargando sitios: ${e.message}")
-        } finally {
-            isLoading = false
+    val coroutineScope = rememberCoroutineScope()
+
+    fun loadDevices() {
+        coroutineScope.launch {
+            isLoading = true
+            try {
+                if (userId.isNotBlank()) {
+                    val devices = repository.getUserDevices(userId)
+                    userDevices.clear()
+                    userDevices.addAll(devices)
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("LinkedDevices", "Error cargando dispositivos reales: ${e.message}")
+            } finally {
+                isLoading = false
+            }
         }
+    }
+
+    LaunchedEffect(userId) {
+        loadDevices()
     }
 
     Column(
@@ -59,11 +83,11 @@ fun LinkedDevicesScreen(
             .background(MaterialTheme.colorScheme.background)
     ) {
         EcoTopBar(
-            title = "Vinculados",
-            subtitle = "Dispositivos"
+            title = "Mis Dispositivos",
+            subtitle = "Sesiones Activas"
         )
 
-        // Resumen de Sesiones Activas
+        // Resumen de Sesiones del Usuario Actual
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -72,18 +96,41 @@ fun LinkedDevicesScreen(
             shape = RoundedCornerShape(24.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text("Ecosistema Activo", color = Color.White, fontWeight = FontWeight.Bold)
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "1 Reloj Wear OS sincronizado · 3 Pantallas TV con sesión activa",
-                    color = EcoGuiaColors.Gold,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text("Sesión de: $currentUserName", color = Color.White, fontWeight = FontWeight.Bold)
+                        Text(currentUserEmail, color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp)
+                    }
+                    Button(
+                        onClick = { showQrDialog = true },
+                        colors = ButtonDefaults.buttonColors(containerColor = EcoGuiaColors.Gold)
+                    ) {
+                        Icon(Icons.Default.QrCode, contentDescription = "Vincular por QR", tint = Color.Black, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Vincular QR", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Surface(
+                    color = EcoGuiaColors.Jade.copy(alpha = 0.2f),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text(
+                        text = if (userDevices.isEmpty() && !isLoading) "1 sesión activa (Este Teléfono Móvil)" else "${userDevices.size + 1} sesión(es) registrada(s) en Neon PostgreSQL",
+                        color = EcoGuiaColors.Gold,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                    )
+                }
             }
         }
 
-        // Lista de Dispositivos y Sesiones
+        // Lista de Dispositivos del Usuario
         Column(modifier = Modifier.padding(horizontal = 16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -91,12 +138,12 @@ fun LinkedDevicesScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Dispositivos & Puntos (${realSites.size + 2})",
+                    text = "Dispositivos Vinculados",
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(vertical = 12.dp)
+                    modifier = Modifier.padding(vertical = 8.dp)
                 )
                 TextButton(onClick = onManageClick) {
-                    Text("Gestionar / Quitar", color = EcoGuiaColors.Jade, fontWeight = FontWeight.Bold)
+                    Text("Gestión avanzada", color = EcoGuiaColors.Jade, fontWeight = FontWeight.Bold)
                 }
             }
 
@@ -111,46 +158,184 @@ fun LinkedDevicesScreen(
                 }
             } else {
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    // Reloj Wear OS
+                    // Teléfono actual (Siempre activo por la sesión iniciada)
                     item {
-                        DeviceItem(
-                            title = "Reloj Wear OS (Galaxy Watch)",
-                            subtitle = "Sesión activa · Sincronizado vía Bluetooth/GPS",
-                            icon = Icons.Default.Watch,
-                            statusColor = EcoGuiaColors.Jade,
-                            onClick = onStatusClick
+                        UserDeviceSessionItem(
+                            title = "Teléfono Móvil (Este Dispositivo)",
+                            subtitle = "Sesión activa principal · $currentUserEmail",
+                            icon = Icons.Default.Phonelink,
+                            isCurrentDevice = true,
+                            onCloseSession = { }
                         )
                     }
 
-                    // Smart TV Principal
-                    item {
-                        DeviceItem(
-                            title = "Smart TV - Lobby Principal",
-                            subtitle = "Sesión iniciada (mus@ecoguia.com) · Canal activo",
-                            icon = Icons.Default.Tv,
-                            statusColor = EcoGuiaColors.Jade,
-                            onClick = onStatusClick
+                    // Dispositivos reales vinculados en Neon PostgreSQL
+                    items(userDevices.size) { index ->
+                        val dev = userDevices[index]
+                        UserDeviceSessionItem(
+                            title = dev.name,
+                            subtitle = "Tipo: ${dev.type.uppercase()} · ${dev.deviceIdentifier ?: "Sincronizado"}",
+                            icon = if (dev.type.lowercase().contains("watch") || dev.type.lowercase().contains("wear")) Icons.Default.Watch else Icons.Default.Tv,
+                            isCurrentDevice = false,
+                            onCloseSession = {
+                                coroutineScope.launch {
+                                    repository.unlinkDevice(dev.id)
+                                    loadDevices()
+                                }
+                            }
                         )
                     }
 
-                    // Puntos de Emisión / Sitios
-                    items(realSites.size) { index ->
-                        val site = realSites[index]
-                        DeviceItem(
-                            title = site.name,
-                            subtitle = "Baliza de transmisión - Radio ${site.detectionRadiusM}m (${site.siteType})",
-                            icon = Icons.Default.Tv,
-                            statusColor = EcoGuiaColors.Gold,
-                            onClick = onStatusClick
-                        )
+                    if (userDevices.isEmpty()) {
+                        item {
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 12.dp),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                                shape = RoundedCornerShape(16.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier.padding(16.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = "No tienes otros dispositivos o Smart TVs vinculadas en este momento. Toca 'Vincular QR' para sincronizar tu TV o Reloj.",
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        fontSize = 12.sp
+                                    )
+                                }
+                            }
+                        }
                     }
+
                 }
             }
         }
     }
+
+    // Modal de Vinculación Rápida por Código QR / Pin de la TV o Reloj
+    if (showQrDialog) {
+        AlertDialog(
+            onDismissRequest = { showQrDialog = false },
+            title = { Text("Vincular Dispositivo por QR / Código", fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        "Ingresa el código numérico de 6 dígitos mostrado en la Smart TV o Reloj Wear OS para sincronizar la sesión de $currentUserEmail:",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    OutlinedTextField(
+                        value = pairingCodeInput,
+                        onValueChange = { pairingCodeInput = it },
+                        label = { Text("Código de Vinculación (ej. 849201)") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    if (pairingMessage != null) {
+                        Text(pairingMessage!!, color = EcoGuiaColors.Jade, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (pairingCodeInput.isNotBlank()) {
+                            coroutineScope.launch {
+                                val success = repository.pairDeviceByCode(userId, pairingCodeInput.trim())
+                                if (success) {
+                                    pairingMessage = "¡Dispositivo vinculado con éxito!"
+                                    delay(1000)
+                                    showQrDialog = false
+                                    pairingCodeInput = ""
+                                    pairingMessage = null
+                                    loadDevices()
+                                } else {
+                                    pairingMessage = "No se pudo completar la vinculación."
+                                }
+                            }
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = EcoGuiaColors.Jade)
+                ) {
+                    Text("Vincular Ahora")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showQrDialog = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
 }
 
 
+
+
+
+
+@Composable
+fun UserDeviceSessionItem(
+    title: String,
+    subtitle: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    isCurrentDevice: Boolean,
+    onCloseSession: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(EcoGuiaColors.Jade.copy(alpha = 0.15f), RoundedCornerShape(12.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(imageVector = icon, contentDescription = null, tint = EcoGuiaColors.Jade, modifier = Modifier.size(20.dp))
+            }
+
+            Column(
+                modifier = Modifier
+                    .padding(horizontal = 12.dp)
+                    .weight(1f)
+            ) {
+                Text(
+                    text = title,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = subtitle,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 10.sp
+                )
+            }
+
+            Surface(
+                color = Color(0xFFFFEBEE),
+                shape = RoundedCornerShape(8.dp),
+                modifier = androidx.compose.ui.Modifier.clickable { onCloseSession() }
+            ) {
+                Text(
+                    text = if (isCurrentDevice) "Cerrar sesión" else "Desvincular",
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Red
+                )
+            }
+        }
+    }
+}
 
 @Composable
 fun DeviceItem(
@@ -166,6 +351,7 @@ fun DeviceItem(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         onClick = onClick
     ) {
+
         Row(
             modifier = Modifier.padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -209,6 +395,13 @@ fun DeviceItem(
 @Composable
 fun LinkedDevicesScreenPreview() {
     EcoGuiaMobileTheme {
-        LinkedDevicesScreen({}, {}, {})
+        LinkedDevicesScreen(
+            currentUserEmail = "mus@ecoguia.com",
+            currentUserName = "Museo Dolores Hidalgo",
+            onTVCampaignClick = {},
+            onManageClick = {},
+            onStatusClick = {}
+        )
     }
 }
+

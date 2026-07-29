@@ -34,6 +34,43 @@ class AuthViewModel(
     private val _authState = mutableStateOf<AuthState>(AuthState.Idle)
     val authState: State<AuthState> = _authState
 
+    private var sharedPreferences: android.content.SharedPreferences? = null
+
+    /**
+     * Inicializa el almacenamiento de sesión persistente con SharedPreferences.
+     */
+    fun initSessionPersistence(context: android.content.Context) {
+        sharedPreferences = context.getSharedPreferences("user_session_prefs", android.content.Context.MODE_PRIVATE)
+        val savedUserId = sharedPreferences?.getString("saved_user_id", null)
+        val savedUserEmail = sharedPreferences?.getString("saved_user_email", null)
+        val savedUserName = sharedPreferences?.getString("saved_user_name", null)
+        val savedUserRole = sharedPreferences?.getString("saved_user_role", null)
+
+        if (!savedUserId.isNull_or_blank_helper() && !savedUserEmail.isNull_or_blank_helper()) {
+            val restoredUser = RemoteUser(
+                id = savedUserId!!,
+                email = savedUserEmail!!,
+                displayName = savedUserName ?: "Usuario",
+                role = savedUserRole ?: "visitor"
+            )
+            _authState.value = AuthState.Success(restoredUser)
+        }
+    }
+
+    private fun saveSessionLocally(user: RemoteUser) {
+        sharedPreferences?.edit()?.apply {
+            putString("saved_user_id", user.id)
+            putString("saved_user_email", user.email)
+            putString("saved_user_name", user.displayName)
+            putString("saved_user_role", user.role)
+            apply()
+        }
+    }
+
+    private fun clearSessionLocally() {
+        sharedPreferences?.edit()?.clear()?.apply()
+    }
+
     /**
      * Referencia opcional al sistema de notificaciones para disparar alertas globales.
      */
@@ -76,15 +113,11 @@ class AuthViewModel(
     val isAdmin: Boolean
         get() = isSuperAdmin || isModerator || isMuseumHotel
 
-
-
     /**
      * Determina si es un usuario normal (visitante/turista).
      */
     val isUser: Boolean
         get() = currentUser != null
-
-
 
     /**
      * Intenta iniciar sesión con el correo y contraseña proporcionados.
@@ -94,6 +127,7 @@ class AuthViewModel(
             _authState.value = AuthState.Loading
             val user = repository.login(email, password_hash)
             if (user != null) {
+                saveSessionLocally(user)
                 _authState.value = AuthState.Success(user)
                 notificationViewModel?.showNotification("Bienvenido, ${user.displayName}", NotificationType.SUCCESS)
             } else {
@@ -128,8 +162,8 @@ class AuthViewModel(
         viewModelScope.launch {
             val success = repository.updateUser(user.id, newName)
             if (success) {
-                // Actualizar estado local inmediatamente para reactividad
                 val updatedUser = user.copy(displayName = newName)
+                saveSessionLocally(updatedUser)
                 _authState.value = AuthState.Success(updatedUser)
                 notificationViewModel?.showNotification("Perfil actualizado con éxito.", NotificationType.SUCCESS)
             } else {
@@ -142,10 +176,10 @@ class AuthViewModel(
      * Cierra la sesión del usuario actual y reinicia el estado.
      */
     fun logout() {
+        clearSessionLocally()
         _authState.value = AuthState.Idle
         notificationViewModel?.showNotification("Sesión cerrada", NotificationType.INFO)
     }
-
 
     /**
      * Reinicia el estado de autenticación a Idle.
@@ -153,4 +187,7 @@ class AuthViewModel(
     fun resetState() {
         _authState.value = AuthState.Idle
     }
+
+    private fun String?.isNull_or_blank_helper(): Boolean = this == null || this.trim().isEmpty()
 }
+

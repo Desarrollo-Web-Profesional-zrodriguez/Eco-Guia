@@ -105,7 +105,7 @@ fun TVCampaignScreen(
                 item {
                     CampaignItem(
                         title = "Colección Pública (Mapa AR)",
-                        subtitle = "Mapa centrado en las coordenadas del sitio con marcadores e íconos de Ojo 👁️.",
+                        subtitle = "Mapa centrado en las coordenadas del sitio con marcadores e ícono de visibilidad (Ojo).",
                         icon = Icons.Default.QrCode,
                         isSelected = selectedProgram == "public",
                         onClick = {
@@ -114,6 +114,7 @@ fun TVCampaignScreen(
                         }
                     )
                 }
+
                 item {
                     CampaignItem(
                         title = "Ranking Semanal",
