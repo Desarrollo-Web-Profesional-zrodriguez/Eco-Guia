@@ -119,6 +119,27 @@ class EcoGuiaRepositoryImpl(
         return neonClient.executeQuery("SELECT *, ST_Y(location::geometry) as latitude, ST_X(location::geometry) as longitude FROM geo_drops WHERE status = 'approved' ORDER BY created_at DESC")
     }
 
+    override suspend fun getGeoDropsBySite(siteId: String): List<RemoteGeoDrop> {
+        val query = "SELECT *, ST_Y(location::geometry) as latitude, ST_X(location::geometry) as longitude FROM geo_drops WHERE status = 'approved' AND site_id::text = $1 ORDER BY created_at DESC"
+        return try {
+            neonClient.executeQuery(query, listOf(siteId))
+        } catch (e: Exception) {
+            android.util.Log.e("EcoGuiaRepo", "Error al obtener GeoDrops por sitio: ${e.message}", e)
+            emptyList()
+        }
+    }
+
+    override suspend fun getTopRankingGeoDrops(limit: Int): List<RemoteGeoDrop> {
+        val query = "SELECT *, ST_Y(location::geometry) as latitude, ST_X(location::geometry) as longitude FROM geo_drops WHERE status = 'approved' ORDER BY likes_count DESC, created_at DESC LIMIT $1::integer"
+        return try {
+            neonClient.executeQuery(query, listOf(limit.toString()))
+        } catch (e: Exception) {
+            android.util.Log.e("EcoGuiaRepo", "Error al obtener ranking GeoDrops: ${e.message}", e)
+            emptyList()
+        }
+    }
+
+
     /**
      * Recupera las cápsulas pendientes o reportadas para la lista de moderación del admin/moderador.
      */

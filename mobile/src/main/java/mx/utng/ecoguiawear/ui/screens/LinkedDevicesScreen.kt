@@ -60,12 +60,10 @@ fun LinkedDevicesScreen(
     ) {
         EcoTopBar(
             title = "Vinculados",
-            subtitle = "Dispositivos",
-            actionIcon = Icons.Default.Tv,
-            onActionClick = onTVCampaignClick
+            subtitle = "Dispositivos"
         )
 
-        // Active Ecosystem Card
+        // Resumen de Sesiones Activas
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -74,16 +72,18 @@ fun LinkedDevicesScreen(
             shape = RoundedCornerShape(24.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text("Ecosistema activo", color = Color.White, fontWeight = FontWeight.Bold)
+                Text("Ecosistema Activo", color = Color.White, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    "Puntos de emisión activos en la base de datos Neon PostgreSQL.", 
-                    color = Color.White.copy(alpha = 0.7f), 
-                    fontSize = 12.sp
+                    text = "1 Reloj Wear OS sincronizado · 3 Pantallas TV con sesión activa",
+                    color = EcoGuiaColors.Gold,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold
                 )
             }
         }
 
-        // Device List
+        // Lista de Dispositivos y Sesiones
         Column(modifier = Modifier.padding(horizontal = 16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -91,15 +91,15 @@ fun LinkedDevicesScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Dispositivos & Puntos (${realSites.size})",
+                    text = "Dispositivos & Puntos (${realSites.size + 2})",
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(vertical = 12.dp)
                 )
                 TextButton(onClick = onManageClick) {
-                    Text("Gestionar", color = EcoGuiaColors.Jade)
+                    Text("Gestionar / Quitar", color = EcoGuiaColors.Jade, fontWeight = FontWeight.Bold)
                 }
             }
-            
+
             if (isLoading) {
                 Box(
                     modifier = Modifier
@@ -111,13 +111,36 @@ fun LinkedDevicesScreen(
                 }
             } else {
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    // Reloj Wear OS
+                    item {
+                        DeviceItem(
+                            title = "Reloj Wear OS (Galaxy Watch)",
+                            subtitle = "Sesión activa · Sincronizado vía Bluetooth/GPS",
+                            icon = Icons.Default.Watch,
+                            statusColor = EcoGuiaColors.Jade,
+                            onClick = onStatusClick
+                        )
+                    }
+
+                    // Smart TV Principal
+                    item {
+                        DeviceItem(
+                            title = "Smart TV - Lobby Principal",
+                            subtitle = "Sesión iniciada (mus@ecoguia.com) · Canal activo",
+                            icon = Icons.Default.Tv,
+                            statusColor = EcoGuiaColors.Jade,
+                            onClick = onStatusClick
+                        )
+                    }
+
+                    // Puntos de Emisión / Sitios
                     items(realSites.size) { index ->
                         val site = realSites[index]
                         DeviceItem(
                             title = site.name,
-                            subtitle = "Punto activo - Radio ${site.detectionRadiusM}m (${site.siteType ?: "Sitio"})",
-                            icon = if (index % 2 == 0) Icons.Default.Tv else Icons.Default.Watch,
-                            statusColor = EcoGuiaColors.Jade,
+                            subtitle = "Baliza de transmisión - Radio ${site.detectionRadiusM}m (${site.siteType})",
+                            icon = Icons.Default.Tv,
+                            statusColor = EcoGuiaColors.Gold,
                             onClick = onStatusClick
                         )
                     }
@@ -126,6 +149,7 @@ fun LinkedDevicesScreen(
         }
     }
 }
+
 
 
 @Composable

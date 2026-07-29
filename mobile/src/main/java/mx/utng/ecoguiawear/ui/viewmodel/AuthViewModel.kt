@@ -59,16 +59,23 @@ class AuthViewModel(
         get() = currentUser?.role?.lowercase() in listOf("super_admin", "admin", "administrator")
 
     /**
-     * Determina si el usuario autenticado tiene rol de Moderador / Gestor Cultural.
+     * Determina si el usuario autenticado tiene rol de Moderador / Gestor Cultural o Museo.
      */
     val isModerator: Boolean
-        get() = isSuperAdmin || currentUser?.role?.lowercase() in listOf("moderator", "mod")
+        get() = isSuperAdmin || isMuseumHotel || currentUser?.role?.lowercase() in listOf("moderator", "mod")
+
+    /**
+     * Rol específico para cuentas de Museos / Hoteles (ej. mus@ecoguia.com).
+     */
+    val isMuseumHotel: Boolean
+        get() = currentUser?.role?.lowercase() in listOf("museum_hotel", "museum", "hotel") || currentUser?.email?.lowercase() == "mus@ecoguia.com"
 
     /**
      * Determina si el usuario tiene privilegios administrativos o de gestión (SuperAdmin o Moderador).
      */
     val isAdmin: Boolean
-        get() = isSuperAdmin || isModerator
+        get() = isSuperAdmin || isModerator || isMuseumHotel
+
 
     /**
      * Determina si es un usuario normal (visitante/turista).

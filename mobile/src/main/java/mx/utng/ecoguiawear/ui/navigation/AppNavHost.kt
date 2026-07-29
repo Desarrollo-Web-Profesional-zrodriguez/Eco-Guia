@@ -404,20 +404,26 @@ fun AppNavHost(
         composable("tv_campaign") {
             TVCampaignScreen(
                 onAnalyticsClick = { navController.navigate("visitor_analytics") },
-                onManageDevicesClick = { navController.navigate("campaign_devices") }
+                onManageDevicesClick = { program -> navController.navigate("campaign_devices/$program") }
             )
         }
         composable("visitor_analytics") {
             VisitorAnalyticsScreen()
         }
-        composable("campaign_devices") {
+        composable("campaign_devices/{programType}") { backStackEntry ->
+            val programType = backStackEntry.arguments?.getString("programType") ?: "gallery"
             CampaignDevicesScreen(
-                onManageContentClick = { navController.navigate("portal_360") }
+                programType = programType,
+                onManageContentClick = {
+                    notificationViewModel.showNotification("¡Transmisión iniciada en Smart TV!", NotificationType.SUCCESS)
+                    navController.navigate("portal_360")
+                }
             )
         }
         composable("portal_360") {
             MuseumPortal360Screen()
         }
+
 
         // ── Alias de barra de navegación ──────────────────────────────────────
         composable("radar") {

@@ -56,6 +56,17 @@ interface EcoGuiaRepository {
      */
     suspend fun getGeoDrops(): List<RemoteGeoDrop>
 
+    /**
+     * Obtiene las cápsulas asociadas a un sitio histórico específico.
+     */
+    suspend fun getGeoDropsBySite(siteId: String): List<RemoteGeoDrop>
+
+    /**
+     * Obtiene el ranking semanal de cápsulas con mayor número de interacciones/likes.
+     */
+    suspend fun getTopRankingGeoDrops(limit: Int = 10): List<RemoteGeoDrop>
+
+
 
     /**
      * Obtiene todas las cápsulas Geo-Drop o reportes pendientes de moderación.

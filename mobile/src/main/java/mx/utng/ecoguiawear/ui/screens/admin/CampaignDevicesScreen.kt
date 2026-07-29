@@ -8,7 +8,9 @@
 package mx.utng.ecoguiawear.ui.screens.admin
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -30,8 +32,17 @@ import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 
 @Composable
 fun CampaignDevicesScreen(
+    programType: String = "gallery",
     onManageContentClick: () -> Unit
 ) {
+    var selectedTVIndex by remember { mutableStateOf(0) }
+
+    val programTitle = when (programType) {
+        "public" -> "Colección Pública (Mapa AR)"
+        "ranking" -> "Ranking Semanal (Top Likes)"
+        else -> "Galería Móvil (Hotel / Museo)"
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -45,8 +56,8 @@ fun CampaignDevicesScreen(
                 .padding(top = 48.dp, start = 24.dp, end = 24.dp, bottom = 16.dp)
         ) {
             Column {
-                Text("Dispositivos", color = Color.White, fontSize = 14.sp)
-                Text("Seleccionados", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text("Pantallas Conectadas", color = Color.White, fontSize = 14.sp)
+                Text(programTitle, color = EcoGuiaColors.Gold, fontSize = 18.sp, fontWeight = FontWeight.Bold)
             }
             
             IconButton(
@@ -57,42 +68,63 @@ fun CampaignDevicesScreen(
             }
         }
 
-        // Map/Graphic Section
-        Box(
+        // Card explicativa
+        Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(140.dp)
-                .padding(16.dp)
-                .clip(RoundedCornerShape(24.dp))
-                .background(Color(0xFFE8F5E9))
+                .padding(16.dp),
+            colors = CardDefaults.cardColors(containerColor = EcoGuiaColors.Surface),
+            shape = RoundedCornerShape(24.dp)
         ) {
-            Text("Mapa de disponibilidad", modifier = Modifier.align(Alignment.Center), color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-
-        // Selected List
-        Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-            Text("Seleccionados para campaña", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
-            
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                item {
-                    DeviceItemToggle("Lobby Hotel Hidalgo", "Galería de la Independencia", true)
-                }
-                item {
-                    DeviceItemToggle("Wearables demo", "4 conectados", true)
-                }
-                item {
-                    DeviceItemToggle("Pasillo 2", "TV de bienvenida hoy", true)
-                }
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("Smart TVs con Sesión Iniciada", color = Color.White, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Selecciona la pantalla donde deseas transmitir la programación '$programTitle'. Solo se permite una transmisión activa por TV.", 
+                    color = Color.White.copy(alpha = 0.7f), 
+                    fontSize = 12.sp
+                )
             }
         }
 
+        // TV Sessions List
+        Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+            Text("Pantallas en Red Local (mus@ecoguia.com)", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
+            
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                item {
+                    DeviceItemToggle(
+                        title = "Smart TV - Lobby Hotel Hidalgo",
+                        subtitle = "Sesión activa · Resolución 4K",
+                        isSelected = selectedTVIndex == 0,
+                        onSelect = { selectedTVIndex = 0 }
+                    )
+                }
+                item {
+                    DeviceItemToggle(
+                        title = "Smart TV - Sala 2 Museo Cuna",
+                        subtitle = "Sesión activa · Pantalla Táctil",
+                        isSelected = selectedTVIndex == 1,
+                        onSelect = { selectedTVIndex = 1 }
+                    )
+                }
+                item {
+                    DeviceItemToggle(
+                        title = "Totem TV - Recepción Principal",
+                        subtitle = "Sesión activa · Modo Standby",
+                        isSelected = selectedTVIndex == 2,
+                        onSelect = { selectedTVIndex = 2 }
+                    )
+                }
+            }
+        }
 
         Spacer(modifier = Modifier.weight(1f))
 
         // Action Button
         Box(modifier = Modifier.padding(24.dp)) {
             EcoButton(
-                text = "Gestionar contenido",
+                text = "Iniciar Transmisión en TV",
                 onClick = onManageContentClick
             )
         }
@@ -103,45 +135,58 @@ fun CampaignDevicesScreen(
 fun DeviceItemToggle(
     title: String,
     subtitle: String,
-    initialValue: Boolean
+    isSelected: Boolean,
+    onSelect: () -> Unit
 ) {
-    var isChecked by remember { mutableStateOf(initialValue) }
-    
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onSelect() },
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSelected) EcoGuiaColors.Jade.copy(alpha = 0.08f) else MaterialTheme.colorScheme.surface
+        ),
+        border = if (isSelected) androidx.compose.foundation.BorderStroke(2.dp, EcoGuiaColors.Jade) else null
     ) {
         Row(
             modifier = Modifier.padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Icon placeholder
-            Box(modifier = Modifier.size(32.dp).background(MaterialTheme.colorScheme.background, RoundedCornerShape(8.dp)))
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(
+                        if (isSelected) EcoGuiaColors.Jade.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant,
+                        RoundedCornerShape(10.dp)
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Default.Tv, null, tint = if (isSelected) EcoGuiaColors.Jade else Color.Gray, modifier = Modifier.size(20.dp))
+            }
             
             Column(modifier = Modifier.padding(horizontal = 12.dp).weight(1f)) {
-                Text(title, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
+                Text(title, fontWeight = FontWeight.Bold, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
                 Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
             }
             
-            Text(
-                text = "ON", 
-                color = EcoGuiaColors.Jade, 
-                fontWeight = FontWeight.Bold, 
-                fontSize = 12.sp,
-                modifier = Modifier.padding(end = 8.dp)
+            RadioButton(
+                selected = isSelected,
+                onClick = onSelect,
+                colors = RadioButtonDefaults.colors(selectedColor = EcoGuiaColors.Jade)
             )
         }
     }
 }
 
+
 @Preview(showBackground = true)
 @Composable
 fun CampaignDevicesScreenPreview() {
     EcoGuiaMobileTheme {
-        CampaignDevicesScreen({})
+        CampaignDevicesScreen(programType = "gallery", onManageContentClick = {})
     }
 }
+
 
 
 
