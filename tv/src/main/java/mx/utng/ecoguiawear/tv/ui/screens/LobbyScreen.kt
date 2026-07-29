@@ -55,15 +55,20 @@ fun LobbyScreen(
     // Consultar sesión guardada o en Neon DB y escuchar comandos de transmisión vía MQTT instantáneo
     LaunchedEffect(pairingCode) {
         // Suscribirse de inmediato al canal MQTT de la TV para responder a comandos remotos en < 100ms
+        val mainHandler = android.os.Handler(android.os.Looper.getMainLooper())
         kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
             mx.utng.ecoguia.shared.data.remote.HiveMQManager.subscribeToTvCommands(pairingCode) { command ->
-                when (command) {
-                    "public" -> onNavigateToPortal360()
-                    "ranking" -> onNavigateToHeatmap()
-                    else -> onNavigateToGallery()
+                android.util.Log.d("TVLobby", "Comando MQTT recibido en TV callback: $command")
+                mainHandler.post {
+                    when (command) {
+                        "public" -> onNavigateToPortal360()
+                        "ranking" -> onNavigateToHeatmap()
+                        else -> onNavigateToGallery()
+                    }
                 }
             }
         }
+
 
 
         // Si ya estaba vinculada previamente, restaurar datos del usuario
