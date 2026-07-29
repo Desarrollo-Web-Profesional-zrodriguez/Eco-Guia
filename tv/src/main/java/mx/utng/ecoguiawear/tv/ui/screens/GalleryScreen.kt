@@ -1,6 +1,6 @@
 @file:OptIn(androidx.tv.material3.ExperimentalTvMaterial3Api::class)
 
-package mx.utng.smarttv.ui.screens
+package mx.utng.ecoguiawear.tv.ui.screens
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -33,7 +33,7 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
-import mx.utng.smarttv.network.TvLocalServer
+import mx.utng.ecoguiawear.tv.network.TvLocalServer
 
 @Composable
 fun GalleryScreen(onBack: () -> Unit) {

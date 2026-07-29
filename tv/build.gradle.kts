@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "mx.utng.smarttv"
+    namespace = "mx.utng.ecoguiawear.tv"
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "mx.utng.smarttv"
+        applicationId = "mx.utng.ecoguiawear.tv"
         minSdk = 24
         targetSdk = 37
         versionCode = 1

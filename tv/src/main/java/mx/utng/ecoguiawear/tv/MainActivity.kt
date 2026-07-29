@@ -1,6 +1,6 @@
 @file:OptIn(androidx.tv.material3.ExperimentalTvMaterial3Api::class)
 
-package mx.utng.smarttv
+package mx.utng.ecoguiawear.tv
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -11,8 +11,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
-import mx.utng.smarttv.ui.theme.EcoGuiaTVTheme
-import mx.utng.smarttv.ui.navigation.SmartTVNavHost
+import mx.utng.ecoguiawear.tv.ui.theme.EcoGuiaTVTheme
+import mx.utng.ecoguiawear.tv.ui.navigation.SmartTVNavHost
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

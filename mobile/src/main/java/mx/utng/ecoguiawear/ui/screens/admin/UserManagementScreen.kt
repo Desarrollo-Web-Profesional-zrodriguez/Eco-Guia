@@ -138,41 +138,86 @@ fun UserManagementScreen(
     // Modal de Diálogo para cambiar rol
     if (selectedUserForRoleChange != null) {
         val user = selectedUserForRoleChange!!
-        val isCurrentMod = user.role.lowercase() in listOf("moderator", "mod")
 
         AlertDialog(
             onDismissRequest = { selectedUserForRoleChange = null },
-            title = { Text("Cambiar rol de usuario", fontWeight = FontWeight.Bold) },
+            title = { Text("Asignar rol a usuario", fontWeight = FontWeight.Bold) },
             text = {
-                Column {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("Usuario: ${user.displayName}", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                     Text("Correo: ${user.email}", fontSize = 12.sp, color = Color.Gray)
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text("Selecciona el nuevo rol a asignar:")
+                    Text("Rol actual: ${user.role.uppercase()}", fontSize = 12.sp, color = EcoGuiaColors.Jade, fontWeight = FontWeight.SemiBold)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Selecciona el nuevo rol a asignar:", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+
+                    // Opción: Usuario Turista
+                    Button(
+                        onClick = {
+                            userManagementViewModel.changeRole(
+                                userId = user.id,
+                                newRole = "visitor",
+                                onSuccess = {
+                                    snackbarMessage = "Rol actualizado a Turista (visitor)."
+                                    selectedUserForRoleChange = null
+                                },
+                                onError = { err ->
+                                    snackbarMessage = err
+                                    selectedUserForRoleChange = null
+                                }
+                            )
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = EcoGuiaColors.Jade.copy(alpha = 0.2f), contentColor = EcoGuiaColors.Jade)
+                    ) {
+                        Text("Turista / Visitante (visitor)")
+                    }
+
+                    // Opción: Moderador Cultural
+                    Button(
+                        onClick = {
+                            userManagementViewModel.changeRole(
+                                userId = user.id,
+                                newRole = "moderator",
+                                onSuccess = {
+                                    snackbarMessage = "Rol actualizado a Moderador (moderator)."
+                                    selectedUserForRoleChange = null
+                                },
+                                onError = { err ->
+                                    snackbarMessage = err
+                                    selectedUserForRoleChange = null
+                                }
+                            )
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = EcoGuiaColors.Gold.copy(alpha = 0.2f), contentColor = EcoGuiaColors.Gold)
+                    ) {
+                        Text("Moderador Cultural (moderator)")
+                    }
+
+                    // Opción: Museo / Hotel / Establecimiento
+                    Button(
+                        onClick = {
+                            userManagementViewModel.changeRole(
+                                userId = user.id,
+                                newRole = "museum_hotel",
+                                onSuccess = {
+                                    snackbarMessage = "Rol actualizado a Museo / Hotel (museum_hotel)."
+                                    selectedUserForRoleChange = null
+                                },
+                                onError = { err ->
+                                    snackbarMessage = err
+                                    selectedUserForRoleChange = null
+                                }
+                            )
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = EcoGuiaColors.DeepBlue, contentColor = Color.White)
+                    ) {
+                        Text("Museo / Hotel (museum_hotel)")
+                    }
                 }
             },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        val newRole = if (isCurrentMod) "visitor" else "moderator"
-                        userManagementViewModel.changeRole(
-                            userId = user.id,
-                            newRole = newRole,
-                            onSuccess = {
-                                snackbarMessage = "Rol cambiado exitosamente a $newRole."
-                                selectedUserForRoleChange = null
-                            },
-                            onError = { err ->
-                                snackbarMessage = err
-                                selectedUserForRoleChange = null
-                            }
-                        )
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = EcoGuiaColors.Jade)
-                ) {
-                    Text(if (isCurrentMod) "Degradar a Usuario Normal" else "Promover a Moderador")
-                }
-            },
+            confirmButton = {},
             dismissButton = {
                 TextButton(onClick = { selectedUserForRoleChange = null }) {
                     Text("Cancelar")
@@ -187,7 +232,21 @@ fun UserRoleCard(
     user: RemoteUser,
     onChangeRoleClick: () -> Unit
 ) {
-    val isModerator = user.role.lowercase() in listOf("moderator", "mod")
+    val roleLower = user.role.lowercase()
+    val isModerator = roleLower in listOf("moderator", "mod")
+    val isMuseum = roleLower in listOf("museum_hotel", "museum", "hotel")
+
+    val badgeText = when {
+        isMuseum -> "MUSEO / HOTEL"
+        isModerator -> "MODERADOR"
+        else -> "TURISTA"
+    }
+
+    val badgeColor = when {
+        isMuseum -> EcoGuiaColors.DeepBlue
+        isModerator -> EcoGuiaColors.Gold
+        else -> EcoGuiaColors.Jade
+    }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -201,16 +260,17 @@ fun UserRoleCard(
             Box(
                 modifier = Modifier
                     .size(40.dp)
-                    .background(
-                        if (isModerator) EcoGuiaColors.Gold.copy(alpha = 0.15f) else EcoGuiaColors.Jade.copy(alpha = 0.15f),
-                        RoundedCornerShape(12.dp)
-                    ),
+                    .background(badgeColor.copy(alpha = 0.15f), RoundedCornerShape(12.dp)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = if (isModerator) Icons.Default.Security else Icons.Default.Person,
+                    imageVector = when {
+                        isMuseum -> Icons.Default.Security
+                        isModerator -> Icons.Default.Security
+                        else -> Icons.Default.Person
+                    },
                     contentDescription = null,
-                    tint = if (isModerator) EcoGuiaColors.Gold else EcoGuiaColors.Jade
+                    tint = badgeColor
                 )
             }
 
@@ -233,13 +293,13 @@ fun UserRoleCard(
             }
 
             Surface(
-                color = if (isModerator) EcoGuiaColors.Gold.copy(alpha = 0.15f) else EcoGuiaColors.Jade.copy(alpha = 0.15f),
+                color = badgeColor.copy(alpha = 0.15f),
                 shape = RoundedCornerShape(8.dp)
             ) {
                 Text(
-                    text = if (isModerator) "MODERADOR" else "USUARIO",
-                    color = if (isModerator) EcoGuiaColors.Gold else EcoGuiaColors.Jade,
-                    fontSize = 10.sp,
+                    text = badgeText,
+                    color = badgeColor,
+                    fontSize = 9.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                 )
@@ -253,3 +313,4 @@ fun UserRoleCard(
         }
     }
 }
+

@@ -1,13 +1,13 @@
-package mx.utng.smarttv.ui.navigation
+package mx.utng.ecoguiawear.tv.ui.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import mx.utng.smarttv.ui.screens.GalleryScreen
-import mx.utng.smarttv.ui.screens.HeatmapScreen
-import mx.utng.smarttv.ui.screens.LobbyScreen
-import mx.utng.smarttv.ui.screens.Portal360Screen
+import mx.utng.ecoguiawear.tv.ui.screens.GalleryScreen
+import mx.utng.ecoguiawear.tv.ui.screens.HeatmapScreen
+import mx.utng.ecoguiawear.tv.ui.screens.LobbyScreen
+import mx.utng.ecoguiawear.tv.ui.screens.Portal360Screen
 
 sealed class TVRoutes(val route: String) {
     object Lobby : TVRoutes("lobby")

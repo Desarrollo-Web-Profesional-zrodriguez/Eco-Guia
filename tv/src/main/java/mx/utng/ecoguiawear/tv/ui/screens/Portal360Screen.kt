@@ -1,6 +1,6 @@
 @file:OptIn(androidx.tv.material3.ExperimentalTvMaterial3Api::class)
 
-package mx.utng.smarttv.ui.screens
+package mx.utng.ecoguiawear.tv.ui.screens
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -35,7 +35,7 @@ import androidx.tv.material3.Button
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import kotlinx.coroutines.launch
-import mx.utng.smarttv.R
+import mx.utng.ecoguiawear.tv.R
 
 @Composable
 fun Portal360Screen(onBack: () -> Unit) {
