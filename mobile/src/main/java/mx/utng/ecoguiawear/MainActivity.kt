@@ -144,6 +144,31 @@ fun MainAppContainer(activity: ComponentActivity, repository: EcoGuiaRepositoryI
     val configuration = androidx.compose.ui.platform.LocalConfiguration.current
     val isLandscape = configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
 
+    // BroadcastReceiver para alertas In-App de proximidad
+    DisposableEffect(context) {
+        val receiver = object : android.content.BroadcastReceiver() {
+            override fun onReceive(context: android.content.Context?, intent: android.content.Intent?) {
+                if (intent?.action == "mx.utng.ecoguiawear.PROXIMITY_ALERT") {
+                    val siteName = intent.getStringExtra("siteName") ?: "un sitio histórico"
+                    val distance = intent.getIntExtra("distance", 0)
+                    notificationViewModel.showNotification(
+                        "📍 ¡Estás a ${distance}m de $siteName!",
+                        NotificationType.SUCCESS
+                    )
+                }
+            }
+        }
+        val filter = android.content.IntentFilter("mx.utng.ecoguiawear.PROXIMITY_ALERT")
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            context.registerReceiver(receiver, filter, android.content.Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            context.registerReceiver(receiver, filter)
+        }
+        onDispose {
+            context.unregisterReceiver(receiver)
+        }
+    }
+
     // Lógica unificada de navegación entre tabs principales
     val onNavigateAction: (String) -> Unit = { route ->
         if (route == "logout") {

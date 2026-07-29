@@ -10,6 +10,7 @@ package mx.utng.ecoguiawear.ui.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -26,10 +27,11 @@ import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
  */
 @Composable
 fun RecoveryScreen(
-    onSendClick: () -> Unit,
+    onSendClick: (String) -> Unit,
     onBackToLogin: () -> Unit
 ) {
     var email by remember { mutableStateOf("cesar@email.com") }
+    var isLoading by remember { mutableStateOf(false) }
 
     EcoBackground {
         Column(
@@ -64,7 +66,8 @@ fun RecoveryScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 EcoTextField(
                     value = email,
@@ -74,10 +77,17 @@ fun RecoveryScreen(
                 
                 Spacer(modifier = Modifier.height(16.dp))
                 
-                EcoButton(
-                    text = "Enviar enlace",
-                    onClick = onSendClick
-                )
+                if (isLoading) {
+                    CircularProgressIndicator(color = EcoGuiaColors.Gold)
+                } else {
+                    EcoButton(
+                        text = "Enviar enlace",
+                        onClick = { 
+                            isLoading = true
+                            onSendClick(email) 
+                        }
+                    )
+                }
                 
                 EcoButton(
                     text = "Volver a iniciar sesión",
