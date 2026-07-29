@@ -198,6 +198,6 @@ fun StatItem(
 @Composable
 fun ProfileScreenPreview() {
     EcoGuiaMobileTheme {
-        ProfileScreen(null, {})
+        ProfileScreen(user = null, viewModel = null, onEditClick = {})
     }
 }

@@ -39,6 +39,7 @@ fun SignUpScreen(
     var fullName by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var otpCode by remember { mutableStateOf("") }
     val authState by viewModel.authState
 
     // Manejo de éxito de registro
@@ -62,14 +63,17 @@ fun SignUpScreen(
             Spacer(modifier = Modifier.height(32.dp))
             
             Text(
-                text = "Crea tu cuenta",
+                text = if (authState is AuthState.AwaitingVerification) "Verifica tu correo" else "Crea tu cuenta",
                 style = MaterialTheme.typography.headlineMedium,
                 color = EcoGuiaColors.Text,
                 fontWeight = FontWeight.Bold
             )
             
             Text(
-                text = "Únete a la comunidad que descubre y comparte historia local.",
+                text = if (authState is AuthState.AwaitingVerification) 
+                    "Ingresa el código de 6 dígitos que enviamos a tu correo electrónico."
+                else 
+                    "Únete a la comunidad que descubre y comparte historia local.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = EcoGuiaColors.Muted,
                 textAlign = TextAlign.Center,
@@ -84,23 +88,31 @@ fun SignUpScreen(
                     .padding(horizontal = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                EcoTextField(
-                    value = fullName,
-                    onValueChange = { fullName = it },
-                    label = "NOMBRE COMPLETO"
-                )
-                
-                EcoTextField(
-                    value = email,
-                    onValueChange = { email = it },
-                    label = "CORREO ELECTRÓNICO"
-                )
-                
-                EcoTextField(
-                    value = password,
-                    onValueChange = { password = it },
-                    label = "CONTRASEÑA"
-                )
+                if (authState is AuthState.AwaitingVerification) {
+                    EcoTextField(
+                        value = otpCode,
+                        onValueChange = { if (it.length <= 6) otpCode = it },
+                        label = "CÓDIGO DE VERIFICACIÓN (6 DÍGITOS)"
+                    )
+                } else {
+                    EcoTextField(
+                        value = fullName,
+                        onValueChange = { fullName = it },
+                        label = "NOMBRE COMPLETO"
+                    )
+                    
+                    EcoTextField(
+                        value = email,
+                        onValueChange = { email = it },
+                        label = "CORREO ELECTRÓNICO"
+                    )
+                    
+                    EcoTextField(
+                        value = password,
+                        onValueChange = { password = it },
+                        label = "CONTRASEÑA"
+                    )
+                }
 
                 if (authState is AuthState.Error) {
                     Text(
@@ -120,20 +132,37 @@ fun SignUpScreen(
                         color = EcoGuiaColors.Jade
                     )
                 } else {
-                    EcoButton(
-                        text = "Crear cuenta",
-                        onClick = { 
-                            if (fullName.isNotBlank() && email.isNotBlank() && password.length >= 8) {
-                                viewModel.register(fullName, email, password)
+                    if (authState is AuthState.AwaitingVerification) {
+                        EcoButton(
+                            text = "Verificar y Crear Cuenta",
+                            onClick = { 
+                                if (otpCode.length == 6) {
+                                    viewModel.verifyOtp(otpCode)
+                                }
                             }
-                        }
-                    )
-                    
-                    EcoButton(
-                        text = "Ya tengo cuenta",
-                        onClick = onBackToLogin,
-                        useGradient = false
-                    )
+                        )
+                        
+                        EcoButton(
+                            text = "Cancelar",
+                            onClick = { viewModel.resetState() },
+                            useGradient = false
+                        )
+                    } else {
+                        EcoButton(
+                            text = "Crear cuenta",
+                            onClick = { 
+                                if (fullName.isNotBlank() && email.isNotBlank() && password.length >= 8) {
+                                    viewModel.register(fullName, email, password)
+                                }
+                            }
+                        )
+                        
+                        EcoButton(
+                            text = "Ya tengo cuenta",
+                            onClick = onBackToLogin,
+                            useGradient = false
+                        )
+                    }
                 }
             }
         }

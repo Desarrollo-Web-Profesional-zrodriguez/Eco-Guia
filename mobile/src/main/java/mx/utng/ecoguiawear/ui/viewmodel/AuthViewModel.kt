@@ -12,9 +12,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
+import mx.utng.ecoguia.shared.domain.repository.EcoGuiaRepository
 import mx.utng.ecoguia.shared.data.repository.EcoGuiaRepositoryImpl
 import mx.utng.ecoguia.shared.domain.model.RemoteUser
-import mx.utng.ecoguia.shared.domain.repository.EcoGuiaRepository
+import mx.utng.ecoguiawear.data.remote.EmailService
 
 /**
  * Representa los diferentes estados de un proceso de autenticación.
@@ -24,10 +25,9 @@ sealed class AuthState {
     object Loading : AuthState()
     data class Success(val user: RemoteUser) : AuthState()
     data class Error(val message: String) : AuthState()
+    data class AwaitingVerification(val name: String, val email: String, val passwordHash: String, val expectedOtp: String) : AuthState()
     object Registered : AuthState()
 }
-
-import mx.utng.ecoguiawear.data.remote.EmailService
 
 class AuthViewModel(
     private val repository: EcoGuiaRepository = EcoGuiaRepositoryImpl(),
@@ -151,18 +151,48 @@ class AuthViewModel(
     }
 
     /**
-     * Registra un nuevo usuario en la base de datos remota.
+     * Inicia el proceso de registro enviando un OTP por correo.
      */
     fun register(name: String, email: String, password_hash: String) {
         viewModelScope.launch {
             _authState.value = AuthState.Loading
-            val success = repository.register(name, email, password_hash)
-            if (success) {
-                _authState.value = AuthState.Registered
-                notificationViewModel?.showNotification("Cuenta creada con éxito. Ya puedes iniciar sesión.", NotificationType.SUCCESS)
+            
+            // Generar código OTP de 6 dígitos
+            val otp = (100000..999999).random().toString()
+            
+            val sent = emailService.sendOtpEmail(email, name, otp)
+            if (sent) {
+                _authState.value = AuthState.AwaitingVerification(name, email, password_hash, otp)
+                notificationViewModel?.showNotification("Código enviado a $email", NotificationType.SUCCESS)
             } else {
-                _authState.value = AuthState.Error("Error al crear la cuenta. El correo podría ya estar registrado.")
-                notificationViewModel?.showNotification("No se pudo completar el registro.", NotificationType.ERROR)
+                _authState.value = AuthState.Error("No se pudo enviar el código de verificación al correo.")
+                notificationViewModel?.showNotification("Error al enviar correo", NotificationType.ERROR)
+            }
+        }
+    }
+
+    /**
+     * Verifica el código OTP y, si es correcto, crea la cuenta.
+     */
+    fun verifyOtp(enteredOtp: String) {
+        val currentState = authState.value
+        if (currentState is AuthState.AwaitingVerification) {
+            if (enteredOtp == currentState.expectedOtp) {
+                viewModelScope.launch {
+                    _authState.value = AuthState.Loading
+                    val success = repository.register(currentState.name, currentState.email, currentState.passwordHash)
+                    if (success) {
+                        _authState.value = AuthState.Registered
+                        notificationViewModel?.showNotification("¡Cuenta creada exitosamente!", NotificationType.SUCCESS)
+                    } else {
+                        _authState.value = AuthState.Error("Error al crear la cuenta en el servidor.")
+                        notificationViewModel?.showNotification("Error al registrar", NotificationType.ERROR)
+                    }
+                }
+            } else {
+                notificationViewModel?.showNotification("Código incorrecto, intenta de nuevo.", NotificationType.ERROR)
+                // Mantener el estado actual para que puedan volver a intentarlo
+                _authState.value = currentState
             }
         }
     }
@@ -221,18 +251,23 @@ class AuthViewModel(
         viewModelScope.launch {
             try {
                 val collection = repository.getUserCollection(user.id)
-                val capsules = collection.count { it.id.startsWith("author_") }
-                val saved = collection.size - capsules
+                val capsules: Int = collection.count { it.id.startsWith("author_") }
+                val saved: Int = collection.size - capsules
 
                 _capsulesCount.value = capsules
                 _savedItemsCount.value = saved
 
-                _explorerLevel.value = when {
-                    capsules >= 20 -> "Nivel 4 - Guardián del Patrimonio"
-                    capsules >= 10 -> "Nivel 3 - Curador Comunitario"
-                    capsules >= 3 -> "Nivel 2 - Explorador Activo"
-                    else -> "Nivel 1 - Turista Reciente"
+                val level = if (capsules >= 20) {
+                    "Nivel 4 - Guardián del Patrimonio"
+                } else if (capsules >= 10) {
+                    "Nivel 3 - Curador Comunitario"
+                } else if (capsules >= 3) {
+                    "Nivel 2 - Explorador Activo"
+                } else {
+                    "Nivel 1 - Turista Reciente"
                 }
+                
+                _explorerLevel.value = level
             } catch (e: Exception) {
                 // Si falla la red, mantenemos los valores en 0
                 android.util.Log.e("AuthViewModel", "Error fetching stats: ${e.message}")
