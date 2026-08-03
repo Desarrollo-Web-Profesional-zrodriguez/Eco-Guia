@@ -18,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExitToApp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import mx.utng.ecoguia.shared.domain.model.RemoteHistoricalSite
 import mx.utng.ecoguia.shared.domain.model.RemoteUser
 import mx.utng.ecoguiawear.tv.ui.screens.components.*
@@ -92,7 +93,7 @@ fun LobbyScreen(
             }
         }
 
-        // Si ya estaba vinculada previamente, restaurar datos del usuario
+        // Si ya estaba vinculada previamente, restaurar datos del usuario en hilo IO
         val savedUserId = prefs.getString("saved_paired_user_id", null)
         val savedUserEmail = prefs.getString("saved_paired_user_email", null)
         if (savedUserId != null && savedUserEmail != null) {
@@ -105,14 +106,13 @@ fun LobbyScreen(
                 role = savedRole
             )
             isPairingSuccess = true
-            // Cargar sitio activo guardado previamente o el del propietario
             val savedSiteId = prefs.getString("saved_selected_site_id", null)
-            val sites = repository.getSitesByOwnerOrAdmin(savedUserId, isAdmin)
+            val sites = withContext(Dispatchers.IO) { repository.getSitesByOwnerOrAdmin(savedUserId, isAdmin) }
             availableSites = sites
             assignedSite = if (savedSiteId != null) {
-                sites.find { it.id == savedSiteId } ?: repository.getSiteByOwner(savedUserId)
+                sites.find { it.id == savedSiteId } ?: withContext(Dispatchers.IO) { repository.getSiteByOwner(savedUserId) }
             } else {
-                repository.getSiteByOwner(savedUserId)
+                withContext(Dispatchers.IO) { repository.getSiteByOwner(savedUserId) }
             }
         }
         isRestoringSession = false
@@ -120,7 +120,7 @@ fun LobbyScreen(
         while (true) {
             try {
                 if (!isPairingSuccess) {
-                    val pairedUser = repository.getPairingStatus(pairingCode)
+                    val pairedUser = withContext(Dispatchers.IO) { repository.getPairingStatus(pairingCode) }
                     if (pairedUser != null) {
                         val userRole = pairedUser.role ?: "museum_hotel"
                         isAdmin = userRole == "admin"
@@ -134,14 +134,14 @@ fun LobbyScreen(
                             .putString("saved_paired_user_role", userRole)
                             .putString("saved_pairing_code", pairingCode)
                             .apply()
-                        val sites = repository.getSitesByOwnerOrAdmin(pairedUser.id, isAdmin)
+                        val sites = withContext(Dispatchers.IO) { repository.getSitesByOwnerOrAdmin(pairedUser.id, isAdmin) }
                         availableSites = sites
-                        assignedSite = sites.firstOrNull() ?: repository.getSiteByOwner(pairedUser.id)
+                        assignedSite = sites.firstOrNull() ?: withContext(Dispatchers.IO) { repository.getSiteByOwner(pairedUser.id) }
                     }
                 } else {
                     // Verificar si la sesión fue desvinculada remotamente desde el móvil
                     val checkId = loggedUser?.id ?: pairingCode
-                    val currentStatus = repository.getPairingStatus(checkId)
+                    val currentStatus = withContext(Dispatchers.IO) { repository.getPairingStatus(checkId) }
                     if (currentStatus == null) {
                         android.util.Log.d("TVLobby", "Sesión desvinculada remotamente desde el móvil.")
                         prefs.edit()

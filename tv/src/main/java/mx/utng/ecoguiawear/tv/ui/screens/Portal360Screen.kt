@@ -27,9 +27,12 @@ import androidx.tv.material3.Button
 import androidx.tv.material3.Card
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
+import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import mx.utng.ecoguia.shared.data.repository.EcoGuiaRepositoryImpl
 import mx.utng.ecoguia.shared.domain.model.RemoteGeoDrop
 import mx.utng.ecoguia.shared.domain.model.RemoteHistoricalSite
@@ -108,21 +111,23 @@ fun Portal360Screen(
             otherSites = emptyList()
             return@LaunchedEffect
         }
+
         try {
-            val fetchedSite = if (savedSiteId != null) {
-                // Cargar el sitio específico seleccionado por el usuario en el Lobby
-                val isAdmin = prefs.getString("saved_paired_user_role", "") == "admin"
-                val all = repository.getSitesByOwnerOrAdmin(savedUserId, isAdmin)
-                all.find { it.id == savedSiteId } ?: repository.getSiteByOwner(savedUserId)
-            } else {
-                repository.getSiteByOwner(savedUserId)
+            val fetchedSite = withContext(Dispatchers.IO) {
+                if (savedSiteId != null) {
+                    val isAdmin = prefs.getString("saved_paired_user_role", "") == "admin"
+                    val all = repository.getSitesByOwnerOrAdmin(savedUserId, isAdmin)
+                    all.find { it.id == savedSiteId } ?: repository.getSiteByOwner(savedUserId)
+                } else {
+                    repository.getSiteByOwner(savedUserId)
+                }
             }
             site = fetchedSite
             if (fetchedSite != null) {
                 // Filtrar GeoDrops de forma estricta por el sitio seleccionado
-                geoDrops = repository.getGeoDropsBySite(fetchedSite.id)
+                geoDrops = withContext(Dispatchers.IO) { repository.getGeoDropsBySite(fetchedSite.id) }
                 // Cargar todos los sitios históricos para renderizar las áreas de proximidad de 30m de los demás sitios
-                val allHistoricalSites = repository.getHistoricalSites()
+                val allHistoricalSites = withContext(Dispatchers.IO) { repository.getHistoricalSites() }
                 otherSites = allHistoricalSites.filter { it.id != fetchedSite.id }
             } else {
                 geoDrops = emptyList()
@@ -151,10 +156,22 @@ fun Portal360Screen(
 
     LaunchedEffect(siteLatLng, zoomLevel) {
         var bearing = 0f
+        // Pausa inicial de 1.5s para que la TV renderice la escena antes de iniciar animaciones
+        kotlinx.coroutines.delay(1500)
         while (true) {
-            kotlinx.coroutines.delay(100)
-            bearing = (bearing + 0.4f) % 360f
-            cameraPositionState.position = CameraPosition.builder().target(siteLatLng).zoom(zoomLevel).tilt(45f).bearing(bearing).build()
+            bearing = (bearing + 20f) % 360f
+            val update = CameraUpdateFactory.newCameraPosition(
+                CameraPosition.builder()
+                    .target(siteLatLng)
+                    .zoom(zoomLevel)
+                    .tilt(45f)
+                    .bearing(bearing)
+                    .build()
+            )
+            // Animar el giro durante 3 segundos a 60 FPS
+            cameraPositionState.animate(update, durationMs = 3000)
+            // Pausa de reposo de 1.5s para liberar la CPU de la TV y procesar eventos del control remoto
+            kotlinx.coroutines.delay(4500)
         }
     }
 
