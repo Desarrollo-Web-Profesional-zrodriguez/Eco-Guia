@@ -24,6 +24,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.platform.LocalContext
+import mx.utng.ecoguia.shared.domain.model.RemoteCategory
 import mx.utng.ecoguiawear.ui.components.EcoButton
 import mx.utng.ecoguiawear.ui.components.EcoTextField
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
@@ -65,11 +66,11 @@ fun SiteRegistrationScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(EcoGuiaColors.DeepBlue)
-                .padding(top = 48.dp, start = 24.dp, end = 24.dp, bottom = 16.dp)
+                .padding(top = 28.dp, start = 20.dp, end = 20.dp, bottom = 8.dp)
         ) {
             Column {
-                Text("Alta de sitio", color = Color.White, fontSize = 14.sp)
-                Text("Datos básicos", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text("Alta de sitio", color = Color.White, fontSize = 12.sp)
+                Text("Datos básicos", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
             }
             
             IconButton(
@@ -83,16 +84,16 @@ fun SiteRegistrationScreen(
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(horizontal = 16.dp, vertical = 6.dp),
             colors = CardDefaults.cardColors(containerColor = EcoGuiaColors.Surface),
-            shape = RoundedCornerShape(24.dp)
+            shape = RoundedCornerShape(16.dp)
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(if (siteName.isEmpty()) "Nuevo sitio" else siteName, color = Color.White, fontWeight = FontWeight.Bold)
+            Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+                Text(if (siteName.isEmpty()) "Nuevo sitio" else siteName, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                 Text(
                     "Ruta principal para visitantes locales y turistas.", 
                     color = Color.White.copy(alpha = 0.7f), 
-                    fontSize = 12.sp
+                    fontSize = 11.sp
                 )
             }
         }
@@ -103,7 +104,7 @@ fun SiteRegistrationScreen(
                 .weight(1f)
                 .padding(horizontal = 16.dp)
         ) {
-            Text("Detalles del lugar", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
+            Text("Detalles del lugar", fontWeight = FontWeight.Bold, fontSize = 14.sp, modifier = Modifier.padding(vertical = 4.dp))
             
             LazyColumn(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 item {
@@ -142,24 +143,28 @@ fun SiteRegistrationScreen(
                             expanded = expanded,
                             onDismissRequest = { expanded = false },
                             modifier = Modifier
-                                .fillMaxWidth(0.9f)
+                                .fillMaxWidth(0.85f)
                                 .background(EcoGuiaColors.Surface)
                         ) {
                             if (categories.isEmpty() && !isLoadingCategories) {
                                 DropdownMenuItem(
-                                    text = { Text("No hay categorías", color = Color.Gray) },
-                                    onClick = { expanded = false }
-                                )
-                            }
-                            categories.forEach { cat ->
-                                DropdownMenuItem(
-                                    text = { Text(cat.name, color = Color.White) },
+                                    text = { Text("No hay categorías en la BD (Click para escribir)", color = Color.Gray) },
                                     onClick = {
-                                        android.util.Log.d("SiteRegScreen", "Categoría seleccionada: ${cat.name}")
-                                        category = cat.name
+                                        category = "Otro"
                                         expanded = false
                                     }
                                 )
+                            } else {
+                                categories.forEach { cat ->
+                                    DropdownMenuItem(
+                                        text = { Text(cat.name, color = Color.White, fontWeight = FontWeight.SemiBold) },
+                                        onClick = {
+                                            android.util.Log.d("SiteRegScreen", "Categoría seleccionada de BD: ${cat.name}")
+                                            category = cat.name
+                                            expanded = false
+                                        }
+                                    )
+                                }
                             }
                         }
                     }
@@ -210,6 +215,59 @@ fun SiteRegistrationScreen(
                                         HorizontalDivider(color = Color.White.copy(alpha = 0.1f))
                                     }
                                 }
+                            }
+                        }
+                    }
+                }
+
+                item {
+                    val museumUsers by viewModel.museumUsers
+                    var ownerExpanded by remember { mutableStateOf(false) }
+                    var selectedOwnerId by viewModel.selectedOwnerUserId
+                    val selectedOwnerName = museumUsers.firstOrNull { it.id == selectedOwnerId }?.displayName ?: "Sin asignar (Público)"
+
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        EcoTextField(
+                            value = selectedOwnerName,
+                            onValueChange = {},
+                            label = "PROPIETARIO (MUSEO / HOTEL / ESTABLECIMIENTO)",
+                            placeholder = "Seleccionar cuenta encargada",
+                            readOnly = true
+                        )
+
+                        Box(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .clickable { ownerExpanded = true }
+                        )
+
+                        DropdownMenu(
+                            expanded = ownerExpanded,
+                            onDismissRequest = { ownerExpanded = false },
+                            modifier = Modifier
+                                .fillMaxWidth(0.85f)
+                                .background(EcoGuiaColors.Surface)
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Sin asignar (Público/Sin Dueño)", color = Color.Gray) },
+                                onClick = {
+                                    selectedOwnerId = null
+                                    ownerExpanded = false
+                                }
+                            )
+                            museumUsers.forEach { user ->
+                                DropdownMenuItem(
+                                    text = { 
+                                        Column {
+                                            Text(user.displayName, color = Color.White, fontWeight = FontWeight.Bold)
+                                            Text(user.email, color = Color.White.copy(alpha = 0.6f), fontSize = 11.sp)
+                                        }
+                                    },
+                                    onClick = {
+                                        selectedOwnerId = user.id
+                                        ownerExpanded = false
+                                    }
+                                )
                             }
                         }
                     }

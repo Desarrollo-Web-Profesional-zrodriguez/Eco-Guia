@@ -16,4 +16,7 @@ object EcoGuiaConfig {
 
     /** Umbral de distancia para marcar llegada a una parada en metros. (Default: 50m) */
     var ARRIVAL_THRESHOLD_METERS: Int = 50
+
+    /** Contexto global de la aplicación para fallback de Room */
+    var appContext: android.content.Context? = null
 }

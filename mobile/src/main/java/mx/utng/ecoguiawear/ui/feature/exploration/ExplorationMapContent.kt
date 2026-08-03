@@ -102,8 +102,8 @@ fun ExplorationMapContent(
             )
         ) {
             nearbySites.forEach { site ->
-                val siteLat = site.latitude ?: return@forEach
-                val siteLng = site.longitude ?: return@forEach
+                val siteLat = site.getComputedLatitude() ?: return@forEach
+                val siteLng = site.getComputedLongitude() ?: return@forEach
                 val sitePos = LatLng(siteLat, siteLng)
                 val customIcon = remember(site.siteType) {
                     getCustomCategoryMarkerIcon(context, site.siteType)

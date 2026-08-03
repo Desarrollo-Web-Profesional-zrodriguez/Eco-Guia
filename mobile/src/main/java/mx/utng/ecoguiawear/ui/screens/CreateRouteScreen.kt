@@ -53,6 +53,7 @@ import mx.utng.ecoguiawear.ui.viewmodel.RouteViewModel
  */
 @Composable
 fun CreateRouteScreen(
+    userId: String = "",
     onRouteCreated: () -> Unit = {},
     onBack: () -> Unit = {},
     routeViewModel: RouteViewModel = viewModel(),
@@ -334,7 +335,7 @@ fun CreateRouteScreen(
                                     return@EcoButton
                                 }
                                 val minutes = estimatedMinutesStr.toIntOrNull() ?: 45
-                                routeViewModel.createRoute(title, description, minutes, selectedSiteIds.toList())
+                                routeViewModel.createRoute(title, description, minutes, selectedSiteIds.toList(), userId)
                             }
                         )
                     }

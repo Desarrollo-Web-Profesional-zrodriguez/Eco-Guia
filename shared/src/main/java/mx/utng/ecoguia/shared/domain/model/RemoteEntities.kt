@@ -20,6 +20,7 @@ data class RemoteUser(
     val email: String,
     @SerialName("display_name") val displayName: String,
     val role: String,
+    val bio: String? = null,
     @SerialName("avatar_url") val avatarUrl: String? = null,
     @SerialName("created_at") val createdAt: String? = null
 )
@@ -62,7 +63,19 @@ data class RemoteCollectionItem(
     val type: String, // 'site', 'photo', 'route'
     val status: String? = "approved", // 'approved', 'pending', 'rejected'
     @SerialName("media_url") val mediaUrl: String? = null,
-    @SerialName("created_at") val createdAt: String? = null
+    @SerialName("author_id") val authorId: String? = null,
+    @SerialName("created_at") val createdAt: String? = null,
+    @SerialName("site_type") val siteType: String? = null,
+    val address: String? = null,
+    @SerialName("historical_description") val historicalDescription: String? = null,
+    @SerialName("cost_info") val costInfo: String? = null,
+    @SerialName("opening_hours") val openingHours: String? = null,
+    val accessibility: String? = null,
+    @SerialName("site_name") val siteName: String? = null,
+    @SerialName("estimated_minutes") val estimatedMinutes: Int? = null,
+    @SerialName("distance_m") val distanceM: Int? = null,
+    val latitude: Double? = null,
+    val longitude: Double? = null
 )
 
 
@@ -83,8 +96,31 @@ data class RemoteHistoricalSite(
     val latitude: Double? = null,
     val longitude: Double? = null,
     @SerialName("detection_radius_m") val detectionRadiusM: Int = 50,
+    @SerialName("created_by") val createdBy: String? = null,
     @SerialName("is_active") val isActive: Boolean = true
-)
+) {
+    fun getComputedLatitude(): Double? {
+        if (latitude != null && latitude != 0.0) return latitude
+        if (location.isNullOrBlank()) return null
+        return try {
+            // Parses "POINT(-101.2117261 21.4806382)"
+            val coordsStr = location.substringAfter("(").substringBefore(")")
+            val parts = coordsStr.trim().split(" ")
+            if (parts.size >= 2) parts[1].toDoubleOrNull() else null
+        } catch (e: Exception) { null }
+    }
+
+    fun getComputedLongitude(): Double? {
+        if (longitude != null && longitude != 0.0) return longitude
+        if (location.isNullOrBlank()) return null
+        return try {
+            // Parses "POINT(-101.2117261 21.4806382)"
+            val coordsStr = location.substringAfter("(").substringBefore(")")
+            val parts = coordsStr.trim().split(" ")
+            if (parts.size >= 2) parts[0].toDoubleOrNull() else null
+        } catch (e: Exception) { null }
+    }
+}
 
 /**
  * Representa una categoría de sitio (Catálogo).
@@ -93,6 +129,7 @@ data class RemoteHistoricalSite(
 data class RemoteCategory(
     val id: String? = null,
     val name: String,
+    val slug: String? = null,
     val icon: String? = null
 )
 
@@ -103,7 +140,7 @@ data class RemoteCategory(
 data class RemoteRoute(
     val id: String,
     val title: String,
-    val slug: String,
+    val slug: String? = null,
     val description: String? = null,
     @SerialName("estimated_minutes") val estimatedMinutes: Int? = null,
     @SerialName("distance_m") val distanceM: Int? = null,

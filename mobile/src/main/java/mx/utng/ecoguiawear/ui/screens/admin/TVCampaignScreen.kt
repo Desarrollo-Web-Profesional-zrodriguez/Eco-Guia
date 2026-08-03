@@ -32,10 +32,36 @@ import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 
 @Composable
 fun TVCampaignScreen(
+    userId: String = "",
+    userRole: String = "",
     onAnalyticsClick: () -> Unit,
     onManageDevicesClick: (String) -> Unit
 ) {
     var selectedProgram by remember { mutableStateOf("gallery") }
+    val repository = remember { mx.utng.ecoguia.shared.data.repository.EcoGuiaRepositoryImpl() }
+    var ownedSitesCount by remember { mutableStateOf(0) }
+    var isLoadingSites by remember { mutableStateOf(true) }
+
+    val isAdmin = remember(userRole) {
+        userRole.lowercase() in listOf("admin", "super_admin", "administrator")
+    }
+
+    LaunchedEffect(userId) {
+        isLoadingSites = true
+        try {
+            if (userId.isNotBlank()) {
+                val sites = repository.getSitesByOwnerOrAdmin(userId, isAdmin)
+                ownedSitesCount = sites.size
+            } else {
+                ownedSitesCount = 0
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("TVCampaignScreen", "Error consultando sitios del usuario: ${e.message}")
+            ownedSitesCount = 0
+        } finally {
+            isLoadingSites = false
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -77,11 +103,26 @@ fun TVCampaignScreen(
             Column(modifier = Modifier.padding(16.dp)) {
                 Text("Salón de la Fama Visual", color = Color.White, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    "Selecciona 1 programación activa para transmitir en las Smart TV conectadas de tu establecimiento.", 
-                    color = Color.White.copy(alpha = 0.7f), 
-                    fontSize = 12.sp
-                )
+                if (isLoadingSites) {
+                    Text(
+                        "Verificando propiedad de sitios históricos...", 
+                        color = Color.White.copy(alpha = 0.7f), 
+                        fontSize = 12.sp
+                    )
+                } else if (ownedSitesCount == 0) {
+                    Text(
+                        "No tienes ningún sitio histórico o museo registrado a tu propiedad en la plataforma.", 
+                        color = Color(0xFFFFB74D), 
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                } else {
+                    Text(
+                        "Selecciona 1 programación activa para transmitir en las Smart TV conectadas de tu establecimiento ($ownedSitesCount sitio(s) registrado(s)).", 
+                        color = Color.White.copy(alpha = 0.7f), 
+                        fontSize = 12.sp
+                    )
+                }
             }
         }
 
@@ -89,45 +130,90 @@ fun TVCampaignScreen(
         Column(modifier = Modifier.padding(horizontal = 16.dp)) {
             Text("Modos de Programación Disponibles", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
             
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                item {
-                    CampaignItem(
-                        title = "Galería Móvil",
-                        subtitle = "Muestra todos los Geo-Drops y fotos capturadas en este hotel, sitio o museo.",
-                        icon = Icons.Default.Tv,
-                        isSelected = selectedProgram == "gallery",
-                        onClick = {
-                            selectedProgram = "gallery"
-                            onManageDevicesClick("gallery")
-                        }
-                    )
+            if (isLoadingSites) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(120.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = EcoGuiaColors.Jade)
                 }
-                item {
-                    CampaignItem(
-                        title = "Colección Pública (Mapa AR)",
-                        subtitle = "Mapa centrado en las coordenadas del sitio con marcadores e ícono de visibilidad (Ojo).",
-                        icon = Icons.Default.QrCode,
-                        isSelected = selectedProgram == "public",
-                        onClick = {
-                            selectedProgram = "public"
-                            onManageDevicesClick("public")
-                        }
-                    )
+            } else if (ownedSitesCount == 0) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 12.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(20.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Tv,
+                            contentDescription = null,
+                            tint = Color.Gray,
+                            modifier = Modifier.size(40.dp)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Transmisión no disponible",
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "No tienes ningún sitio histórico registrado a tu propiedad para proyectar en Smart TV. Registra tu museo o establecimiento antes de iniciar una campaña visual.",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 12.sp,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        )
+                    }
                 }
+            } else {
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    item {
+                        CampaignItem(
+                            title = "Galería de Geo-Drops",
+                            subtitle = "Presentación automática de imágenes y fichas informativas capturadas por los visitantes.",
+                            icon = Icons.Default.Tv,
+                            isSelected = selectedProgram == "gallery",
+                            onClick = {
+                                selectedProgram = "gallery"
+                                onManageDevicesClick("gallery")
+                            }
+                        )
+                    }
+                    item {
+                        CampaignItem(
+                            title = "Mapa del Sitio & Cápsulas",
+                            subtitle = "Vista del sitio histórico con su radio de detección y ubicación de todos los Geo-Drops dados de alta.",
+                            icon = Icons.Default.QrCode,
+                            isSelected = selectedProgram == "public",
+                            onClick = {
+                                selectedProgram = "public"
+                                onManageDevicesClick("public")
+                            }
+                        )
+                    }
 
-                item {
-                    CampaignItem(
-                        title = "Ranking Semanal",
-                        subtitle = "Muestra las cápsulas e imágenes más visitadas con mayor número de likes.",
-                        icon = Icons.Default.AccountTree,
-                        isSelected = selectedProgram == "ranking",
-                        onClick = {
-                            selectedProgram = "ranking"
-                            onManageDevicesClick("ranking")
-                        }
-                    )
+                    item {
+                        CampaignItem(
+                            title = "Resumen & Estadísticas de Cápsulas",
+                            subtitle = "Muestra el resumen de visitas e información destacada de las cápsulas históricas.",
+                            icon = Icons.Default.AccountTree,
+                            isSelected = selectedProgram == "ranking",
+                            onClick = {
+                                selectedProgram = "ranking"
+                                onManageDevicesClick("ranking")
+                            }
+                        )
+                    }
                 }
             }
+
         }
 
     }
@@ -192,7 +278,7 @@ fun CampaignItem(
 @Composable
 fun TVCampaignScreenPreview() {
     EcoGuiaMobileTheme {
-        TVCampaignScreen({}, {})
+        TVCampaignScreen(onAnalyticsClick = {}, onManageDevicesClick = {})
     }
 }
 

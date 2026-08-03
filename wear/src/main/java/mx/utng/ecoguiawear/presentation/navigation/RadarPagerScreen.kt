@@ -39,28 +39,10 @@ fun RadarPagerScreen(
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     
-    // Feedback háptico seguro al cambiar de página
-    LaunchedEffect(pagerState.currentPage) {
-        val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val vibratorManager = context.getSystemService(android.content.Context.VIBRATOR_MANAGER_SERVICE) as? android.os.VibratorManager
-            vibratorManager?.defaultVibrator
-        } else {
-            @Suppress("DEPRECATION")
-            context.getSystemService(android.content.Context.VIBRATOR_SERVICE) as? Vibrator
-        }
-        
-        vibrator?.let {
-            if (it.hasVibrator()) {
-                it.vibrate(VibrationEffect.createOneShot(45, VibrationEffect.DEFAULT_AMPLITUDE))
-            }
-        }
-    }
-
     Box(modifier = Modifier.fillMaxSize()) {
         HorizontalPager(
             state = pagerState,
-            modifier = Modifier.fillMaxSize(),
-            beyondViewportPageCount = 1 
+            modifier = Modifier.fillMaxSize()
         ) { page ->
             val isActive = pagerState.currentPage == page
             
@@ -87,6 +69,8 @@ fun RadarPagerScreen(
                         if (isRouteActive) scope.launch { pagerState.animateScrollToPage(3) }
                     },
                     onOpenSettings = { },
+                    onSelectNextAutoTarget = viewModel::selectNextAutoTarget,
+                    onSelectPreviousAutoTarget = viewModel::selectPreviousAutoTarget,
                     onRefresh = viewModel::refreshFromCloud,
                     onNavigateBack = { 
                         scope.launch { pagerState.animateScrollToPage(0) }

@@ -11,7 +11,7 @@ import kotlinx.serialization.json.Json
 import io.ktor.client.statement.*
 
 class GroqClient(
-    private val apiKey: String = "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"
+    private val apiKey: String = mx.utng.ecoguia.shared.BuildConfig.GROQ_API_KEY
 ) {
     private val client = HttpClient(OkHttp) {
         install(ContentNegotiation) {

@@ -54,7 +54,7 @@ fun RadarScreen(
     EcoWearScaffold(requestFocus = requestFocus) {
         item {
             ScreenHeader(
-                title = "Radar activo",
+                title = "Sitio histórico",
                 subtitle = state.lastAlert
             )
         }
@@ -143,7 +143,7 @@ fun RadarScreen(
             Button(
                 label = { 
                     Text(
-                        text = if (target.isAutoTarget) "📷 Capturar Geo-Drop" else "Ver Geo-Drop",
+                        text = "Ver Brújula / Dirección",
                         modifier = Modifier.fillMaxWidth(),
                         textAlign = TextAlign.Center
                     ) 

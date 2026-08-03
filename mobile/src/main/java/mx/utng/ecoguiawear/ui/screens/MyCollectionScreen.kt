@@ -23,8 +23,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -219,9 +221,11 @@ fun MyCollectionScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                text = if (searchQuery.isNotEmpty()) "🔍" else "🏛️",
-                                fontSize = 40.sp
+                            Icon(
+                                imageVector = if (searchQuery.isNotEmpty()) Icons.Default.SearchOff else Icons.Default.AccountBalance,
+                                contentDescription = null,
+                                tint = if (searchQuery.isNotEmpty()) Color.Gray else EcoGuiaColors.Jade,
+                                modifier = Modifier.size(48.dp)
                             )
                             Spacer(modifier = Modifier.height(12.dp))
                             Text(
@@ -261,8 +265,9 @@ fun MyCollectionScreen(
                                 val item = filteredItems[index]
                                 CollectionItemRow(
                                     item = item,
+                                    currentUserId = userId,
                                     searchQuery = searchQuery,
-                                    onRemove = { viewModel.removeSite(userId, item.id) }
+                                    onRemove = { viewModel.removeItem(userId, item) }
                                 )
                             }
                         }
@@ -275,8 +280,9 @@ fun MyCollectionScreen(
                             ) { _, item ->
                                 CollectionItemRow(
                                     item = item,
+                                    currentUserId = userId,
                                     searchQuery = searchQuery,
-                                    onRemove = { viewModel.removeSite(userId, item.id) }
+                                    onRemove = { viewModel.removeItem(userId, item) }
                                 )
                             }
                         }

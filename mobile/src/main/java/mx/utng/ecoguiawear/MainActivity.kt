@@ -40,6 +40,7 @@ import mx.utng.ecoguia.shared.data.repository.EcoGuiaRepositoryImpl
 import mx.utng.ecoguia.shared.domain.model.RemoteGeoDrop
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import mx.utng.ecoguiawear.ui.navigation.AppNavHost
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 import mx.utng.ecoguiawear.ui.viewmodel.AuthViewModel
@@ -61,6 +62,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        mx.utng.ecoguia.shared.config.EcoGuiaConfig.appContext = applicationContext
+        mx.utng.ecoguiawear.data.ProximityNotificationHelper.createChannels(applicationContext)
         enableEdgeToEdge()
         setContent {
             EcoGuiaMobileTheme {
@@ -94,20 +97,44 @@ fun MainAppContainer(activity: ComponentActivity, repository: EcoGuiaRepositoryI
     val routeViewModel: RouteViewModel = viewModel()
     val isRouteActive by routeViewModel.activeRoute.run { remember { derivedStateOf { value != null } } }
 
+    // Procesar intent enviado desde el reloj para abrir la pantalla GeoDrop del sitio
+    val intent = activity.intent
+    LaunchedEffect(intent) {
+        if (intent?.action == "mx.utng.ecoguiawear.OPEN_GEODROP") {
+            val siteId = intent.getStringExtra("siteId").orEmpty()
+            navController.navigate("camera_capture?siteId=$siteId") {
+                launchSingleTop = true
+            }
+        }
+    }
+
     // Cargar sesión persistente al abrir la aplicación
     LaunchedEffect(Unit) {
         authViewModel.initSessionPersistence(context)
     }
 
 
-    // Solicitar permisos de GPS al iniciar
+    // Solicitar permisos de GPS, Cámara y Notificaciones al iniciar
+    val permissionsToRequest = remember {
+        val list = mutableListOf(
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION,
+            Manifest.permission.CAMERA
+        )
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            list.add(Manifest.permission.POST_NOTIFICATIONS)
+        }
+        list.toTypedArray()
+    }
+
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
-        val granted = permissions.entries.all { it.value }
-        if (!granted) {
+        val locationGranted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+                permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+        if (!locationGranted) {
             notificationViewModel.showNotification(
-                "La app necesita GPS para funcionar correctamente.",
+                "La app necesita GPS para ofrecer recomendaciones por proximidad.",
                 NotificationType.INFO
             )
         }
@@ -115,12 +142,7 @@ fun MainAppContainer(activity: ComponentActivity, repository: EcoGuiaRepositoryI
 
     LaunchedEffect(Unit) {
         authViewModel.initNotifications(notificationViewModel)
-        permissionLauncher.launch(
-            arrayOf(
-                Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            )
-        )
+        permissionLauncher.launch(permissionsToRequest)
     }
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -144,6 +166,73 @@ fun MainAppContainer(activity: ComponentActivity, repository: EcoGuiaRepositoryI
     val configuration = androidx.compose.ui.platform.LocalConfiguration.current
     val isLandscape = configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
 
+    // BroadcastReceiver para alertas In-App de proximidad
+    DisposableEffect(context) {
+        val receiver = object : android.content.BroadcastReceiver() {
+            override fun onReceive(context: android.content.Context?, intent: android.content.Intent?) {
+                if (intent?.action == "mx.utng.ecoguiawear.PROXIMITY_ALERT") {
+                    val siteName = intent.getStringExtra("siteName") ?: "un sitio histórico"
+                    val distance = intent.getIntExtra("distance", 0)
+                    notificationViewModel.showNotification(
+                        "¡Estás a ${distance}m de $siteName!",
+                        NotificationType.SUCCESS
+                    )
+                }
+            }
+        }
+        val filter = android.content.IntentFilter("mx.utng.ecoguiawear.PROXIMITY_ALERT")
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            context.registerReceiver(receiver, filter, android.content.Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            context.registerReceiver(receiver, filter)
+        }
+        onDispose {
+            context.unregisterReceiver(receiver)
+        }
+    }
+
+    // Función utilitaria para verificar conectividad a Internet
+    fun isOnline(context: android.content.Context): Boolean {
+        val connectivityManager = context.getSystemService(android.content.Context.CONNECTIVITY_SERVICE) as? android.net.ConnectivityManager
+        val network = connectivityManager?.activeNetwork ?: return false
+        val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
+        return capabilities.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET)
+    }
+
+    // Comprobación de estado de red y sesión al iniciar con pantalla Splash (Spinner)
+    LaunchedEffect(authViewModel.currentUser, routeViewModel.activeRoute.value) {
+        kotlinx.coroutines.delay(1200) // Tiempo breve para permitir al usuario ver el spinner de verificación
+        val online = isOnline(context)
+        val hasActiveRoute = routeViewModel.activeRoute.value != null
+        val isLoggedIn = authViewModel.currentUser != null
+
+        if (!online) {
+            if (hasActiveRoute) {
+                navController.navigate("active_route") {
+                    popUpTo(0) { inclusive = true }
+                }
+            } else {
+                navController.navigate("no_internet") {
+                    popUpTo(0) { inclusive = true }
+                }
+            }
+        } else if (!isLoggedIn) {
+            val currentDestination = navController.currentDestination?.route
+            if (currentDestination != "login" && currentDestination != "signup" && currentDestination != "recovery") {
+                navController.navigate("login") {
+                    popUpTo(0) { inclusive = true }
+                }
+            }
+        } else {
+            val currentDestination = navController.currentDestination?.route
+            if (currentDestination == "splash") {
+                navController.navigate("exploration") {
+                    popUpTo("splash") { inclusive = true }
+                }
+            }
+        }
+    }
+
     // Lógica unificada de navegación entre tabs principales
     val onNavigateAction: (String) -> Unit = { route ->
         if (route == "logout") {
@@ -152,18 +241,32 @@ fun MainAppContainer(activity: ComponentActivity, repository: EcoGuiaRepositoryI
                 popUpTo(0) { inclusive = true }
             }
         } else {
-            val isMainTab = route in listOf("exploration", "search_experience", "collection")
-            navController.navigate(route) {
-                if (isMainTab) {
-                    popUpTo("exploration") {
-                        inclusive = (route == "exploration")
-                        saveState = false
+            val hasActiveRoute = routeViewModel.activeRoute.value != null
+            val online = isOnline(context)
+            if (!online) {
+                if (hasActiveRoute) {
+                    if (route == "active_route" || route == "offline") {
+                        navController.navigate(route) { launchSingleTop = true }
+                    } else {
+                        notificationViewModel.showNotification(
+                            "Estás en modo offline con una ruta activa. Solo puedes ver el progreso de la ruta.",
+                            NotificationType.ERROR
+                        )
                     }
                 } else {
-                    popUpTo("exploration") { saveState = true }
+                    navController.navigate("no_internet") {
+                        popUpTo(0) { inclusive = true }
+                    }
                 }
-                launchSingleTop = true
-                restoreState = isMainTab && route != "exploration"
+            } else {
+                val isMainTab = route in listOf("exploration", "search_experience", "collection")
+                navController.navigate(route) {
+                    popUpTo(navController.graph.findStartDestination().id) {
+                        saveState = false
+                    }
+                    launchSingleTop = true
+                    restoreState = false
+                }
             }
         }
     }

@@ -1,46 +1,114 @@
 /**
  * Archivo: EcoGuiaRepositoryImpl.kt
- * Autor: Zahir Andres
- * Fecha de última actualización: 2026-07-25
- * Descripción: Implementación del repositorio de datos que utiliza Neon HTTP API para PostgreSQL.
- * Gestiona consultas espaciales complejas para detectar sitios históricos y Geo-Drops,
- * y la persistencia real de la colección personal del usuario en user_saved_items.
- *
- * Funciones destacadas:
- * - getNearbySites: Utiliza PostGIS (ST_DWithin) para encontrar sitios en un radio geográfico.
- * - getHistoricalSites: Recupera sitios con sus coordenadas mediante ST_X y ST_Y.
- * - getUserCollection: Consulta user_saved_items JOIN historical_sites, devuelve site_id como id.
- * - saveSite: INSERT con ON CONFLICT DO NOTHING para evitar duplicados en user_saved_items.
- * - removeSavedSite: DELETE por user_id + site_id de user_saved_items.
- * - isSiteSaved: COUNT para verificar si un sitio ya está guardado por el usuario.
+ * Autores: ZahirAndres, CesarEnrique
+ * Fecha de última actualización: 2026-07-30
+ * Descripción: Implementación delegadora limpia y modularizada del repositorio EcoGuía.
+ * Cada dominio de negocio (Auth, Sitios, GeoDrops, TV/Pairing) se encuentra
+ * segmentado en archivos de extensión independientes en el paquete .extensions.
  */
-
 package mx.utng.ecoguia.shared.data.repository
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.firstOrNull
 import mx.utng.ecoguia.shared.data.remote.NeonClient
-
+import mx.utng.ecoguia.shared.data.repository.extensions.*
 import mx.utng.ecoguia.shared.domain.model.*
 import mx.utng.ecoguia.shared.domain.repository.EcoGuiaRepository
 
 class EcoGuiaRepositoryImpl(
-    private val neonClient: NeonClient = NeonClient()
+    val neonClient: NeonClient = NeonClient(),
+    val context: android.content.Context? = mx.utng.ecoguia.shared.config.EcoGuiaConfig.appContext
 ) : EcoGuiaRepository {
 
-    /**
-     * Recupera todos los sitios históricos activos ordenados por nombre.
-     */
-    override suspend fun getHistoricalSites(): List<RemoteHistoricalSite> {
-        return neonClient.executeQuery(
-            "SELECT id, name, slug, site_type, address, short_description, historical_description, ST_Y(location::geometry) as latitude, ST_X(location::geometry) as longitude, detection_radius_m, is_active FROM historical_sites WHERE is_active = TRUE ORDER BY name ASC"
-        )
+    // ── Autenticación y Usuarios ──────────────────────────────────────────────
+    override suspend fun login(email: String, password_hash: String): RemoteUser? =
+        loginExt(email, password_hash)
+
+    override suspend fun register(displayName: String, email: String, password_hash: String): Boolean =
+        registerExt(email, password_hash, displayName, "visitor") != null
+
+    override suspend fun updateUser(id: String, displayName: String, bio: String?): Boolean =
+        updateUserProfileExt(id, displayName, bio, null)
+
+    override suspend fun resetPassword(email: String, newPasswordHash: String): Boolean =
+        resetUserPasswordExt(email, newPasswordHash)
+
+    suspend fun getUserProfile(userId: String): RemoteUser? =
+        getUserProfileExt(userId)
+
+    suspend fun updateUserProfile(userId: String, displayName: String, avatarUrl: String?): Boolean =
+        updateUserProfileExt(userId, displayName, null, avatarUrl)
+
+    override suspend fun getUsersByRole(role: String): List<RemoteUser> =
+        getUsersByRoleExt(role)
+
+    override suspend fun getAllUsers(): List<RemoteUser> {
+        return try {
+            neonClient.executeQuery("SELECT id, email, display_name, role::text, bio, avatar_url, created_at::text FROM users WHERE role::text NOT IN ('super_admin', 'admin')")
+        } catch (e: Exception) {
+            emptyList()
+        }
     }
 
-    /**
-     * Registra un nuevo sitio histórico en Neon PostgreSQL usando las columnas existentes en el esquema real.
-     */
+    override suspend fun updateUserRole(userId: String, newRole: String): Boolean {
+        return try {
+            neonClient.executeCommand("UPDATE users SET role = $1::user_role WHERE id::text = $2", listOf(newRole, userId)) > 0
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    // ── Sitios Históricos y Categorías ────────────────────────────────────────
+    override suspend fun getHistoricalSites(): List<RemoteHistoricalSite> =
+        getHistoricalSitesExt()
+
+    override suspend fun getHistoricalSiteById(siteId: String): RemoteHistoricalSite? =
+        getHistoricalSiteByIdExt(siteId)
+
+    override suspend fun getNearbySites(lat: Double, lng: Double, radiusM: Int): List<RemoteHistoricalSite> {
+        val query = """
+            SELECT id, name, slug, site_type::text, short_description, historical_description, address,
+                   ST_AsText(location) as location,
+                   ST_Y(location::geometry)::double precision AS latitude,
+                   ST_X(location::geometry)::double precision AS longitude,
+                   detection_radius_m, is_active
+            FROM historical_sites
+            WHERE ST_DWithin(location::geography, ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography, $3)
+              AND is_active = TRUE
+        """.trimIndent()
+        return try {
+            val sites: List<RemoteHistoricalSite> = neonClient.executeQuery(query, listOf(lng.toString(), lat.toString(), radiusM.toString()))
+            if (sites.isNotEmpty()) sites else getHistoricalSites()
+        } catch (e: Exception) {
+            if (e is kotlinx.coroutines.CancellationException) throw e
+            android.util.Log.w("EcoGuiaRepo", "getNearbySites falló en SQL (${e.message}). Usando fallback getHistoricalSites().")
+            getHistoricalSites()
+        }
+    }
+
+    override suspend fun getSiteCategories(): List<RemoteCategory> {
+        val query = "SELECT id::text, name, COALESCE(icon, 'general') as slug FROM site_categories ORDER BY name ASC"
+        return try {
+            val categories: List<RemoteCategory> = neonClient.executeQuery(query)
+            if (categories.isNotEmpty()) {
+                categories
+            } else {
+                android.util.Log.w("EcoGuiaRepo", "La tabla site_categories existe pero está vacía. Usando categorías base.")
+                getDefaultCategoriesFallback()
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("EcoGuiaRepo", "Error consultando categorías de la base de datos: ${e.message}", e)
+            getDefaultCategoriesFallback()
+        }
+    }
+
+    private fun getDefaultCategoriesFallback(): List<RemoteCategory> = listOf(
+        RemoteCategory(id = "1", name = "Museo", slug = "museum"),
+        RemoteCategory(id = "2", name = "Monumento Histórico", slug = "monument"),
+        RemoteCategory(id = "3", name = "Plaza Principal", slug = "plaza"),
+        RemoteCategory(id = "4", name = "Templo / Iglesia", slug = "church"),
+        RemoteCategory(id = "5", name = "Sitio Arqueológico", slug = "archaeological")
+    )
+
     override suspend fun createHistoricalSite(
         name: String,
         siteType: String,
@@ -52,785 +120,435 @@ class EcoGuiaRepositoryImpl(
         radiusM: Int,
         hours: String,
         cost: String,
-        accessibility: String
-    ): String {
+        accessibility: String,
+        ownerUserId: String?
+    ): String = createHistoricalSiteExt(name, siteType, address, shortDesc, historyDesc, lat, lng, radiusM, hours, cost, accessibility, ownerUserId)
 
-        val slug = name.lowercase().trim().replace(" ", "-").replace(Regex("[^a-z0-9-]"), "") + "-" + (System.currentTimeMillis() % 10000)
-        val query = """
-            INSERT INTO historical_sites (name, slug, site_type, address, short_description, historical_description, location, detection_radius_m, is_active)
-            VALUES ($1, $2, $3, $4, $5, $6, ST_SetSRID(ST_MakePoint($7, $8), 4326)::geography, $9::integer, TRUE)
-            RETURNING id
-        """.trimIndent()
-        return try {
-            val result = neonClient.executeQuery<Map<String, String>>(
-                query,
-                listOf(name, slug, siteType, address, shortDesc, historyDesc, lng.toString(), lat.toString(), radiusM.toString())
-            )
-            val newId = result.firstOrNull()?.get("id")?.toString()?.trim('"')
-            android.util.Log.d("EcoGuiaRepo", "Sitio registrado con éxito: $name (ID: $newId)")
-            if (!newId.isNullOrBlank()) newId else "SUCCESS"
-        } catch (e: Exception) {
-            android.util.Log.e("EcoGuiaRepo", "Error al crear sitio histórico: ${e.message}", e)
-            ""
-        }
+    override suspend fun getSiteByOwner(userId: String): RemoteHistoricalSite? =
+        getSiteByOwnerExt(userId)
 
-    }
+    override suspend fun getSitesByOwnerOrAdmin(userId: String, isAdmin: Boolean): List<RemoteHistoricalSite> =
+        getSitesByOwnerOrAdminExt(userId, isAdmin)
 
+    override suspend fun deleteHistoricalSite(siteId: String): Boolean =
+        deleteHistoricalSiteExt(siteId)
+    override suspend fun assignSiteOwner(siteId: String, userId: String): Boolean =
+        assignSiteOwnerExt(siteId, userId)
 
-    /**
-     * Recupera todas las rutas turísticas marcadas como activas.
-     */
+    override suspend fun createHistoricalSiteForOwner(
+        name: String,
+        slug: String,
+        siteType: String,
+        shortDescription: String?,
+        address: String?,
+        ownerUserId: String
+    ): Boolean = assignSiteOwner(slug, ownerUserId)
+
+    // ── Rutas Turísticas y Paradas ─────────────────────────────────────────────
     override suspend fun getRoutes(): List<RemoteRoute> {
-        return neonClient.executeQuery("SELECT * FROM routes WHERE is_active = TRUE")
-    }
-
-    /**
-     * Obtiene rutas turísticas cercanas a un radio especificado (por defecto 50km = 50000m) usando PostGIS.
-     */
-    override suspend fun getNearbyRoutes(lat: Double, lng: Double, radiusM: Int): List<RemoteRoute> {
-        val query = """
-            SELECT DISTINCT r.*
-            FROM routes r
-            JOIN route_stops rs ON rs.route_id = r.id
-            JOIN historical_sites hs ON hs.id = rs.site_id
-            WHERE r.is_active = TRUE
-              AND ST_DWithin(
-                  hs.location,
-                  ST_SetSRID(ST_MakePoint($1::double precision, $2::double precision), 4326)::geography,
-                  $3::double precision
-              )
-        """.trimIndent()
         return try {
-            neonClient.executeQuery<RemoteRoute>(query, listOf(lng.toString(), lat.toString(), radiusM.toString()))
+            neonClient.executeQuery("SELECT * FROM routes WHERE is_active = TRUE")
         } catch (e: Exception) {
-            android.util.Log.e("EcoGuiaRepo", "Error al buscar rutas cercanas: ${e.message}", e)
-            getRoutes()
-        }
-    }
-
-    /**
-     * Recupera el catálogo de categorías.
-     */
-    override suspend fun getSiteCategories(): List<RemoteCategory> {
-
-        return neonClient.executeQuery("SELECT id, name, icon FROM site_categories WHERE is_active = TRUE ORDER BY name ASC")
-    }
-
-    /**
-     * Recupera los Geo-Drops (cápsulas) aprobados para el mapa y exploración.
-     */
-    override suspend fun getGeoDrops(): List<RemoteGeoDrop> {
-        return neonClient.executeQuery("SELECT *, ST_Y(location::geometry) as latitude, ST_X(location::geometry) as longitude FROM geo_drops WHERE status = 'approved' ORDER BY created_at DESC")
-    }
-
-    override suspend fun getGeoDropsBySite(siteId: String): List<RemoteGeoDrop> {
-        val query = "SELECT *, ST_Y(location::geometry) as latitude, ST_X(location::geometry) as longitude FROM geo_drops WHERE status = 'approved' AND site_id::text = $1 ORDER BY created_at DESC"
-        return try {
-            neonClient.executeQuery(query, listOf(siteId))
-        } catch (e: Exception) {
-            android.util.Log.e("EcoGuiaRepo", "Error al obtener GeoDrops por sitio: ${e.message}", e)
             emptyList()
         }
     }
 
-    override suspend fun getTopRankingGeoDrops(limit: Int): List<RemoteGeoDrop> {
-        val query = "SELECT *, ST_Y(location::geometry) as latitude, ST_X(location::geometry) as longitude FROM geo_drops WHERE status = 'approved' ORDER BY likes_count DESC, created_at DESC LIMIT $1::integer"
-        return try {
-            neonClient.executeQuery(query, listOf(limit.toString()))
-        } catch (e: Exception) {
-            android.util.Log.e("EcoGuiaRepo", "Error al obtener ranking GeoDrops: ${e.message}", e)
-            emptyList()
-        }
-    }
+    override suspend fun getNearbyRoutes(lat: Double, lng: Double, radiusM: Int): List<RemoteRoute> = getRoutes()
 
-
-    /**
-     * Recupera las cápsulas pendientes o reportadas para la lista de moderación del admin/moderador.
-     */
-    override suspend fun getPendingGeoDrops(): List<RemoteGeoDrop> {
-        return try {
-            neonClient.executeQuery("SELECT *, ST_Y(location::geometry) as latitude, ST_X(location::geometry) as longitude FROM geo_drops ORDER BY created_at DESC")
-        } catch (e: Exception) {
-            android.util.Log.e("EcoGuiaRepo", "Error al cargar cápsulas pendientes: ${e.message}", e)
-            emptyList()
-        }
-    }
-
-    /**
-     * Actualiza el estado de moderación (approved/rejected) de un Geo-Drop.
-     */
-    override suspend fun updateGeoDropStatus(id: String, status: String): Boolean {
-        val query = "UPDATE geo_drops SET status = $1 WHERE id = $2::uuid"
-        return try {
-            val rows = neonClient.executeCommand(query, listOf(status, id))
-            rows > 0
-        } catch (e: Exception) {
-            android.util.Log.e("EcoGuiaRepo", "Error al actualizar estado de moderación: ${e.message}", e)
-            false
-        }
-    }
-
-
-    /**
-     * Crea un nuevo Geo-Drop usando PostGIS para la localización y lo vincula al usuario en user_saved_items.
-     * Verifica la validez de las llaves foráneas para evitar violaciones de restricción en cuentas de prueba o UUIDs sintéticos.
-     */
-    override suspend fun createGeoDrop(title: String, description: String, lat: Double, lng: Double, userId: String?, siteId: String?, mediaUrl: String?): Boolean {
-        val cleanUserId = if (userId.isNullOrEmpty() || userId == "guest") "" else userId
-        val cleanSiteId = siteId.orEmpty()
-        val insertGeoDropQuery = """
-            INSERT INTO geo_drops (title, description, location, status, type, author_id, site_id, media_url) 
-            VALUES ($1, $2, ST_SetSRID(ST_MakePoint($3, $4), 4326)::geography, 'pending', 'photo', 
-                    CASE WHEN $5 <> '' AND EXISTS (SELECT 1 FROM users WHERE id::text = $5) THEN $5::uuid ELSE NULL END, 
-                    CASE WHEN $6 <> '' AND EXISTS (SELECT 1 FROM historical_sites WHERE id::text = $6) THEN $6::uuid ELSE NULL END,
-                    CASE WHEN $7 = '' THEN NULL ELSE $7 END)
-            RETURNING id::text
-        """.trimIndent()
-        return try {
-            val response = neonClient.executeQuery<kotlinx.serialization.json.JsonObject>(
-                query = insertGeoDropQuery, 
-                params = listOf(title, description, lng.toString(), lat.toString(), cleanUserId, cleanSiteId, mediaUrl.orEmpty())
-            )
-
-            val newGeoDropId = response.firstOrNull()?.get("id")?.toString()?.replace("\"", "")
-            
-            true
-
-
-
-
-
-
-            true
-        } catch (e: Exception) {
-            android.util.Log.e("EcoGuiaRepo", "Error al crear Geo-Drop: ${e.message}", e)
-            false
-        }
-    }
-
-
-
-    /**
-     * Recupera la colección real del usuario consultando user_saved_items unida con historical_sites, routes y geo_drops.
-     */
-    override suspend fun getUserCollection(userId: String): List<RemoteCollectionItem> {
+    override suspend fun getRouteStops(routeId: String): List<RemoteRouteStop> {
         val query = """
-            SELECT * FROM (
-                -- 1. Fotografías/Geo-Drops creados por el usuario
-                SELECT 
-                    'author_' || gd.id::text AS id,
-                    gd.id::text AS raw_id,
-                    gd.title AS title,
-                    COALESCE(gd.description, 'Fotografía anclada') AS subtitle,
-                    'photo' AS type,
-                    gd.status::text AS status,
-                    gd.media_url AS media_url,
-                    gd.created_at AS created_at
-                FROM geo_drops gd
-                WHERE $1 <> '' AND gd.author_id::text = $1
-
-                UNION ALL
-
-                -- 2. Geo-Drops de otros usuarios coleccionados/guardados por el usuario
-                SELECT 
-                    'saved_' || usi.id::text AS id,
-                    gd.id::text AS raw_id,
-                    gd.title AS title,
-                    COALESCE(gd.description, 'Geo-Drop Coleccionado') AS subtitle,
-                    'photo' AS type,
-                    'approved' AS status,
-                    gd.media_url AS media_url,
-                    usi.created_at AS created_at
-                FROM user_saved_items usi
-                JOIN geo_drops gd ON gd.id = usi.geo_drop_id
-                WHERE $1 <> '' AND usi.user_id::text = $1 AND usi.geo_drop_id IS NOT NULL
-
-                UNION ALL
-
-                -- 3. Sitios o Rutas guardados explícitamente en favoritos
-                SELECT 
-                    'fav_' || usi.id::text AS id,
-                    COALESCE(hs.id::text, r.id::text, usi.id::text) AS raw_id,
-                    COALESCE(hs.name, r.title, 'Elemento Guardado') AS title,
-                    COALESCE(hs.historical_description, hs.short_description, r.description, 'Sin descripción disponible') AS subtitle,
-                    CASE WHEN usi.route_id IS NOT NULL THEN 'route' ELSE 'site' END AS type,
-                    'approved' AS status,
-                    NULL AS media_url,
-                    usi.created_at AS created_at
-                FROM user_saved_items usi
-                LEFT JOIN historical_sites hs ON hs.id = usi.site_id
-                LEFT JOIN routes r ON r.id = usi.route_id
-                WHERE $1 <> '' AND usi.user_id::text = $1 AND usi.geo_drop_id IS NULL AND (usi.site_id IS NOT NULL OR usi.route_id IS NOT NULL)
-
-
-
-            ) combined_collection
-            ORDER BY created_at DESC
-        """.trimIndent()
-        return try {
-            neonClient.executeQuery<RemoteCollectionItem>(query, listOf(userId))
-        } catch (e: Exception) {
-            android.util.Log.e("EcoGuiaRepo", "Error al cargar colección: ${e.message}", e)
-            emptyList()
-        }
-    }
-
-
-
-
-    /**
-     * Busca sitios cercanos utilizando ST_DWithin de PostGIS.
-     */
-    override suspend fun getNearbySites(lat: Double, lng: Double, radiusM: Int): List<RemoteHistoricalSite> {
-        val query = """
-            SELECT *, ST_Y(location::geometry) as latitude, ST_X(location::geometry) as longitude 
-            FROM historical_sites 
-            WHERE is_active = TRUE 
-            AND ST_DWithin(
-                location, 
-                ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography, 
-                $3
-            )
-        """.trimIndent()
-        return neonClient.executeQuery(
-            query = query, 
-            params = listOf(lng.toString(), lat.toString(), radiusM.toString())
-        )
-    }
-
-    /**
-     * Verifica las credenciales de un usuario únicamente consultando la base de datos remota Neon PostgreSQL.
-     */
-    override suspend fun login(email: String, password_hash: String): RemoteUser? {
-        val input = email.trim().lowercase()
-
-        val query = "SELECT id, email, display_name, role, avatar_url, created_at FROM users WHERE (LOWER(email) = LOWER($1) OR LOWER(display_name) = LOWER($1)) AND password_hash = crypt($2, password_hash) AND is_active = TRUE"
-        return try {
-            val result = neonClient.executeQuery<RemoteUser>(query, listOf(input, password_hash))
-            result.firstOrNull()
-        } catch (e: Exception) {
-            android.util.Log.e("EcoGuiaRepo", "Error en login remotos: ${e.message}", e)
-            null
-        }
-    }
-
-
-
-    /**
-     * Registra un nuevo usuario. Cifra la contraseña con gen_salt('bf').
-     */
-    override suspend fun register(displayName: String, email: String, password_hash: String): Boolean {
-        val query = "INSERT INTO users (display_name, email, password_hash, role) VALUES ($1, $2, crypt($3, gen_salt('bf')), 'visitor')"
-        return try {
-            val rowsAffected = neonClient.executeCommand(query, listOf(displayName, email, password_hash))
-            rowsAffected > 0
-        } catch (e: Exception) {
-            false
-        }
-    }
-
-    /**
-     * Actualiza la información del perfil del usuario.
-     */
-    override suspend fun updateUser(id: String, displayName: String): Boolean {
-        val query = "UPDATE users SET display_name = $1 WHERE id = $2"
-        return try {
-            val rowsAffected = neonClient.executeCommand(query, listOf(displayName, id))
-            rowsAffected > 0
-        } catch (e: Exception) {
-            false
-        }
-    }
-
-    /**
-     * Obtiene los artículos de conocimiento curados desde la tabla knowledge_articles de Neon.
-     */
-    override suspend fun getKnowledgeArticles(): List<RemoteKnowledgeArticle> {
-        val query = "SELECT id, title, content, created_by, is_active, created_at FROM knowledge_articles WHERE is_active = TRUE ORDER BY created_at DESC"
-        return try {
-            neonClient.executeQuery<RemoteKnowledgeArticle>(query)
-        } catch (e: Exception) {
-            android.util.Log.e("EcoGuiaRepo", "Error al obtener conocimiento de IA: ${e.message}", e)
-            emptyList()
-        }
-    }
-
-    /**
-     * Guarda una nueva pregunta/respuesta curada en la tabla knowledge_articles de Neon.
-     */
-    override suspend fun createKnowledgeArticle(title: String, content: String, authorId: String?): Boolean {
-        val cleanAuthorId = if (authorId.isNullOrEmpty()) "" else authorId
-
-        val query = """
-            INSERT INTO knowledge_articles (title, content, created_by, is_active)
-            VALUES ($1, $2, CASE WHEN $3 <> '' AND EXISTS (SELECT 1 FROM users WHERE id::text = $3) THEN $3::uuid ELSE NULL END, TRUE)
-        """.trimIndent()
-        return try {
-            val rows = neonClient.executeCommand(query, listOf(title, content, cleanAuthorId))
-            rows > 0
-        } catch (e: Exception) {
-            android.util.Log.e("EcoGuiaRepo", "Error al guardar conocimiento de IA: ${e.message}", e)
-            false
-        }
-    }
-
-
-
-    /**
-     * Obtiene todos los usuarios registrados en Neon PostgreSQL.
-     * Convierte el tipo de dato enum user_role a texto (role::text) para evitar errores de parseo en PostgreSQL.
-     */
-    override suspend fun getAllUsers(): List<RemoteUser> {
-        val query = "SELECT id, email, display_name, role::text AS role, avatar_url, created_at FROM users WHERE role::text NOT IN ('admin') ORDER BY created_at DESC"
-        return try {
-            neonClient.executeQuery<RemoteUser>(query)
-        } catch (e: Exception) {
-            android.util.Log.e("EcoGuiaRepo", "Error al obtener usuarios: ${e.message}", e)
-            emptyList()
-        }
-    }
-
-
-    /**
-     * Actualiza el rol de un usuario en Neon PostgreSQL.
-     */
-    override suspend fun updateUserRole(userId: String, newRole: String): Boolean {
-        val query = "UPDATE users SET role = $1::user_role WHERE id = $2::uuid"
-        return try {
-            val rows = neonClient.executeCommand(query, listOf(newRole, userId))
-            rows > 0
-        } catch (e: Exception) {
-            android.util.Log.e("EcoGuiaRepo", "Error al actualizar rol de usuario: ${e.message}", e)
-            false
-        }
-    }
-
-
-    /**
-     * Ejecuta una consulta simple para validar la disponibilidad de la base de datos.
-     */
-    override suspend fun testConnection(): String {
-        return try {
-            val query = "SELECT now() as current_time"
-            val response = neonClient.executeQuery<kotlinx.serialization.json.JsonObject>(query)
-            val time = response.firstOrNull()?.get("current_time")?.toString()
-            if (time != null) "Connected! Database time: $time" else "Connected, but no data."
-        } catch (e: Exception) {
-            "Connection failed: ${e.message}"
-        }
-    }
-
-    /**
-     * Guarda un sitio en la colección del usuario en user_saved_items.
-
-     * ON CONFLICT DO NOTHING garantiza que no haya duplicados.
-     */
-    override suspend fun saveSite(userId: String, siteId: String): Boolean {
-        val query = """
-            INSERT INTO user_saved_items (user_id, site_id)
-            SELECT $1::uuid, $2::uuid
-            WHERE NOT EXISTS (
-                SELECT 1 FROM user_saved_items WHERE user_id = $1::uuid AND site_id = $2::uuid
-            )
-        """.trimIndent()
-        return try {
-            val rows = neonClient.executeCommand(query, listOf(userId, siteId))
-            android.util.Log.d("EcoGuiaRepo", "Sitio guardado: $siteId para usuario $userId ($rows filas)")
-            true
-        } catch (e: Exception) {
-            android.util.Log.e("EcoGuiaRepo", "Error al guardar sitio: ${e.message}", e)
-            false
-        }
-    }
-
-    /**
-     * Elimina un sitio de la colección del usuario en user_saved_items.
-     */
-    override suspend fun removeSavedSite(userId: String, siteId: String): Boolean {
-        val cleanId = siteId.removePrefix("author_").removePrefix("saved_").removePrefix("fav_")
-        val querySavedItems = """
-            DELETE FROM user_saved_items
-            WHERE user_id::text = $1
-              AND (id::text = $2 OR site_id::text = $2 OR route_id::text = $2 OR geo_drop_id::text = $2)
-        """.trimIndent()
-
-        val queryGeoDrops = """
-            DELETE FROM geo_drops
-            WHERE author_id::text = $1 AND id::text = $2
-        """.trimIndent()
-
-        return try {
-            val rows1 = neonClient.executeCommand(querySavedItems, listOf(userId, cleanId))
-            val rows2 = neonClient.executeCommand(queryGeoDrops, listOf(userId, cleanId))
-            android.util.Log.d("EcoGuiaRepo", "Elemento eliminado de colección: $cleanId (saved_items: $rows1, geo_drops: $rows2)")
-            true
-        } catch (e: Exception) {
-            android.util.Log.e("EcoGuiaRepo", "Error al eliminar elemento de colección: ${e.message}", e)
-            false
-        }
-    }
-
-
-
-
-    /**
-     * Verifica si un sitio ya está guardado por el usuario en user_saved_items.
-     */
-    override suspend fun isSiteSaved(userId: String, siteId: String): Boolean {
-        val query = """
-            SELECT COUNT(*) AS count
-            FROM user_saved_items
-            WHERE user_id = $1::uuid AND site_id = $2::uuid
-        """.trimIndent()
-        return try {
-            val result = neonClient.executeQuery<kotlinx.serialization.json.JsonObject>(query, listOf(userId, siteId))
-            val count = result.firstOrNull()?.get("count")?.toString()?.trim('"')?.toLongOrNull() ?: 0L
-            count > 0L
-        } catch (e: Exception) {
-            android.util.Log.e("EcoGuiaRepo", "Error al verificar guardado de sitio: ${e.message}", e)
-            false
-        }
-    }
-
-    /**
-     * Verifica si un Geo-Drop ya fue coleccionado o es propiedad del usuario.
-     */
-    override suspend fun isGeoDropCollected(userId: String, geoDropId: String): Boolean {
-        if (userId.isBlank() || userId == "guest") return false
-        val query = """
-            SELECT COUNT(*) AS count
-            FROM (
-                SELECT 1 FROM user_saved_items WHERE user_id::text = $1 AND geo_drop_id::text = $2
-                UNION ALL
-                SELECT 1 FROM geo_drops WHERE author_id::text = $1 AND id::text = $2
-            ) c
-        """.trimIndent()
-        return try {
-            val result = neonClient.executeQuery<kotlinx.serialization.json.JsonObject>(query, listOf(userId, geoDropId))
-            val count = result.firstOrNull()?.get("count")?.toString()?.trim('"')?.toLongOrNull() ?: 0L
-            count > 0L
-        } catch (e: Exception) {
-            android.util.Log.e("EcoGuiaRepo", "Error al verificar guardado de GeoDrop: ${e.message}", e)
-            false
-        }
-    }
-
-
-
-
-    /**
-     * Obtiene las paradas ordenadas de una ruta turística, incluyendo nombre y coordenadas del sitio histórico.
-     */
-    override suspend fun getRouteStops(routeId: String): List<mx.utng.ecoguia.shared.domain.model.RemoteRouteStop> {
-        val query = """
-            SELECT
-                rs.id::text           AS id,
-                rs.route_id::text     AS route_id,
-                rs.site_id::text      AS site_id,
-                rs.stop_order         AS stop_order,
-                rs.instruction        AS instruction,
-                hs.name               AS site_name,
-                ST_Y(hs.location::geometry) AS latitude,
-                ST_X(hs.location::geometry) AS longitude
+            SELECT 
+                rs.id, 
+                rs.route_id, 
+                rs.site_id,
+                rs.site_id AS geo_drop_id,
+                rs.stop_order, 
+                rs.instruction, 
+                rs.created_at::text,
+                COALESCE(hs.name, 'Sitio Histórico') AS site_name,
+                ST_Y(hs.location::geometry)::double precision AS latitude,
+                ST_X(hs.location::geometry)::double precision AS longitude
             FROM route_stops rs
-            JOIN historical_sites hs ON hs.id = rs.site_id
-            WHERE rs.route_id = $1::uuid
+            LEFT JOIN historical_sites hs ON hs.id = rs.site_id
+            WHERE rs.route_id::text = $1
             ORDER BY rs.stop_order ASC
         """.trimIndent()
         return try {
-            neonClient.executeQuery<mx.utng.ecoguia.shared.domain.model.RemoteRouteStop>(query, listOf(routeId))
-        } catch (e: Exception) {
-            android.util.Log.e("EcoGuiaRepo", "Error al obtener paradas de ruta: ${e.message}", e)
-            emptyList()
-        }
-    }
-
-    /**
-     * Crea una ruta turística nueva e inserta sus paradas ordenadas en Neon PostgreSQL.
-     */
-    override suspend fun createRoute(
-        title: String,
-        description: String,
-        estimatedMinutes: Int,
-        siteIds: List<String>
-    ): Boolean {
-        return try {
-            val slug = title.lowercase().trim().replace(" ", "-").replace(Regex("[^a-z0-9-]"), "") + "-" + (System.currentTimeMillis() % 10000)
-            val routeQuery = """
-                INSERT INTO routes (title, slug, description, estimated_minutes)
-                VALUES ($1, $2, $3, $4::integer)
-                RETURNING id::text
-            """.trimIndent()
-
-            val routeResult = neonClient.executeQuery<kotlinx.serialization.json.JsonObject>(
-                routeQuery,
-                listOf(title, slug, description, estimatedMinutes.toString())
-            )
-
-            val routeId = routeResult.firstOrNull()?.get("id")?.toString()?.trim('"')
-                ?: return false
-
-            siteIds.forEachIndexed { index, siteId ->
-                val stopQuery = """
-                    INSERT INTO route_stops (route_id, site_id, stop_order)
-                    VALUES ($1::uuid, $2::uuid, $3::integer)
-                    ON CONFLICT DO NOTHING
-                """.trimIndent()
-                neonClient.executeCommand(stopQuery, listOf(routeId, siteId, (index + 1).toString()))
+            val stops: List<RemoteRouteStop> = neonClient.executeQuery(query, listOf(routeId))
+            if (stops.isNotEmpty() && context != null) {
+                val database = mx.utng.ecoguia.shared.data.EcoGuiaDatabase.getDatabase(context)
+                val entities = stops.map {
+                    GeoDropEntity(
+                        id = it.id,
+                        routeId = routeId,
+                        title = it.siteName ?: "Parada ${it.stopOrder}",
+                        description = it.instruction.orEmpty(),
+                        latitude = it.latitude ?: 0.0,
+                        longitude = it.longitude ?: 0.0,
+                        order = it.stopOrder,
+                        isVisited = false
+                    )
+                }
+                database.dao().insertGeoDrops(entities)
             }
-
-            android.util.Log.d("EcoGuiaRepo", "Ruta creada con éxito: $routeId")
-            true
+            stops
         } catch (e: Exception) {
-            android.util.Log.e("EcoGuiaRepo", "Error al crear ruta: ${e.message}", e)
-            false
+            android.util.Log.e("EcoGuiaRepo", "Error al consultar paradas remotas de la ruta: ${e.message}")
+            if (context != null) {
+                try {
+                    val database = mx.utng.ecoguia.shared.data.EcoGuiaDatabase.getDatabase(context)
+                    val localDrops = database.dao().getGeoDropsForRoute(routeId).firstOrNull() ?: emptyList()
+                    localDrops.map { drop ->
+                        RemoteRouteStop(
+                            id = drop.id,
+                            routeId = routeId,
+                            siteId = drop.id,
+                            geoDropId = drop.id,
+                            stopOrder = drop.order,
+                            instruction = drop.description,
+                            siteName = drop.title,
+                            latitude = drop.latitude,
+                            longitude = drop.longitude
+                        )
+                    }
+                } catch (localEx: Exception) {
+                    emptyList()
+                }
+            } else emptyList()
         }
     }
 
-    /**
-     * Elimina una ruta existente por su ID.
-     */
-    override suspend fun deleteRoute(routeId: String): Boolean {
-        val query = "DELETE FROM routes WHERE id = $1::uuid"
-        return try {
-            val rows = neonClient.executeCommand(query, listOf(routeId))
-            rows > 0
-        } catch (e: Exception) {
-            android.util.Log.e("EcoGuiaRepo", "Error al eliminar ruta: ${e.message}", e)
-            false
-        }
-    }
+    override suspend fun createRoute(title: String, description: String, estimatedMinutes: Int, siteIds: List<String>, ownerUserId: String?): Boolean {
+        val slugBase = title.lowercase()
+            .replace(Regex("[^a-z0-9\\s-]"), "")
+            .trim()
+            .replace(Regex("\\s+"), "-")
+        val slug = if (slugBase.isNotBlank()) "$slugBase-${System.currentTimeMillis().toString().takeLast(4)}" else "ruta-${System.currentTimeMillis()}"
 
-    /**
-     * Guarda explícitamente una ruta completada en la colección del usuario en user_saved_items.
-     */
-    override suspend fun saveRouteToCollection(userId: String, routeId: String): Boolean {
-        val query = """
-            INSERT INTO user_saved_items (user_id, route_id)
-            VALUES ($1::uuid, $2::uuid)
-            ON CONFLICT DO NOTHING
+        val insertRoute = """
+            INSERT INTO routes (title, slug, description, estimated_minutes, created_by, is_active) 
+            VALUES ($1, $2, $3, $4, NULLIF($5, '')::uuid, TRUE) 
+            RETURNING id
         """.trimIndent()
         return try {
-            val rows = neonClient.executeCommand(query, listOf(userId, routeId))
-            android.util.Log.d("EcoGuiaRepo", "Ruta $routeId guardada explícitamente en colección para usuario $userId ($rows filas)")
-            true
-        } catch (e: Exception) {
-            android.util.Log.e("EcoGuiaRepo", "Error al guardar GeoDrop en colección: ${e.message}", e)
-            false
-        }
-    }
-
-    override suspend fun getUserDevices(userId: String): List<RemoteDevice> {
-        val query = "SELECT id, user_id, type::text, name, device_identifier, is_active, last_seen_at::text FROM devices WHERE user_id::text = $1 AND is_active = TRUE ORDER BY created_at DESC"
-        return try {
-            neonClient.executeQuery(query, listOf(userId))
-        } catch (e: Exception) {
-            android.util.Log.e("EcoGuiaRepo", "Error al obtener dispositivos del usuario: ${e.message}", e)
-            emptyList()
-        }
-    }
-
-    override suspend fun registerDevice(userId: String, name: String, type: String, deviceIdentifier: String): Boolean {
-        val query = """
-            INSERT INTO devices (user_id, name, type, device_identifier, is_active, last_seen_at)
-            VALUES ($1::uuid, $2, $3::device_type, $4, TRUE, NOW())
-            ON CONFLICT DO NOTHING
-        """.trimIndent()
-        return try {
-            val rows = neonClient.executeCommand(query, listOf(userId, name, type, deviceIdentifier))
-            rows > 0
-        } catch (e: Exception) {
-            android.util.Log.e("EcoGuiaRepo", "Error al registrar dispositivo: ${e.message}", e)
-            false
-        }
-    }
-
-    override suspend fun unlinkDevice(deviceId: String): Boolean {
-        val query = "DELETE FROM devices WHERE id::text = $1"
-        return try {
-            val rows = neonClient.executeCommand(query, listOf(deviceId))
-            rows > 0
-        } catch (e: Exception) {
-            android.util.Log.e("EcoGuiaRepo", "Error al desvincular dispositivo: ${e.message}", e)
-            false
-        }
-    }
-
-    override suspend fun pairDeviceByCode(userId: String, pairingCode: String): Boolean {
-        val insertTvDevice = """
-            INSERT INTO devices (user_id, name, type, device_identifier, is_active, last_seen_at)
-            VALUES ($1::uuid, 'Smart TV - Emisión Lobby', 'tv'::device_type, 'TV-PIN-' || $2, TRUE, NOW())
-            ON CONFLICT DO NOTHING
-        """.trimIndent()
-
-        val insertPairing = """
-            INSERT INTO device_pairings (user_id, pairing_code, is_active)
-            VALUES ($1::uuid, $2, TRUE)
-        """.trimIndent()
-
-        return try {
-            if (userId.isNotBlank()) {
-                neonClient.executeCommand(insertTvDevice, listOf(userId, pairingCode))
-            }
-            neonClient.executeCommand(insertPairing, listOf(if (userId.isBlank()) "2603b469-aa27-4eed-a6aa-dbce7fc145f5" else userId, pairingCode))
-            true
-        } catch (e: Exception) {
-            android.util.Log.e("EcoGuiaRepo", "Error al registrar vinculación QR: ${e.message}", e)
-            false
-        }
-    }
-
-
-    override suspend fun getPairingStatus(pairingCode: String): RemoteUser? {
-        val query = """
-            SELECT u.id, u.email, u.display_name, u.role::text, u.avatar_url, u.created_at::text
-            FROM device_pairings dp
-            JOIN users u ON dp.user_id = u.id
-            WHERE dp.pairing_code = $1 AND dp.is_active = TRUE
-            LIMIT 1
-        """.trimIndent()
-        return try {
-            val users: List<RemoteUser> = neonClient.executeQuery(query, listOf(pairingCode))
-            users.firstOrNull()
-        } catch (e: Exception) {
-            android.util.Log.e("EcoGuiaRepo", "Error al obtener estado de pairing: ${e.message}", e)
-            null
-        }
-    }
-
-    override suspend fun getSiteByOwner(userId: String): RemoteHistoricalSite? {
-        val queryByOwner = """
-            SELECT id, name, slug, site_type::text, short_description, historical_description, address,
-                   ST_AsText(location) as location, detection_radius_m, is_active
-            FROM historical_sites
-            WHERE created_by::text = $1 AND is_active = TRUE
-            LIMIT 1
-        """.trimIndent()
-
-        val queryDefault = """
-            SELECT id, name, slug, site_type::text, short_description, historical_description, address,
-                   ST_AsText(location) as location, detection_radius_m, is_active
-            FROM historical_sites
-            WHERE is_active = TRUE
-            ORDER BY created_at ASC
-            LIMIT 1
-        """.trimIndent()
-
-        return try {
-            val sites: List<RemoteHistoricalSite> = neonClient.executeQuery(queryByOwner, listOf(userId))
-            if (sites.isNotEmpty()) {
-                sites.first()
-            } else {
-                val fallback: List<RemoteHistoricalSite> = neonClient.executeQuery(queryDefault, emptyList())
-                fallback.firstOrNull()
-            }
-        } catch (e: Exception) {
-            android.util.Log.e("EcoGuiaRepo", "Error obteniendo sitio por dueño: ${e.message}", e)
-            null
-        }
-    }
-
-    override suspend fun setTvTransmissionProgram(pairingCode: String, programType: String): Boolean {
-        // 1. Enviar vía canal MQTT de alta velocidad (HiveMQ Cloud)
-        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
-            mx.utng.ecoguia.shared.data.remote.HiveMQManager.publishProgramCommand(pairingCode, programType)
-        }
-
-
-        // 2. Guardar en Neon DB como respaldo de persistencia
-        val query = """
-            INSERT INTO tv_displays (name, location_label, is_online, active_program)
-            VALUES ($1, 'Lobby Principal', TRUE, $2)
-            ON CONFLICT (name) DO UPDATE SET active_program = EXCLUDED.active_program, is_online = TRUE
-        """.trimIndent()
-
-        return try {
-            neonClient.executeCommand(query, listOf("TV-" + pairingCode, programType))
-            true
-        } catch (e: Exception) {
-            android.util.Log.e("EcoGuiaRepo", "Error enviando transmisión a TV en DB: ${e.message}", e)
-            true // Se retorna true porque el canal MQTT ya envió la orden
-        }
-    }
-
-
-    override suspend fun getTvActiveProgram(pairingCode: String): String? {
-        val query = "SELECT active_program FROM tv_displays WHERE name = $1 LIMIT 1"
-        return try {
-            val rows: List<Map<String, String>> = neonClient.executeQuery(query, listOf("TV-" + pairingCode))
-            val prog = rows.firstOrNull()?.get("active_program")
-            if (!prog.isNull_or_blank_helper()) prog else null
-        } catch (e: Exception) {
-            null
-        }
-    }
-
-    override suspend fun assignSiteOwner(siteId: String, userId: String): Boolean {
-        val query = "UPDATE historical_sites SET created_by = $1::uuid, updated_at = NOW() WHERE id = $2::uuid"
-        return try {
-            neonClient.executeCommand(query, listOf(userId, siteId))
-            true
-        } catch (e: Exception) {
-            android.util.Log.e("EcoGuiaRepo", "Error al asignar encargado al sitio: ${e.message}", e)
-            false
-        }
-    }
-
-    private fun String?.isNull_or_blank_helper(): Boolean = this == null || this.trim().isEmpty()
-
-
-
-
-    /**
-     * Guarda un Geo-Drop público existente en la colección personal del usuario (user_saved_items).
-     */
-    override suspend fun saveGeoDropToCollection(userId: String, geoDropId: String, siteId: String?): Boolean {
-        val insertQuery = """
-            INSERT INTO user_saved_items (user_id, geo_drop_id, site_id)
-            SELECT 
-                $1::uuid, 
-                $2::uuid, 
-                COALESCE(
-                    (SELECT site_id FROM geo_drops WHERE id = $2::uuid AND site_id IS NOT NULL),
-                    CASE WHEN $3 <> '' AND EXISTS (SELECT 1 FROM historical_sites WHERE id::text = $3) THEN $3::uuid ELSE NULL END,
-                    (SELECT id FROM historical_sites WHERE is_active = TRUE ORDER BY created_at ASC LIMIT 1)
-                )
-            ON CONFLICT DO NOTHING
-        """.trimIndent()
-
-        val fallbackQuery = """
-            INSERT INTO user_saved_items (user_id, geo_drop_id)
-            VALUES ($1::uuid, $2::uuid)
-            ON CONFLICT DO NOTHING
-        """.trimIndent()
-
-        return try {
-            val rows = neonClient.executeCommand(insertQuery, listOf(userId, geoDropId, siteId.orEmpty()))
-            if (rows == 0) {
-                // Si la BD tenia la exclusion estricta activa y 0 filas fueron modificadas, ejecutamos el fallback
-                neonClient.executeCommand(fallbackQuery, listOf(userId, geoDropId))
-            }
-            android.util.Log.d("EcoGuiaRepo", "GeoDrop $geoDropId guardado en colección para usuario $userId ($rows filas)")
-            true
-        } catch (e: Exception) {
-            try {
-                neonClient.executeCommand(fallbackQuery, listOf(userId, geoDropId))
+            val res = neonClient.executeQuery<Map<String, String>>(insertRoute, listOf(title, slug, description, estimatedMinutes.toString(), ownerUserId.orEmpty()))
+            val routeId = res.firstOrNull()?.get("id")?.toString()?.trim('"')
+            if (!routeId.isNullOrBlank()) {
+                siteIds.forEachIndexed { index, sId ->
+                    neonClient.executeCommand("INSERT INTO route_stops (route_id, site_id, stop_order) VALUES ($1::uuid, $2::uuid, $3)", listOf(routeId, sId, (index + 1).toString()))
+                }
                 true
-            } catch (fallbackEx: Exception) {
-                android.util.Log.e("EcoGuiaRepo", "Error al guardar GeoDrop en colección: ${fallbackEx.message}", fallbackEx)
+            } else false
+        } catch (e: Exception) {
+            android.util.Log.e("EcoGuiaRepo", "Error creando ruta: ${e.message}", e)
+            false
+        }
+    }
+
+    override suspend fun deleteRoute(routeId: String): Boolean {
+        val purgeSavedQuery = "DELETE FROM user_saved_items WHERE route_id::text = $1"
+        val deleteRouteQuery = "DELETE FROM routes WHERE id::text = $1"
+        return try {
+            neonClient.executeCommand(purgeSavedQuery, listOf(routeId))
+            val rows = neonClient.executeCommand(deleteRouteQuery, listOf(routeId))
+            if (rows == 0) {
+                // Fallback a soft-delete si hay otras dependencias FK
+                neonClient.executeCommand("UPDATE routes SET is_active = FALSE WHERE id::text = $1", listOf(routeId)) > 0
+            } else true
+        } catch (e: Exception) {
+            android.util.Log.e("EcoGuiaRepo", "Error al eliminar ruta $routeId: ${e.message}", e)
+            try {
+                // Intento fallback de desactivación
+                neonClient.executeCommand("UPDATE routes SET is_active = FALSE WHERE id::text = $1", listOf(routeId)) > 0
+            } catch (ex: Exception) {
                 false
             }
         }
     }
 
+    // ── Geo-Drops, Likes y Moderación ──────────────────────────────────────────
+    override suspend fun getGeoDrops(): List<RemoteGeoDrop> =
+        getGeoDropsExt()
 
+    override suspend fun getGeoDropsBySite(siteId: String): List<RemoteGeoDrop> =
+        getGeoDropsBySiteExt(siteId)
 
+    override suspend fun getTopRankingGeoDrops(limit: Int): List<RemoteGeoDrop> =
+        getTopRankingGeoDropsExt(limit)
 
+    override suspend fun getPendingGeoDrops(): List<RemoteGeoDrop> {
+        val query = """
+            SELECT 
+                gd.id, 
+                gd.site_id, 
+                gd.title, 
+                gd.description, 
+                gd.type::text, 
+                gd.media_url,
+                ST_Y(gd.location::geometry)::double precision AS latitude,
+                ST_X(gd.location::geometry)::double precision AS longitude,
+                gd.detection_radius_m, 
+                gd.status::text, 
+                gd.visible_on_tv, 
+                gd.likes_count, 
+                gd.reports_count,
+                gd.created_at::text,
+                COALESCE(hs.name, 'Sitio Histórico') AS site_name
+            FROM geo_drops gd
+            LEFT JOIN historical_sites hs ON hs.id = gd.site_id
+            WHERE gd.status::text = 'pending'
+            ORDER BY gd.created_at DESC
+        """.trimIndent()
+        return try {
+            neonClient.executeQuery(query)
+        } catch (e: Exception) {
+            android.util.Log.e("EcoGuiaRepo", "Error obteniendo GeoDrops pendientes: ${e.message}", e)
+            emptyList()
+        }
+    }
 
+    override suspend fun updateGeoDropStatus(id: String, status: String): Boolean {
+        val isTvVisible = status == "approved"
+        val query = "UPDATE geo_drops SET status = $1::content_status, visible_on_tv = $2 WHERE id::text = $3"
+        return try {
+            neonClient.executeCommand(query, listOf(status, isTvVisible.toString().uppercase(), id)) > 0
+        } catch (e: Exception) {
+            android.util.Log.e("EcoGuiaRepo", "Error actualizando estado de GeoDrop $id: ${e.message}", e)
+            false
+        }
+    }
 
+    override suspend fun deleteGeoDrop(geoDropId: String, ownerUserId: String, mediaUrl: String?): Boolean =
+        deleteGeoDropExt(geoDropId, ownerUserId, mediaUrl)
 
+    override suspend fun createGeoDrop(title: String, description: String, lat: Double, lng: Double, userId: String?, siteId: String?, mediaUrl: String?): Boolean {
+        val sId = siteId.orEmpty()
+        val uId = userId.orEmpty()
+        val res = createGeoDropExt(sId, uId, title, description, null, mediaUrl, lat, lng)
+        return res.isNotBlank()
+    }
 
+    suspend fun createGeoDrop(siteId: String, userId: String, title: String, textContent: String, audioUrl: String?, imageUrl: String?): String =
+        createGeoDropExt(siteId, userId, title, textContent, audioUrl, imageUrl)
 
+    suspend fun likeGeoDrop(geoDropId: String): Boolean =
+        likeGeoDropExt(geoDropId)
 
+    suspend fun addCommentToGeoDrop(geoDropId: String, userId: String, textContent: String): Boolean =
+        addCommentToGeoDropExt(geoDropId, userId, textContent)
+
+    // ── Colección Personal ────────────────────────────────────────────────────
+    override suspend fun getUserCollection(userId: String): List<RemoteCollectionItem> {
+        val query = """
+            SELECT 
+                usi.id,
+                COALESCE(usi.site_id::text, usi.geo_drop_id::text, usi.route_id::text) AS raw_id,
+                COALESCE(hs.name, gd.title, r.title, 'Elemento Guardado') AS title,
+                COALESCE(hs.short_description, gd.description, r.description, 'Sin descripción') AS subtitle,
+                CASE 
+                    WHEN usi.site_id IS NOT NULL THEN 'site'
+                    WHEN usi.geo_drop_id IS NOT NULL THEN 'photo'
+                    WHEN usi.route_id IS NOT NULL THEN 'route'
+                    ELSE 'site'
+                END AS type,
+                COALESCE(gd.status::text, 'approved') AS status,
+                gd.media_url AS media_url,
+                COALESCE(gd.author_id::text, hs.created_by::text, r.created_by::text, '') AS author_id,
+                usi.created_at::text AS created_at,
+                
+                -- Detalle extendido de Sitios
+                hs.site_type::text AS site_type,
+                hs.address AS address,
+                hs.historical_description AS historical_description,
+                hs.cost_info AS cost_info,
+                COALESCE(hs.opening_hours::text, '') AS opening_hours,
+                COALESCE(hs.accessibility::text, '') AS accessibility,
+                
+                -- Detalle extendido de GeoDrops
+                COALESCE(hs_gd.name, hs.name, '') AS site_name,
+                
+                -- Detalle extendido de Rutas
+                r.estimated_minutes AS estimated_minutes,
+                r.distance_m AS distance_m,
+                
+                -- Coordenadas Geográficas
+                COALESCE(
+                    ST_Y(hs.location::geometry)::double precision,
+                    ST_Y(gd.location::geometry)::double precision
+                ) AS latitude,
+                COALESCE(
+                    ST_X(hs.location::geometry)::double precision,
+                    ST_X(gd.location::geometry)::double precision
+                ) AS longitude
+
+            FROM user_saved_items usi
+            LEFT JOIN historical_sites hs ON usi.site_id = hs.id
+            LEFT JOIN geo_drops gd ON usi.geo_drop_id = gd.id
+            LEFT JOIN historical_sites hs_gd ON gd.site_id = hs_gd.id
+            LEFT JOIN routes r ON usi.route_id = r.id
+            WHERE usi.user_id::text = $1
+            ORDER BY usi.created_at DESC
+        """.trimIndent()
+        return try {
+            neonClient.executeQuery(query, listOf(userId))
+        } catch (e: Exception) {
+            android.util.Log.e("EcoGuiaRepo", "Error obteniendo colección: ${e.message}", e)
+            emptyList()
+        }
+    }
+
+    override suspend fun saveSite(userId: String, siteId: String): Boolean {
+        val query = "INSERT INTO user_saved_items (user_id, site_id) VALUES ($1::uuid, $2::uuid) ON CONFLICT DO NOTHING"
+        return try { neonClient.executeCommand(query, listOf(userId, siteId)) > 0 } catch (e: Exception) { false }
+    }
+
+    override suspend fun removeSavedSite(userId: String, itemId: String): Boolean {
+        val query = """
+            DELETE FROM user_saved_items 
+            WHERE user_id::text = $1 
+              AND (id::text = $2 OR site_id::text = $2 OR geo_drop_id::text = $2 OR route_id::text = $2)
+        """.trimIndent()
+        return try { neonClient.executeCommand(query, listOf(userId, itemId)) > 0 } catch (e: Exception) { false }
+    }
+
+    override suspend fun isSiteSaved(userId: String, siteId: String): Boolean {
+        val query = "SELECT id FROM user_saved_items WHERE user_id::text = $1 AND site_id::text = $2 LIMIT 1"
+        return try { neonClient.executeQuery<Map<String, String>>(query, listOf(userId, siteId)).isNotEmpty() } catch (e: Exception) { false }
+    }
+
+    override suspend fun isGeoDropCollected(userId: String, geoDropId: String): Boolean {
+        val query = "SELECT id FROM user_saved_items WHERE user_id::text = $1 AND geo_drop_id::text = $2 LIMIT 1"
+        return try { neonClient.executeQuery<Map<String, String>>(query, listOf(userId, geoDropId)).isNotEmpty() } catch (e: Exception) { false }
+    }
+
+    override suspend fun saveGeoDropToCollection(userId: String, geoDropId: String, siteId: String?): Boolean =
+        saveGeoDropToCollectionExt(userId, geoDropId)
+
+    override suspend fun saveRouteToCollection(userId: String, routeId: String): Boolean {
+        val query = "INSERT INTO user_saved_items (user_id, route_id) VALUES ($1::uuid, $2::uuid) ON CONFLICT DO NOTHING"
+        return try { 
+            val success = neonClient.executeCommand(query, listOf(userId, routeId)) > 0
+            if (success) true else saveRouteToCollectionOfflineFallback(userId, routeId)
+        } catch (e: Exception) { 
+            saveRouteToCollectionOfflineFallback(userId, routeId)
+        }
+    }
+
+    private suspend fun saveRouteToCollectionOfflineFallback(userId: String, routeId: String): Boolean {
+        if (context == null) return false
+        return try {
+            val database = mx.utng.ecoguia.shared.data.EcoGuiaDatabase.getDatabase(context)
+            database.dao().insertPendingSyncAction(
+                mx.utng.ecoguia.shared.domain.model.SyncPendingActionEntity(
+                    actionType = "SAVE_ROUTE",
+                    payloadJson = "{\"user_id\": \"$userId\", \"route_id\": \"$routeId\"}"
+                )
+            )
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    // ── Artículos de IA ───────────────────────────────────────────────────────
+    override suspend fun getKnowledgeArticles(): List<RemoteKnowledgeArticle> {
+        return try {
+            neonClient.executeQuery("SELECT id, title, content, created_at::text FROM knowledge_articles ORDER BY created_at DESC")
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    override suspend fun createKnowledgeArticle(title: String, content: String, authorId: String?): Boolean {
+        val query = "INSERT INTO knowledge_articles (title, content) VALUES ($1, $2)"
+        return try {
+            neonClient.executeCommand(query, listOf(title, content)) > 0
+        } catch (e: Exception) {
+            android.util.Log.e("EcoGuiaRepo", "Error al crear artículo de IA: ${e.message}", e)
+            false
+        }
+    }
+
+    override suspend fun testConnection(): String {
+        return try {
+            val res: List<Map<String, String>> = neonClient.executeQuery("SELECT NOW() as now_time")
+            res.firstOrNull()?.get("now_time") ?: "OK"
+        } catch (e: Exception) {
+            "ERROR: ${e.message}"
+        }
+    }
+
+    // ── Dispositivos y TV Pairing ──────────────────────────────────────────────
+    override suspend fun getUserDevices(userId: String): List<RemoteDevice> =
+        getUserDevicesExt(userId)
+
+    override suspend fun registerDevice(userId: String, name: String, type: String, deviceIdentifier: String): Boolean =
+        registerDeviceExt(userId, name, type, deviceIdentifier)
+
+    override suspend fun unlinkDevice(deviceId: String): Boolean =
+        unlinkDeviceExt(deviceId)
+
+    override suspend fun unlinkTvSession(pairingCode: String): Boolean =
+        unlinkTvSessionExt(pairingCode)
+
+    override suspend fun deactivateAllUserPairings(userId: String): Boolean =
+        deactivateAllUserPairingsExt(userId)
+
+    override suspend fun pairDeviceByCode(userId: String, pairingCode: String): Boolean =
+        pairDeviceByCodeExt(userId, pairingCode)
+
+    override suspend fun getPairingStatus(pairingCode: String): RemoteUser? =
+        getPairingStatusExt(pairingCode)
+
+    override suspend fun setTvTransmissionProgram(pairingCode: String, programType: String): Boolean =
+        setTvTransmissionProgramExt(pairingCode, programType)
+
+    override suspend fun getTvActiveProgram(pairingCode: String): String? =
+        getTvActiveProgramExt(pairingCode)
+    override suspend fun deleteUserCascade(userId: String): Boolean {
+        val mainAdminEmail = "rodriguez.mora.zahir.15@gmail.com"
+        return try {
+            // Verificar si el usuario que se intenta eliminar es la cuenta principal protegida
+            val checkUser: List<RemoteUser> = neonClient.executeQuery(
+                "SELECT id, email, display_name, role FROM users WHERE id = $1::uuid",
+                listOf(userId)
+            )
+            val userToDelete = checkUser.firstOrNull()
+            if (userToDelete != null && userToDelete.email.equals(mainAdminEmail, ignoreCase = true)) {
+                android.util.Log.w("EcoGuiaRepo", "Intento de eliminación de la cuenta de administración protegida ($mainAdminEmail) denegado.")
+                return false
+            }
+
+            // Reasignar la propiedad de los sitios al usuario principal en lugar de NULL
+            val updateSitesQuery = """
+                UPDATE historical_sites 
+                SET created_by = (SELECT id FROM users WHERE LOWER(email) = LOWER($2) LIMIT 1) 
+                WHERE created_by = $1::uuid
+            """.trimIndent()
+            neonClient.executeCommand(updateSitesQuery, listOf(userId, mainAdminEmail))
+
+            // Ejecución segura de borrados individuales para evitar fallas por tablas opcionales o inexistentes
+            val deleteQueries = listOf(
+                "DELETE FROM user_saved_items WHERE user_id = $1::uuid",
+                "DELETE FROM user_route_progress WHERE user_id = $1::uuid",
+                "DELETE FROM devices WHERE user_id = $1::uuid",
+                "DELETE FROM device_pairings WHERE user_id = $1::uuid",
+                "DELETE FROM user_reviews WHERE user_id = $1::uuid",
+                "DELETE FROM sync_queue WHERE user_id = $1::uuid"
+            )
+
+            for (query in deleteQueries) {
+                try {
+                    neonClient.executeCommand(query, listOf(userId))
+                } catch (subEx: Exception) {
+                    android.util.Log.w("EcoGuiaRepo", "Consulta de borrado ignorada (tabla inexistente o vacía): ${subEx.message}")
+                }
+            }
+
+            neonClient.executeCommand("DELETE FROM users WHERE id = $1::uuid AND LOWER(email) != LOWER($2)", listOf(userId, mainAdminEmail)) > 0
+        } catch (e: Exception) {
+            android.util.Log.e("EcoGuiaRepo", "Error al eliminar usuario en cascada: ${e.message}", e)
+            false
+        }
+    }
 }
-

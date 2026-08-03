@@ -18,9 +18,19 @@ import mx.utng.ecoguia.shared.domain.model.*
 
 interface EcoGuiaRepository {
     /**
+     * Elimina un usuario definitivamente y todas sus referencias en cascada en Neon PostgreSQL.
+     */
+    suspend fun deleteUserCascade(userId: String): Boolean
+
+    /**
      * Obtiene la lista de todos los sitios históricos activos.
      */
     suspend fun getHistoricalSites(): List<RemoteHistoricalSite>
+
+    /**
+     * Obtiene un sitio histórico específico por su ID desde Neon PostgreSQL.
+     */
+    suspend fun getHistoricalSiteById(siteId: String): RemoteHistoricalSite?
 
     /**
      * Registra un nuevo sitio histórico en la base de datos Neon PostgreSQL.
@@ -36,7 +46,8 @@ interface EcoGuiaRepository {
         radiusM: Int,
         hours: String,
         cost: String,
-        accessibility: String
+        accessibility: String,
+        ownerUserId: String? = null
     ): String
 
 
@@ -80,6 +91,13 @@ interface EcoGuiaRepository {
 
 
     /**
+     * Elimina definitivamente una cápsula Geo-Drop si el usuario que lo solicita es su autor.
+     * Opcionalmente recibe la mediaUrl para notificar a la capa superior si debe borrar de Storage.
+     */
+    suspend fun deleteGeoDrop(geoDropId: String, ownerUserId: String, mediaUrl: String? = null): Boolean
+
+
+    /**
      * Registra una nueva cápsula de información (Geo-Drop) en la nube y la guarda en la colección del usuario.
      */
     suspend fun createGeoDrop(title: String, description: String, lat: Double, lng: Double, userId: String? = null, siteId: String? = null, mediaUrl: String? = null): Boolean
@@ -111,10 +129,15 @@ interface EcoGuiaRepository {
     suspend fun register(displayName: String, email: String, password_hash: String): Boolean
 
     /**
-     * Actualiza el nombre a mostrar de un usuario existente.
+     * Actualiza el nombre y biografía de un usuario existente.
      * Retorna verdadero si la operación fue exitosa.
      */
-    suspend fun updateUser(id: String, displayName: String): Boolean
+    suspend fun updateUser(id: String, displayName: String, bio: String? = null): Boolean
+
+    /**
+     * Actualiza la contraseña de un usuario a partir de su correo electrónico.
+     */
+    suspend fun resetPassword(email: String, newPasswordHash: String): Boolean
 
     /**
      * Obtiene los artículos de conocimiento curados para la IA desde la tabla knowledge_articles de Neon.
@@ -154,6 +177,19 @@ interface EcoGuiaRepository {
     suspend fun unlinkDevice(deviceId: String): Boolean
 
     /**
+     * Cierra la sesión completa de una Smart TV:
+     * - Desactiva el registro en device_pairings (is_active = FALSE)
+     * - Elimina el dispositivo TV de la tabla devices
+     * El dispositivo desaparece de 'Mis Dispositivos' en la app móvil.
+     */
+    suspend fun unlinkTvSession(pairingCode: String): Boolean
+
+    /**
+     * Desactiva todos los registros de vinculación activos del usuario en device_pairings (is_active = FALSE).
+     */
+    suspend fun deactivateAllUserPairings(userId: String): Boolean
+
+    /**
      * Inicia sesión o vincula un dispositivo mediante código / QR rápido en device_pairings.
      */
     suspend fun pairDeviceByCode(userId: String, pairingCode: String): Boolean
@@ -169,6 +205,31 @@ interface EcoGuiaRepository {
     suspend fun getSiteByOwner(userId: String): RemoteHistoricalSite?
 
     /**
+     * Obtiene TODOS los sitios históricos de un propietario.
+     * Si isAdmin es true, retorna todos los sitios activos del sistema.
+     */
+    suspend fun getSitesByOwnerOrAdmin(userId: String, isAdmin: Boolean): List<RemoteHistoricalSite>
+
+    /**
+     * Desactiva lógicamente un sitio histórico (is_active = false).
+     * Solo el propietario o un administrador pueden hacerlo.
+     */
+    suspend fun deleteHistoricalSite(siteId: String): Boolean
+
+    /**
+     * Crea un nuevo Sitio Histórico asignándolo a un propietario responsable (ownerUserId).
+     * Pensado para uso del Administrador.
+     */
+    suspend fun createHistoricalSiteForOwner(
+        name: String,
+        slug: String,
+        siteType: String,
+        shortDescription: String?,
+        address: String?,
+        ownerUserId: String
+    ): Boolean
+
+    /**
      * Transmite una orden de programa (gallery, public, ranking) a una Smart TV en tv_displays.
      */
     suspend fun setTvTransmissionProgram(pairingCode: String, programType: String): Boolean
@@ -177,6 +238,11 @@ interface EcoGuiaRepository {
      * Consulta el programa de transmisión actual ordenado remotamente para la Smart TV.
      */
     suspend fun getTvActiveProgram(pairingCode: String): String?
+
+    /**
+     * Obtiene los usuarios que pertenecen a un rol específico (ej: museum_hotel).
+     */
+    suspend fun getUsersByRole(role: String): List<RemoteUser>
 
     /**
      * Asigna un Sitio Histórico a un Usuario (Encargado / Museo / Hotel) en historical_sites.
@@ -232,7 +298,8 @@ interface EcoGuiaRepository {
         title: String,
         description: String,
         estimatedMinutes: Int,
-        siteIds: List<String>
+        siteIds: List<String>,
+        ownerUserId: String? = null
     ): Boolean
 
     /**

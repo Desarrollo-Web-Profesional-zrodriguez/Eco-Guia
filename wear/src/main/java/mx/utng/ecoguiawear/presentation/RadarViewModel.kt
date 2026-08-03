@@ -91,6 +91,16 @@ class RadarViewModel(
         if (enabled) pulse(HapticPulse.TOGGLE)
     }
 
+    fun deleteAlert(id: String) {
+        repository.deleteAlert(id)
+        pulse(HapticPulse.TOGGLE)
+    }
+
+    fun clearAllAlerts() {
+        repository.clearAllAlerts()
+        pulse(HapticPulse.TOGGLE)
+    }
+
     private fun pulse(type: HapticPulse) {
         val settings = state.value.hapticSettings
         if (settings.enabled) {

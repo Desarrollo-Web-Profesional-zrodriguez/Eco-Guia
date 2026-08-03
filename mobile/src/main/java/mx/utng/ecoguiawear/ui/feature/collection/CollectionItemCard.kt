@@ -16,13 +16,22 @@ package mx.utng.ecoguiawear.ui.feature.collection
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Accessible
 import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.MenuBook
+import androidx.compose.material.icons.filled.Place
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Straighten
+import androidx.compose.material.icons.filled.Timer
 import mx.utng.ecoguia.shared.data.repository.EcoGuiaRepositoryImpl
 import androidx.compose.material3.*
 
@@ -55,6 +64,7 @@ import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 @Composable
 fun CollectionItemRow(
     item: RemoteCollectionItem,
+    currentUserId: String = "",
     searchQuery: String = "",
     onRemove: () -> Unit = {}
 ) {
@@ -71,10 +81,24 @@ fun CollectionItemRow(
 
     // Diálogo de confirmación antes de eliminar
     if (showConfirmDialog) {
+        val authorId = item.authorId
+        val isAuthor = !authorId.isNullOrBlank() && 
+            !currentUserId.isNullOrBlank() &&
+            authorId.trim().equals(currentUserId.trim(), ignoreCase = true)
+        
+        android.util.Log.d("CollectionItemCard", "Evaluando autoría -> item.title='${item.title}', item.authorId='$authorId', currentUserId='$currentUserId', isAuthor=$isAuthor")
+
         AlertDialog(
             onDismissRequest = { showConfirmDialog = false },
-            title = { Text("Eliminar de Mi Colección", fontWeight = FontWeight.Bold) },
-            text = { Text("¿Deseas quitar \"${item.title}\" de tu colección personal?") },
+            title = { Text(if (isAuthor) "Eliminación Definitiva" else "Quitar de Mi Colección", fontWeight = FontWeight.Bold) },
+            text = {
+                Text(
+                    if (isAuthor) 
+                        "Tú creaste este contenido. Al eliminarlo se borrará DEFINITIVAMENTE del mapa y de las colecciones de todos los usuarios." 
+                    else 
+                        "¿Deseas quitar \"${item.title}\" de tu colección personal?"
+                )
+            },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -83,7 +107,7 @@ fun CollectionItemRow(
                     },
                     colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
                 ) {
-                    Text("Eliminar", fontWeight = FontWeight.Bold)
+                    Text(if (isAuthor) "Eliminar Definitivamente" else "Quitar", fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
@@ -127,46 +151,204 @@ fun CollectionItemRow(
     var showDetailDialog by remember { mutableStateOf(false) }
 
     if (showDetailDialog) {
+        val dialogScrollState = androidx.compose.foundation.rememberScrollState()
+
         AlertDialog(
             onDismissRequest = { showDetailDialog = false },
             title = { Text(item.title, fontWeight = FontWeight.Bold) },
             text = {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 380.dp)
+                        .verticalScroll(dialogScrollState)
                 ) {
-                    if (!item.mediaUrl.isNullOrBlank()) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(220.dp)
-                                .background(Color.Black, RoundedCornerShape(16.dp)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            coil.compose.AsyncImage(
-                                model = item.mediaUrl,
-                                contentDescription = item.title,
-                                contentScale = androidx.compose.ui.layout.ContentScale.Fit,
-                                modifier = Modifier.fillMaxSize()
-                            )
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        if (!item.mediaUrl.isNullOrBlank()) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(180.dp)
+                                    .background(Color.Black, RoundedCornerShape(16.dp)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                coil.compose.AsyncImage(
+                                    model = item.mediaUrl,
+                                    contentDescription = item.title,
+                                    contentScale = androidx.compose.ui.layout.ContentScale.Fit,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
                         }
-                    }
                     Column(modifier = Modifier.fillMaxWidth()) {
+                        val typeText = when(item.type) {
+                            "site" -> "Sitio Histórico" + (item.siteType?.let { " · ${it.uppercase()}" } ?: "")
+                            "photo" -> "Cápsula GeoDrop"
+                            else -> "Ruta Turística"
+                        }
                         Text(
-                            text = "Tipo: ${when(item.type) { "site" -> "Sitio Histórico"; "photo" -> "Fotografía / Cápsula"; else -> "Ruta Turística" }}",
+                            text = typeText,
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp,
                             color = EcoGuiaColors.Jade
                         )
                         Spacer(modifier = Modifier.height(4.dp))
+
+                        // Para GeoDrops: Mostrar Sitio Perteneciente
+                        if (!item.siteName.isNullOrBlank()) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(vertical = 2.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Place,
+                                    contentDescription = null,
+                                    tint = EcoGuiaColors.Gold,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "Pertenece a: ${item.siteName}",
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 12.sp,
+                                    color = EcoGuiaColors.Gold
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                        }
+
                         Text(
                             text = item.subtitle.ifBlank { "Sin descripción detallada." },
                             fontSize = 14.sp,
                             color = MaterialTheme.colorScheme.onSurface
                         )
+
+                        // Detalles de Sitio (Dirección, Horarios, Costo, Accesibilidad, Historia)
+                        if (item.type == "site") {
+                            if (!item.address.isNullOrBlank()) {
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = Icons.Default.Place,
+                                        contentDescription = null,
+                                        tint = EcoGuiaColors.Jade,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text("Dirección: ${item.address}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                            }
+
+                            val cleanHours = item.openingHours.orEmpty()
+                                .replace(Regex("[{}\"\\s]"), " ")
+                                .replace("schedule:", "")
+                                .trim()
+                            if (cleanHours.isNotBlank()) {
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = Icons.Default.Schedule,
+                                        contentDescription = null,
+                                        tint = EcoGuiaColors.Jade,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text("Horarios: $cleanHours", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                            }
+
+                            if (!item.costInfo.isNullOrBlank()) {
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = Icons.Default.AttachMoney,
+                                        contentDescription = null,
+                                        tint = EcoGuiaColors.Jade,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("Costo: ${item.costInfo}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                            }
+
+                            val cleanAccess = item.accessibility.orEmpty()
+                                .replace(Regex("[{}\"\\s\\[\\]]"), " ")
+                                .replace("features:", "")
+                                .trim()
+                            if (cleanAccess.isNotBlank()) {
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = Icons.Default.Accessible,
+                                        contentDescription = null,
+                                        tint = EcoGuiaColors.Jade,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text("Accesibilidad: $cleanAccess", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                            }
+
+                            val histDesc = item.historicalDescription
+                            if (!histDesc.isNullOrBlank() && histDesc != item.subtitle) {
+                                Spacer(modifier = Modifier.height(10.dp))
+                                HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = Icons.Default.MenuBook,
+                                        contentDescription = null,
+                                        tint = EcoGuiaColors.Gold,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text("Historia & Contexto:", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = EcoGuiaColors.Gold)
+                                }
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(histDesc, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface)
+                            }
+                        }
+
+                        // Detalles de Ruta (Tiempo Estimado, Distancia)
+                        if (item.type == "route") {
+                            val mins = item.estimatedMinutes
+                            val distM = item.distanceM
+                            if (mins != null || distM != null) {
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    mins?.let {
+                                        Icon(
+                                            imageVector = Icons.Default.Timer,
+                                            contentDescription = null,
+                                            tint = EcoGuiaColors.Jade,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text("~$it min", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = EcoGuiaColors.Jade)
+                                    }
+                                    if (mins != null && distM != null) {
+                                        Spacer(modifier = Modifier.width(12.dp))
+                                    }
+                                    distM?.let {
+                                        Icon(
+                                            imageVector = Icons.Default.Straighten,
+                                            contentDescription = null,
+                                            tint = EcoGuiaColors.Jade,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text("${"%.1f".format(it / 1000.0)} km", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = EcoGuiaColors.Jade)
+                                    }
+                                }
+                            }
+                        }
+
                         val createdDate = item.createdAt
                         if (createdDate != null) {
-                            Spacer(modifier = Modifier.height(6.dp))
+                            Spacer(modifier = Modifier.height(8.dp))
                             Text(
                                 text = "Guardado el: ${createdDate.take(10)}",
                                 fontSize = 11.sp,
@@ -243,9 +425,9 @@ fun CollectionItemRow(
                             }
                         }
                     }
-
                 }
-            },
+            }
+        },
             confirmButton = {
                 TextButton(onClick = { showDetailDialog = false }) {
                     Text("Cerrar", fontWeight = FontWeight.Bold)

@@ -21,13 +21,13 @@ fun ProximityAlertScreen(
     EcoWearScaffold {
         item {
             ScreenHeader(
-                title = "Geo-Drop cerca",
+                title = "Sitio histórico",
                 subtitle = "${state.target.distanceMeters} m restantes"
             )
         }
         item {
             Text(
-                text = "Saca el telefono para activar la camara cuando llegues.",
+                text = "Dentro del rango del sitio. Abre la cámara Geo-Drop en tu móvil.",
                 color = EcoGuiaColors.Text,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
@@ -35,7 +35,7 @@ fun ProximityAlertScreen(
         }
         item {
             Chip(
-                label = { Text("Abrir en telefono") },
+                label = { Text("Ver Geo-Drops del sitio") },
                 onClick = onOpenPhone,
                 colors = ChipDefaults.primaryChipColors(backgroundColor = EcoGuiaColors.Jade),
                 modifier = Modifier.fillMaxWidth()

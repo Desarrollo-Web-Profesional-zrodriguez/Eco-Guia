@@ -8,7 +8,10 @@
 package mx.utng.ecoguiawear.ui.screens.admin
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MyLocation
@@ -54,6 +57,9 @@ fun SiteLocationScreen(
         }
     }
 
+    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+    val isLandscape = configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -64,11 +70,11 @@ fun SiteLocationScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(EcoGuiaColors.DeepBlue)
-                .padding(top = 48.dp, start = 24.dp, end = 24.dp, bottom = 16.dp)
+                .padding(top = 28.dp, start = 20.dp, end = 20.dp, bottom = 8.dp)
         ) {
             Column {
-                Text("Geolocalización", color = Color.White, fontSize = 14.sp)
-                Text("Radio de llegada", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text("Geolocalización", color = Color.White, fontSize = 12.sp)
+                Text("Radio de llegada", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
             }
             
             IconButton(
@@ -79,77 +85,183 @@ fun SiteLocationScreen(
             }
         }
 
-        // Map Section (Preview)
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(220.dp)
-                .padding(16.dp)
-                .clip(RoundedCornerShape(24.dp))
-                .background(Color(0xFFE8F5E9))
-        ) {
-            GoogleMap(
-                modifier = Modifier.fillMaxSize(),
-                cameraPositionState = cameraPositionState,
-                onMapClick = { latLng ->
-                    lat = latLng.latitude
-                    lng = latLng.longitude
-                },
-                uiSettings = MapUiSettings(zoomControlsEnabled = false, myLocationButtonEnabled = false)
+        val isSystemInDark = isSystemInDarkTheme()
+        val mapStyleOptions = remember(isSystemInDark) {
+            if (isSystemInDark) {
+                com.google.android.gms.maps.model.MapStyleOptions(
+                    """[{"elementType":"geometry","stylers":[{"color":"#242f3e"}]},{"elementType":"labels.text.fill","stylers":[{"color":"#746855"}]},{"elementType":"labels.text.stroke","stylers":[{"color":"#242f3e"}]},{"featureType":"administrative.locality","elementType":"labels.text.fill","stylers":[{"color":"#d59563"}]},{"featureType":"poi","elementType":"labels.text.fill","stylers":[{"color":"#d59563"}]},{"featureType":"poi.park","elementType":"geometry","stylers":[{"color":"#263c3f"}]},{"featureType":"poi.park","elementType":"labels.text.fill","stylers":[{"color":"#6b9a76"}]},{"featureType":"road","elementType":"geometry","stylers":[{"color":"#38414e"}]},{"featureType":"road","elementType":"geometry.stroke","stylers":[{"color":"#212a37"}]},{"featureType":"road","elementType":"labels.text.fill","stylers":[{"color":"#9ca5b3"}]},{"featureType":"road.highway","elementType":"geometry","stylers":[{"color":"#746855"}]},{"featureType":"road.highway","elementType":"geometry.stroke","stylers":[{"color":"#1f2835"}]},{"featureType":"road.highway","elementType":"labels.text.fill","stylers":[{"color":"#f3d19c"}]},{"featureType":"transit","elementType":"geometry","stylers":[{"color":"#2f3948"}]},{"featureType":"transit.station","elementType":"labels.text.fill","stylers":[{"color":"#d59563"}]},{"featureType":"water","elementType":"geometry","stylers":[{"color":"#17263c"}]},{"featureType":"water","elementType":"labels.text.fill","stylers":[{"color":"#515c6d"}]},{"featureType":"water","elementType":"labels.text.stroke","stylers":[{"color":"#17263c"}]}]"""
+                )
+            } else null
+        }
+
+        if (isLandscape) {
+            // Diseño en 2 columnas para modo Horizontal
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                if (lat != 0.0 && lng != 0.0) {
-                    Marker(
-                        state = MarkerState(position = LatLng(lat, lng)),
-                        title = "Ubicación seleccionada"
+                // Mapa a la izquierda
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                ) {
+                    GoogleMap(
+                        modifier = Modifier.fillMaxSize(),
+                        cameraPositionState = cameraPositionState,
+                        onMapClick = { latLng ->
+                            lat = latLng.latitude
+                            lng = latLng.longitude
+                        },
+                        properties = MapProperties(
+                            mapType = MapType.NORMAL,
+                            isBuildingEnabled = true,
+                            mapStyleOptions = mapStyleOptions
+                        ),
+                        uiSettings = MapUiSettings(zoomControlsEnabled = false, myLocationButtonEnabled = false)
+                    ) {
+                        if (lat != 0.0 && lng != 0.0) {
+                            Marker(
+                                state = MarkerState(position = LatLng(lat, lng)),
+                                title = "Ubicación seleccionada"
+                            )
+                            Circle(
+                                center = LatLng(lat, lng),
+                                radius = radius.toDouble(),
+                                fillColor = EcoGuiaColors.Jade.copy(alpha = 0.2f),
+                                strokeColor = EcoGuiaColors.Jade,
+                                strokeWidth = 2f
+                            )
+                        }
+                    }
+                }
+
+                val rightScrollState = rememberScrollState()
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .verticalScroll(rightScrollState),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Text("Ubicación y radio", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    EcoTextField(
+                        value = if (lat == 0.0) "Toca el mapa o el icono superior" else "$lat, $lng", 
+                        onValueChange = { }, 
+                        label = "COORDENADAS"
                     )
-                    Circle(
-                        center = LatLng(lat, lng),
-                        radius = radius.toDouble(),
-                        fillColor = EcoGuiaColors.Jade.copy(alpha = 0.2f),
-                        strokeColor = EcoGuiaColors.Jade,
-                        strokeWidth = 2f
+                    var radiusText by remember { mutableStateOf(radius.toString()) }
+                    EcoTextField(
+                        value = radiusText,
+                        onValueChange = { input ->
+                            radiusText = input
+                            val parsed = input.toIntOrNull()
+                            if (parsed != null && parsed > 0) {
+                                radius = parsed
+                            }
+                        },
+                        label = "RADIO DE LLEGADA (Metros)"
+                    )
+                    EcoTextField(
+                        value = visibility, 
+                        onValueChange = { visibility = it }, 
+                        label = "VISIBILIDAD EN TV/SMART"
+                    )
+
+                    EcoButton(
+                        text = "Confirmar ubicación",
+                        onClick = onNext
                     )
                 }
             }
-        }
-
-        // Location Form
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .padding(horizontal = 16.dp)
-        ) {
-            Text("Ubicación y radio", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
-            
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                EcoTextField(
-                    value = if (lat == 0.0) "Toca el mapa o el icono superior" else "$lat, $lng", 
-                    onValueChange = { }, 
-                    label = "COORDENADAS"
-                )
-                var radiusText by remember { mutableStateOf(radius.toString()) }
-                EcoTextField(
-                    value = radiusText,
-                    onValueChange = { input ->
-                        radiusText = input
-                        val parsed = input.toIntOrNull()
-                        if (parsed != null && parsed > 0) {
-                            radius = parsed
+        } else {
+            // Diseño vertical con Scroll
+            val scrollState = rememberScrollState()
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(scrollState)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(240.dp)
+                        .padding(12.dp)
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                ) {
+                    GoogleMap(
+                        modifier = Modifier.fillMaxSize(),
+                        cameraPositionState = cameraPositionState,
+                        onMapClick = { latLng ->
+                            lat = latLng.latitude
+                            lng = latLng.longitude
+                        },
+                        properties = MapProperties(
+                            mapType = MapType.NORMAL,
+                            isBuildingEnabled = true,
+                            mapStyleOptions = mapStyleOptions
+                        ),
+                        uiSettings = MapUiSettings(zoomControlsEnabled = false, myLocationButtonEnabled = false)
+                    ) {
+                        if (lat != 0.0 && lng != 0.0) {
+                            Marker(
+                                state = MarkerState(position = LatLng(lat, lng)),
+                                title = "Ubicación seleccionada"
+                            )
+                            Circle(
+                                center = LatLng(lat, lng),
+                                radius = radius.toDouble(),
+                                fillColor = EcoGuiaColors.Jade.copy(alpha = 0.2f),
+                                strokeColor = EcoGuiaColors.Jade,
+                                strokeWidth = 2f
+                            )
                         }
-                    },
-                    label = "RADIO DE LLEGADA (Metros)"
-                )
-                EcoTextField(value = visibility, onValueChange = { visibility = it }, label = "VISIBILIDAD EN TV/SMART")
+                    }
+                }
 
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Text("Ubicación y radio", fontWeight = FontWeight.Bold)
+                    EcoTextField(
+                        value = if (lat == 0.0) "Toca el mapa o el icono superior" else "$lat, $lng", 
+                        onValueChange = { }, 
+                        label = "COORDENADAS"
+                    )
+                    var radiusText by remember { mutableStateOf(radius.toString()) }
+                    EcoTextField(
+                        value = radiusText,
+                        onValueChange = { input ->
+                            radiusText = input
+                            val parsed = input.toIntOrNull()
+                            if (parsed != null && parsed > 0) {
+                                radius = parsed
+                            }
+                        },
+                        label = "RADIO DE LLEGADA (Metros)"
+                    )
+                    EcoTextField(
+                        value = visibility, 
+                        onValueChange = { visibility = it }, 
+                        label = "VISIBILIDAD EN TV/SMART"
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+                    EcoButton(
+                        text = "Confirmar ubicación",
+                        onClick = onNext
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
             }
-        }
-
-        // Action Button
-        Box(modifier = Modifier.padding(24.dp)) {
-            EcoButton(
-                text = "Confirmar ubicación",
-                onClick = onNext
-            )
         }
     }
 }

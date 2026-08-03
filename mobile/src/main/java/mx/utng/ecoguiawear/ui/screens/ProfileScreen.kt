@@ -14,7 +14,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -28,18 +28,36 @@ import mx.utng.ecoguiawear.ui.components.EcoTopBar
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 
+import androidx.compose.runtime.LaunchedEffect
+import mx.utng.ecoguiawear.ui.viewmodel.AuthViewModel
+
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+
 /**
  * Composable que representa la pantalla de perfil.
  */
 @Composable
 fun ProfileScreen(
     user: RemoteUser?,
+    viewModel: AuthViewModel? = null,
     onEditClick: () -> Unit
 ) {
+    LaunchedEffect(user?.id) {
+        viewModel?.fetchUserStats()
+    }
+
+    val capsulesCount = viewModel?.capsulesCount?.value ?: 0
+    val savedItemsCount = viewModel?.savedItemsCount?.value ?: 0
+    val explorerLevel = viewModel?.explorerLevel?.value ?: "Nivel 1 - Turista Reciente"
+
+    val scrollState = rememberScrollState()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
+            .verticalScroll(scrollState)
     ) {
         EcoTopBar(
             title = "Mi Perfil",
@@ -86,6 +104,15 @@ fun ProfileScreen(
                         color = Color.White.copy(alpha = 0.7f), 
                         fontSize = 12.sp
                     )
+                    if (!user?.bio.isNullOrBlank()) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = user?.bio!!,
+                            color = EcoGuiaColors.Gold,
+                            fontSize = 12.sp,
+                            maxLines = 2
+                        )
+                    }
                 }
             }
         }
@@ -94,29 +121,43 @@ fun ProfileScreen(
         Column(modifier = Modifier.padding(horizontal = 16.dp)) {
             Text("Ver perfil", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
             
+            var showLevelDialog by remember { mutableStateOf(false) }
+
+            if (showLevelDialog) {
+                AlertDialog(
+                    onDismissRequest = { showLevelDialog = false },
+                    title = { Text("Nivel de Explorador") },
+                    text = { Text("Tu nivel actual es: $explorerLevel.\n\nCompleta más cápsulas y registros para subir de rango en la comunidad.") },
+                    confirmButton = {
+                        TextButton(onClick = { showLevelDialog = false }) { Text("Cerrar") }
+                    }
+                )
+            }
+
             StatItem(
                 title = "Nivel de explorador",
-                subtitle = "Nivel 3 - Curador comunitario",
+                subtitle = explorerLevel,
                 icon = Icons.Default.Star,
-                trailing = "Ver"
+                trailing = "Ver",
+                onClick = { showLevelDialog = true }
             )
             
             Spacer(modifier = Modifier.height(12.dp))
             
             StatItem(
                 title = "Cápsulas publicadas",
-                subtitle = "24 aportes en la comunidad",
+                subtitle = "$capsulesCount aportes en la comunidad",
                 icon = Icons.Default.AddCircle,
-                trailing = "24"
+                trailing = capsulesCount.toString()
             )
             
             Spacer(modifier = Modifier.height(12.dp))
             
             StatItem(
                 title = "Colección guardada",
-                subtitle = "18 fotos y 4 rutas",
+                subtitle = "$savedItemsCount elementos guardados",
                 icon = Icons.Default.Favorite,
-                trailing = "18"
+                trailing = savedItemsCount.toString()
             )
         }
     }
@@ -127,14 +168,16 @@ fun StatItem(
     title: String,
     subtitle: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
-    trailing: String
+    trailing: String,
+    onClick: () -> Unit = {}
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
-        )
+        ),
+        onClick = onClick
     ) {
         Row(
             modifier = Modifier.padding(12.dp),
@@ -186,6 +229,6 @@ fun StatItem(
 @Composable
 fun ProfileScreenPreview() {
     EcoGuiaMobileTheme {
-        ProfileScreen(null, {})
+        ProfileScreen(user = null, viewModel = null, onEditClick = {})
     }
 }

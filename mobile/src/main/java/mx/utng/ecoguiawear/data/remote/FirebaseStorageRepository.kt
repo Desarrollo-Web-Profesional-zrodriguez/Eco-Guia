@@ -40,4 +40,24 @@ class FirebaseStorageRepository {
             null
         }
     }
+
+    /**
+     * Elimina un archivo de Firebase Storage dada su URL pública de descarga.
+     * @param imageUrl URL pública firmada de descarga (ej: https://firebasestorage.googleapis.com/...)
+     * @return true si se eliminó exitosamente de Firebase Storage, false en caso contrario.
+     */
+    suspend fun deleteImageFromUrl(imageUrl: String): Boolean {
+        if (imageUrl.isBlank() || !imageUrl.contains("firebasestorage.googleapis.com")) return false
+        return try {
+            val storageRef = storage.getReferenceFromUrl(imageUrl)
+            storageRef.delete().await()
+            android.util.Log.d("FirebaseStorage", "Imagen eliminada exitosamente de Firebase Storage: $imageUrl")
+            true
+        } catch (e: Exception) {
+            android.util.Log.e("FirebaseStorage", "Error al eliminar imagen de Firebase Storage ($imageUrl): ${e.message}", e)
+            false
+        }
+    }
 }
+
+

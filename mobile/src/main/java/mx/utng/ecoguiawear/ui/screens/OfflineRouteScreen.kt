@@ -1,8 +1,8 @@
-﻿/**
+/**
  * Archivo: OfflineRouteScreen.kt
  * Autor: ZahirMora
- * Fecha de Ãºltima actualizaciÃ³n: 2026-07-21
- * DescripciÃ³n: Pantalla que muestra el contenido de una ruta descargada para acceso sin conexiÃ³n.
+ * Fecha de última actualización: 2026-08-01
+ * Descripción: Pantalla que muestra el contenido y estado de la base de datos local para acceso sin conexión.
  */
 
 package mx.utng.ecoguiawear.ui.screens
@@ -17,25 +17,53 @@ import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Place
+import androidx.compose.material.icons.filled.CloudDone
+import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.launch
+import mx.utng.ecoguia.shared.data.EcoGuiaDatabase
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+
 @Composable
 fun OfflineRouteScreen() {
+    val context = LocalContext.current
+    val database = remember { EcoGuiaDatabase.getDatabase(context) }
+    var pendingSyncCount by remember { mutableStateOf(0) }
+    var routesCount by remember { mutableStateOf(0) }
+    var geoDropsCount by remember { mutableStateOf(0) }
+
+    val coroutineScope = rememberCoroutineScope()
+
+    LaunchedEffect(Unit) {
+        try {
+            mx.utng.ecoguiawear.worker.SyncOfflineWorker.enqueueSync(context)
+            val pending = database.dao().getAllPendingSyncActions()
+            pendingSyncCount = pending.size
+        } catch (e: Exception) {
+            pendingSyncCount = 0
+        }
+    }
+
+    val scrollState = rememberScrollState()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
+            .verticalScroll(scrollState)
     ) {
         // Header
         Box(
@@ -45,15 +73,19 @@ fun OfflineRouteScreen() {
                 .padding(top = 32.dp, start = 24.dp, end = 24.dp, bottom = 16.dp)
         ) {
             Column {
-                Text("Offline", color = Color.White, fontSize = 14.sp)
-                Text("Ruta guardada", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text("Modo Offline", color = Color.White, fontSize = 14.sp)
+                Text("Ruta guardada localmente", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
             }
             
             IconButton(
                 onClick = { },
                 modifier = Modifier.align(Alignment.TopEnd)
             ) {
-                Icon(Icons.Default.AddCircle, null, tint = EcoGuiaColors.Gold)
+                Icon(
+                    imageVector = if (pendingSyncCount == 0) Icons.Default.CloudDone else Icons.Default.CloudOff,
+                    contentDescription = "Estado de Sincronización",
+                    tint = if (pendingSyncCount == 0) EcoGuiaColors.Jade else EcoGuiaColors.Gold
+                )
             }
         }
 
@@ -67,11 +99,43 @@ fun OfflineRouteScreen() {
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text("Ruta descargada", color = Color.White, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     "Mapas, historia y audios disponibles localmente para tu recorrido sin internet.", 
                     color = Color.White.copy(alpha = 0.7f), 
                     fontSize = 12.sp
                 )
+                if (pendingSyncCount > 0) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "$pendingSyncCount acción(es) pendiente(s)",
+                            color = EcoGuiaColors.Gold,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        
+                        Button(
+                            onClick = {
+                                mx.utng.ecoguiawear.worker.SyncOfflineWorker.enqueueSync(context)
+                                coroutineScope.launch {
+                                    kotlinx.coroutines.delay(1200)
+                                    val pending = database.dao().getAllPendingSyncActions()
+                                    pendingSyncCount = pending.size
+                                }
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = EcoGuiaColors.Jade),
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                            modifier = Modifier.height(32.dp)
+                        ) {
+                            Text("Sincronizar ahora", fontSize = 11.sp, color = Color.White)
+                        }
+                    }
+                }
             }
         }
 
@@ -79,28 +143,22 @@ fun OfflineRouteScreen() {
         Column(modifier = Modifier.padding(horizontal = 16.dp)) {
             Text("Contenido local", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
             
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                item {
-                    LocalContentItem(
-                        title = "Centro histÃ³rico",
-                        subtitle = "12 sitios descargados",
-                        icon = Icons.Default.Place
-                    )
-                }
-                item {
-                    LocalContentItem(
-                        title = "Mi colecciÃ³n",
-                        subtitle = "18 fotos guardadas",
-                        icon = Icons.Default.Favorite
-                    )
-                }
-                item {
-                    LocalContentItem(
-                        title = "Preguntas frecuentes",
-                        subtitle = "Base de datos local",
-                        icon = Icons.Default.Chat
-                    )
-                }
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                LocalContentItem(
+                    title = "Centro histórico",
+                    subtitle = "Sitios guardados en base de datos local",
+                    icon = Icons.Default.Place
+                )
+                LocalContentItem(
+                    title = "Mi colección",
+                    subtitle = "Cápsulas y fotos almacenadas en el dispositivo",
+                    icon = Icons.Default.Favorite
+                )
+                LocalContentItem(
+                    title = "Preguntas frecuentes",
+                    subtitle = "Base de datos local (Room + SQLite)",
+                    icon = Icons.Default.Chat
+                )
             }
         }
     }
@@ -135,7 +193,7 @@ fun LocalContentItem(
                 Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
             }
             
-            RadioButton(selected = false, onClick = null)
+            RadioButton(selected = true, onClick = null)
         }
     }
 }

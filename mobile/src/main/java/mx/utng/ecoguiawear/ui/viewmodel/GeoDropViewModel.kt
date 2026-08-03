@@ -43,14 +43,79 @@ class GeoDropViewModel(
     private val _targetSiteName = mutableStateOf<String?>(null)
     val targetSiteName: State<String?> = _targetSiteName
 
+    private val _isSiteCreationMode = mutableStateOf(false)
+    val isSiteCreationMode: State<Boolean> = _isSiteCreationMode
+
     private val _isSaving = mutableStateOf(false)
     val isSaving: State<Boolean> = _isSaving
 
+
+    private val _allSites = mutableStateOf<List<mx.utng.ecoguia.shared.domain.model.RemoteHistoricalSite>>(emptyList())
+    val allSites: State<List<mx.utng.ecoguia.shared.domain.model.RemoteHistoricalSite>> = _allSites
 
     private val _nearbyGeoDrops = mutableStateOf<List<RemoteGeoDrop>>(emptyList())
     val nearbyGeoDrops: State<List<RemoteGeoDrop>> = _nearbyGeoDrops
 
     val collectedGeoDropIds = androidx.compose.runtime.mutableStateMapOf<String, Boolean>()
+
+    fun loadSites(userLocation: Location? = null) {
+        viewModelScope.launch {
+            try {
+                val sites = repository.getHistoricalSites()
+                val targetId = _targetSiteId.value
+                val targetSite = sites.firstOrNull { it.id == targetId }
+                if (targetSite != null && _targetSiteName.value.isNullOrBlank()) {
+                    _targetSiteName.value = targetSite.name
+                }
+
+                if (!targetId.isNullOrBlank()) {
+                    // Comportamiento 2: Sitio Seleccionado / Modo Admin -> Incluir el sitio objetivo al inicio sin filtrarlo por 100m
+                    val sorted = if (userLocation != null) {
+                        sites.sortedWith(
+                            compareByDescending<mx.utng.ecoguia.shared.domain.model.RemoteHistoricalSite> { site ->
+                                site.id == targetId
+                            }.thenBy { site ->
+                                val lat = site.getComputedLatitude()
+                                val lng = site.getComputedLongitude()
+                                if (lat != null && lng != null) {
+                                    val results = FloatArray(1)
+                                    Location.distanceBetween(userLocation.latitude, userLocation.longitude, lat, lng, results)
+                                    results[0]
+                                } else Float.MAX_VALUE
+                            }
+                        )
+                    } else {
+                        sites.sortedByDescending { it.id == targetId }
+                    }
+                    _allSites.value = sorted
+                } else {
+                    // Comportamiento 1: Modo general / Museos -> Filtrar únicamente sitios cercanos a <= 100 metros
+                    if (userLocation != null) {
+                        val filtered = sites.filter { site ->
+                            val lat = site.getComputedLatitude()
+                            val lng = site.getComputedLongitude()
+                            if (lat != null && lng != null) {
+                                val results = FloatArray(1)
+                                Location.distanceBetween(userLocation.latitude, userLocation.longitude, lat, lng, results)
+                                results[0] <= 100f
+                            } else false
+                        }.sortedBy { site ->
+                            val lat = site.getComputedLatitude()!!
+                            val lng = site.getComputedLongitude()!!
+                            val results = FloatArray(1)
+                            Location.distanceBetween(userLocation.latitude, userLocation.longitude, lat, lng, results)
+                            results[0]
+                        }
+                        _allSites.value = if (filtered.isNotEmpty()) filtered else sites
+                    } else {
+                        _allSites.value = sites
+                    }
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("GeoDropVM", "Error cargando sitios: ${e.message}")
+            }
+        }
+    }
 
     /**
      * Carga todos los Geo-Drops registrados en la base de datos.
@@ -70,7 +135,7 @@ class GeoDropViewModel(
      * Verifica si un GeoDrop específico ya fue capturado/guardado por el usuario.
      */
     fun checkGeoDropStatus(userId: String, dropId: String) {
-        if (dropId.isBlank()) return
+        if (dropId.isBlank() || collectedGeoDropIds.containsKey(dropId)) return
         viewModelScope.launch {
             try {
                 val isCollected = repository.isGeoDropCollected(userId, dropId)
@@ -150,9 +215,10 @@ class GeoDropViewModel(
     /**
      * Establece el sitio obligatorio al que pertenecerá el Geo-Drop.
      */
-    fun setTargetSite(siteId: String, siteName: String) {
+    fun setTargetSite(siteId: String, siteName: String, isCreationMode: Boolean = false) {
         _targetSiteId.value = siteId
         _targetSiteName.value = siteName
+        _isSiteCreationMode.value = isCreationMode
     }
 
     private val firebaseStorageRepo = mx.utng.ecoguiawear.data.remote.FirebaseStorageRepository()
@@ -169,14 +235,9 @@ class GeoDropViewModel(
         onSuccess: () -> Unit,
         onError: (String) -> Unit
     ) {
-        if (location == null) {
-            onError("No se pudo obtener la ubicación GPS actual.")
-            return
-        }
-
         val siteId = _targetSiteId.value
-        if (siteId.isNullOrBlank()) {
-            onError("La cápsula debe estar asociada obligatoriamente a un sitio histórico.")
+        if (location == null && siteId.isNullOrBlank()) {
+            onError("No se pudo obtener la ubicación GPS ni el sitio asociado.")
             return
         }
 
@@ -192,12 +253,28 @@ class GeoDropViewModel(
                     mediaUrl = firebaseStorageRepo.uploadImage(uri, folder = "geo_drops")
                 }
 
-                // 2. Guardar registro en Neon PostgreSQL asignando explícitamente el siteId
+                // 2. Determinar coordenadas: consultar el sitio específico en PostgreSQL si hay un siteId seleccionado
+                var siteLat: Double? = null
+                var siteLng: Double? = null
+
+                if (!siteId.isNullOrBlank()) {
+                    val fetchedSite = try {
+                        repository.getHistoricalSiteById(siteId) ?: _allSites.value.firstOrNull { it.id == siteId }
+                    } catch (e: Exception) {
+                        _allSites.value.firstOrNull { it.id == siteId }
+                    }
+                    siteLat = fetchedSite?.getComputedLatitude()
+                    siteLng = fetchedSite?.getComputedLongitude()
+                }
+
+                val finalLat = siteLat ?: location?.latitude ?: 0.0
+                val finalLng = siteLng ?: location?.longitude ?: 0.0
+
                 val success = repository.createGeoDrop(
                     title = title,
                     description = description,
-                    lat = location.latitude,
-                    lng = location.longitude,
+                    lat = finalLat,
+                    lng = finalLng,
                     userId = userId,
                     siteId = siteId,
                     mediaUrl = mediaUrl

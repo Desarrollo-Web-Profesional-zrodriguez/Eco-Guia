@@ -1,8 +1,8 @@
 /**
  * Archivo: SecurityScreen.kt
- * Autor: ZahirMora
- * Fecha de última actualización: 2026-07-22
- * Descripción: Pantalla de gestión de cuenta y seguridad.
+ * Autores: ZahirAndres, CesarEnrique
+ * Fecha de última actualización: 2026-07-30
+ * Descripción: Pantalla de gestión de cuenta y seguridad con datos reales del usuario.
  */
 
 package mx.utng.ecoguiawear.ui.screens
@@ -14,7 +14,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -22,27 +22,80 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import mx.utng.ecoguia.shared.domain.model.RemoteUser
 import mx.utng.ecoguiawear.ui.components.EcoTopBar
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+
 /**
- * Composable que representa la pantalla de seguridad.
+ * Composable que representa la pantalla de seguridad con datos reales de la cuenta.
  */
 @Composable
 fun SecurityScreen(
-    onLogoutClick: () -> Unit
+    user: RemoteUser?,
+    onLogoutClick: () -> Unit,
+    onChangePasswordClick: () -> Unit = {},
+    onDeleteAccountClick: () -> Unit = {}
 ) {
+    var showDialog by remember { mutableStateOf(false) }
+    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
+
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            title = { Text("Seguridad de la Cuenta") },
+            text = { Text("Tu cuenta está protegida y verificada con autenticación segura de Eco-Guía.") },
+            confirmButton = {
+                TextButton(onClick = { showDialog = false }) { Text("Aceptar") }
+            }
+        )
+    }
+
+    if (showDeleteConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmDialog = false },
+            title = { Text("¿Eliminar cuenta definitivamente?", color = Color.Red, fontWeight = FontWeight.Bold) },
+            text = {
+                Text(
+                    "Esta acción no se puede deshacer. Se borrarán definitivamente tu usuario, guardados, progresos, dispositivos vinculados e interacciones registradas en la base de datos.",
+                    fontSize = 13.sp
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showDeleteConfirmDialog = false
+                        onDeleteAccountClick()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                ) {
+                    Text("Eliminar para siempre", color = Color.White, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { showDeleteConfirmDialog = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+
+    val scrollState = rememberScrollState()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
+            .verticalScroll(scrollState)
     ) {
         EcoTopBar(
             title = "Cuenta",
             subtitle = "Seguridad",
-            actionIcon = Icons.Default.Settings,
-            onActionClick = { }
+            actionIcon = Icons.Default.Info,
+            onActionClick = { showDialog = true }
         )
 
         Column(modifier = Modifier.padding(24.dp)) {
@@ -55,26 +108,27 @@ fun SecurityScreen(
             Spacer(modifier = Modifier.height(16.dp))
             
             SecurityItem(
-                title = "Correo",
-                subtitle = "cesar@email.com",
+                title = "Correo electrónico",
+                subtitle = user?.email ?: "Sin correo registrado",
                 icon = Icons.Default.Email,
-                trailing = "Editar"
+                trailing = "Verificado"
             )
             
             Spacer(modifier = Modifier.height(12.dp))
             
             SecurityItem(
                 title = "Contraseña",
-                subtitle = "Actualizado hace 10 días",
+                subtitle = "Gestionar o restablecer contraseña",
                 icon = Icons.Default.Lock,
-                trailing = "Cambiar"
+                trailing = "Cambiar",
+                onClick = onChangePasswordClick
             )
             
             Spacer(modifier = Modifier.height(12.dp))
             
             SecurityItem(
-                title = "Verificación",
-                subtitle = "Cuenta verificada",
+                title = "Estado de verificación",
+                subtitle = "Cuenta activa y verificada",
                 icon = Icons.Default.Check,
                 trailing = "OK"
             )
@@ -87,6 +141,17 @@ fun SecurityScreen(
                 icon = Icons.Default.ExitToApp,
                 trailing = "",
                 onClick = onLogoutClick,
+                isLogout = true
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            SecurityItem(
+                title = "Eliminar cuenta",
+                subtitle = "Borrado permanente y en cascada",
+                icon = Icons.Default.DeleteForever,
+                trailing = "Eliminar",
+                onClick = { showDeleteConfirmDialog = true },
                 isLogout = true
             )
         }
@@ -169,6 +234,6 @@ fun SecurityItem(
 @Composable
 fun SecurityScreenPreview() {
     EcoGuiaMobileTheme {
-        SecurityScreen({})
+        SecurityScreen(user = null, onLogoutClick = {})
     }
 }

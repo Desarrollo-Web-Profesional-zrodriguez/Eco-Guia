@@ -60,6 +60,8 @@ class LocationViewModel(
     private val _isProximityServiceActive = mutableStateOf(false)
     val isProximityServiceActive: State<Boolean> = _isProximityServiceActive
 
+    private val notifiedSitesForeground = mutableSetOf<String>()
+
     private var fusedLocationClient: FusedLocationProviderClient? = null
     private var locationCallback: LocationCallback? = null
 
@@ -68,11 +70,19 @@ class LocationViewModel(
      */
     @SuppressLint("MissingPermission")
     fun startLocationUpdates(context: Context) {
+        mx.utng.ecoguiawear.data.ProximityNotificationHelper.createChannels(context)
+        syncProximityState(context)
+
         if (wearMessageClient == null) {
             wearMessageClient = WearMessageClient(context)
         }
         if (fusedLocationClient == null) {
             fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
+        }
+
+        // Si las alertas en segundo plano están activadas, asegurar que el servicio esté corriendo
+        if (_isProximityServiceActive.value) {
+            startProximityService(context)
         }
 
         val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 5000)
@@ -139,16 +149,27 @@ class LocationViewModel(
                 var minDistance = Double.MAX_VALUE
 
                 sites.forEach { site ->
-                    val siteLat = site.latitude ?: return@forEach
-                    val siteLng = site.longitude ?: return@forEach
+                    val siteLat = site.getComputedLatitude() ?: return@forEach
+                    val siteLng = site.getComputedLongitude() ?: return@forEach
                     
                     val results = FloatArray(1)
                     Location.distanceBetween(location.latitude, location.longitude, siteLat, siteLng, results)
                     val distance = results[0].toDouble()
 
-                    if (distance <= site.detectionRadiusM && distance < minDistance) {
-                        minDistance = distance
-                        closest = site
+                    if (distance <= site.detectionRadiusM) {
+                        if (distance < minDistance) {
+                            minDistance = distance
+                            closest = site
+                        }
+
+                        // Emitir notificación si el usuario entra al sitio mientras la app está ABIERTA
+                        if (site.id !in notifiedSitesForeground) {
+                            notifiedSitesForeground.add(site.id)
+                            emitForegroundAlert(site.id, site.name, distance.toInt())
+                        }
+                    } else if (distance > site.detectionRadiusM + 20) {
+                        // Resetear para volver a notificar si sale y regresa al sitio
+                        notifiedSitesForeground.remove(site.id)
                     }
                 }
                 _closestSite.value = closest
@@ -158,6 +179,53 @@ class LocationViewModel(
             } finally {
                 _isLoading.value = false
             }
+        }
+    }
+
+    private fun emitForegroundAlert(siteId: String, siteName: String, distanceM: Int) {
+        val ctx = mx.utng.ecoguia.shared.config.EcoGuiaConfig.appContext ?: return
+
+        // 1. Broadcast para alerta visual In-App (Snackbar)
+        val localIntent = Intent("mx.utng.ecoguiawear.PROXIMITY_ALERT").apply {
+            putExtra("siteName", siteName)
+            putExtra("distance", distanceM)
+        }
+        ctx.sendBroadcast(localIntent)
+
+        // 2. Alerta a Wear OS
+        viewModelScope.launch {
+            try {
+                wearMessageClient?.sendAlert(
+                    id = siteId,
+                    message = " $siteName ($distanceM m)",
+                    type = "SITE"
+                )
+            } catch (e: Exception) {
+                Log.e("LocationViewModel", "Error enviando alerta a Wear OS: ${e.message}")
+            }
+        }
+
+        // 3. Notificación flotante de sistema Android
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (androidx.core.content.ContextCompat.checkSelfPermission(
+                    ctx,
+                    android.Manifest.permission.POST_NOTIFICATIONS
+                ) != android.content.pm.PackageManager.PERMISSION_GRANTED
+            ) {
+                return
+            }
+        }
+
+        try {
+            val notificationManager = ctx.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
+            val notification = mx.utng.ecoguiawear.data.ProximityNotificationHelper.buildSiteAlertNotification(
+                context = ctx,
+                siteName = siteName,
+                distance = distanceM
+            )
+            notificationManager.notify(siteId.hashCode(), notification)
+        } catch (e: Exception) {
+            Log.e("LocationViewModel", "Error emitiendo notificación del sistema: ${e.message}")
         }
     }
 
@@ -179,15 +247,19 @@ class LocationViewModel(
      * @param context Contexto de la aplicación o actividad.
      */
     fun startProximityService(context: Context) {
-        if (_isProximityServiceActive.value) return
-        val intent = Intent(context, ProximityService::class.java)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            context.startForegroundService(intent)
-        } else {
-            context.startService(intent)
+        try {
+            val intent = Intent(context, ProximityService::class.java)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(intent)
+            } else {
+                context.startService(intent)
+            }
+            _isProximityServiceActive.value = true
+            context.getSharedPreferences("eco_prefs", Context.MODE_PRIVATE).edit().putBoolean("proximity_active", true).apply()
+            Log.d("LocationViewModel", "ProximityService iniciado correctamente.")
+        } catch (e: Exception) {
+            Log.e("LocationViewModel", "Error al iniciar ProximityService: ${e.message}")
         }
-        _isProximityServiceActive.value = true
-        Log.d("LocationViewModel", "ProximityService iniciado.")
     }
 
     /**
@@ -195,10 +267,27 @@ class LocationViewModel(
      * @param context Contexto de la aplicación o actividad.
      */
     fun stopProximityService(context: Context) {
-        if (!_isProximityServiceActive.value) return
-        context.stopService(Intent(context, ProximityService::class.java))
+        try {
+            context.stopService(Intent(context, ProximityService::class.java))
+        } catch (e: Exception) {
+            Log.e("LocationViewModel", "Error al detener ProximityService: ${e.message}")
+        }
         _isProximityServiceActive.value = false
+        context.getSharedPreferences("eco_prefs", Context.MODE_PRIVATE).edit().putBoolean("proximity_active", false).apply()
         Log.d("LocationViewModel", "ProximityService detenido.")
+    }
+
+    /**
+     * Sincroniza el estado visual con las preferencias guardadas, para que el Toggle
+     * no se reinicie si el usuario sale y vuelve a la pantalla.
+     */
+    fun syncProximityState(context: Context) {
+        val prefs = context.getSharedPreferences("eco_prefs", Context.MODE_PRIVATE)
+        val isActive = prefs.getBoolean("proximity_active", false)
+        _isProximityServiceActive.value = isActive
+        if (isActive) {
+            startProximityService(context)
+        }
     }
 
     override fun onCleared() {

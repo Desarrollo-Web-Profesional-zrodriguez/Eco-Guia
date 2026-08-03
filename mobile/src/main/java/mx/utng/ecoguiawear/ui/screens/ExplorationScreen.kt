@@ -67,6 +67,7 @@ fun ExplorationScreen(
     onOpenRoutes: () -> Unit = {},
     onOpenGeoDropWithSite: (String) -> Unit = {},
     userId: String = "",
+    userRole: String = "",
     locationViewModel: LocationViewModel = viewModel(),
     collectionViewModel: CollectionViewModel = viewModel()
 ) {
@@ -128,11 +129,13 @@ fun ExplorationScreen(
             compareByDescending<RemoteHistoricalSite> { site ->
                 collectionViewModel.savedSiteIds[site.id] == true
             }.thenBy { site ->
-                if (currentLocation != null && site.latitude != null && site.longitude != null) {
+                val siteLat = site.getComputedLatitude()
+                val siteLng = site.getComputedLongitude()
+                if (currentLocation != null && siteLat != null && siteLng != null) {
                     val results = FloatArray(1)
                     android.location.Location.distanceBetween(
                         currentLocation!!.latitude, currentLocation!!.longitude,
-                        site.latitude!!, site.longitude!!, results
+                        siteLat, siteLng, results
                     )
                     results[0]
                 } else Float.MAX_VALUE
@@ -245,8 +248,8 @@ fun ExplorationScreen(
     // BottomSheet de detalle del sitio seleccionado
     selectedSite?.let { site ->
         val loc = currentLocation
-        val siteLat = site.latitude
-        val siteLng = site.longitude
+        val siteLat = site.getComputedLatitude()
+        val siteLng = site.getComputedLongitude()
         val isWithinRange = remember(loc, siteLat, siteLng) {
             if (loc != null && siteLat != null && siteLng != null) {
                 val results = FloatArray(1)
@@ -255,9 +258,12 @@ fun ExplorationScreen(
                     siteLat, siteLng, results
                 )
                 results[0] <= site.detectionRadiusM
-            } else false
+            } else true // Permite agregar si la ubicación no ha cargado o si es simulada
         }
 
+        val isUserAdmin = remember(userRole) {
+            userRole.lowercase() in listOf("admin", "super_admin", "administrator")
+        }
 
         ModalBottomSheet(
             onDismissRequest = { selectedSite = null },
@@ -270,10 +276,9 @@ fun ExplorationScreen(
                 userId = userId,
                 collectionViewModel = collectionViewModel,
                 isWithinRange = isWithinRange,
+                isUserAdmin = isUserAdmin,
                 onNavigate = {
                     locationViewModel.syncTargetWithWatch(site)
-                    val siteLat = site.latitude
-                    val siteLng = site.longitude
                     if (siteLat != null && siteLng != null) {
                         scope.launch {
                             cameraPositionState.animate(

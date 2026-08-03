@@ -46,6 +46,7 @@ class SiteRegistrationViewModel(
     val addressSuggestions: State<List<AutocompletePrediction>> = _addressSuggestions
 
     // Paso 2: Contenido
+    var historyTitle = mutableStateOf("")
     var shortDesc = mutableStateOf("")
     var historyDesc = mutableStateOf("")
 
@@ -59,11 +60,27 @@ class SiteRegistrationViewModel(
     var cost = mutableStateOf("")
     var selectedAccessibility = mutableStateOf(setOf<String>())
 
+    // Asignación de Propietario (Solamente cuentas con rol museum_hotel)
+    var selectedOwnerUserId = mutableStateOf<String?>(null)
+    private val _museumUsers = mutableStateOf<List<mx.utng.ecoguia.shared.domain.model.RemoteUser>>(emptyList())
+    val museumUsers: State<List<mx.utng.ecoguia.shared.domain.model.RemoteUser>> = _museumUsers
+
     private val _isSaving = mutableStateOf(false)
     val isSaving: State<Boolean> = _isSaving
 
     init {
         loadCategories()
+        loadMuseumUsers()
+    }
+
+    fun loadMuseumUsers() {
+        viewModelScope.launch {
+            try {
+                _museumUsers.value = repository.getUsersByRole("museum_hotel")
+            } catch (e: Exception) {
+                android.util.Log.e("SiteRegVM", "Error al cargar usuarios museum_hotel: ${e.message}", e)
+            }
+        }
     }
 
     fun loadCategories() {
@@ -136,31 +153,59 @@ class SiteRegistrationViewModel(
     }
 
     /**
-     * Envía los datos finales al repositorio para persistencia.
+     * Limpia completamente todos los campos del formulario para un nuevo registro.
      */
-    fun registerSite(onSuccess: (String) -> Unit, onError: (String) -> Unit) {
+    fun resetForm() {
+        name.value = ""
+        siteType.value = ""
+        customCategory.value = ""
+        address.value = ""
+        _addressSuggestions.value = emptyList()
+        historyTitle.value = ""
+        shortDesc.value = ""
+        historyDesc.value = ""
+        latitude.value = 0.0
+        longitude.value = 0.0
+        radiusM.value = 50
+        hours.value = ""
+        cost.value = ""
+        selectedAccessibility.value = emptySet()
+    }
+
+    /**
+     * Envía los datos finales al repositorio para persistencia asignando el creador activo.
+     */
+    fun registerSite(ownerUserId: String? = null, onSuccess: (String) -> Unit, onError: (String) -> Unit) {
         viewModelScope.launch {
             _isSaving.value = true
             
             // Si la categoría es "Otro", usamos la personalizada
             val finalCategory = if (siteType.value == "Otro") customCategory.value else siteType.value
             val finalAccessibility = selectedAccessibility.value.joinToString(", ")
+            val finalHistoryDesc = if (historyTitle.value.isNotBlank()) "${historyTitle.value.trim()}\n\n${historyDesc.value}" else historyDesc.value
 
+            val targetOwnerUserId = selectedOwnerUserId.value ?: ownerUserId
             val createdId = repository.createHistoricalSite(
                 name = name.value,
                 siteType = finalCategory,
                 address = address.value,
                 shortDesc = shortDesc.value,
-                historyDesc = historyDesc.value,
+                historyDesc = finalHistoryDesc,
                 lat = latitude.value,
                 lng = longitude.value,
                 radiusM = radiusM.value,
                 hours = hours.value,
                 cost = cost.value,
-                accessibility = finalAccessibility
+                accessibility = finalAccessibility,
+                ownerUserId = targetOwnerUserId
             )
             _isSaving.value = false
-            if (createdId.isNotBlank()) onSuccess(createdId) else onError("Error al guardar en el servidor.")
+            if (createdId.isNotBlank()) {
+                resetForm()
+                onSuccess(createdId)
+            } else {
+                onError("Error al guardar en el servidor.")
+            }
         }
     }
 

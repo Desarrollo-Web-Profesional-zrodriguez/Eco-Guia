@@ -104,11 +104,30 @@ class WearMessageClient(private val context: Context) {
         }
     }
 
+    /**
+     * Envía una alerta de sitio o ruta al reloj Wear OS.
+     */
+    suspend fun sendAlert(id: String, message: String, type: String = "SITE") {
+        try {
+            val nodes = Wearable.getNodeClient(context).connectedNodes.await()
+            val payload = "$id|$message|$type"
+            nodes.forEach { node ->
+                Wearable.getMessageClient(context)
+                    .sendMessage(node.id, PATH_SEND_ALERT, payload.toByteArray())
+                    .await()
+            }
+            Log.d("WearMessageClient", "Alerta enviada a ${nodes.size} nodos Wear OS: $message")
+        } catch (e: Exception) {
+            Log.e("WearMessageClient", "Error al enviar alerta a Wear OS: ${e.message}")
+        }
+    }
+
     companion object {
         const val PATH_SYNC_TARGET = "/eco-guia/sync/target"
         const val PATH_SYNC_ROUTE = "/eco-guia/sync/route"
         const val PATH_CANCEL_ROUTE = "/eco-guia/cancel/route"
         const val PATH_COMPLETE_ROUTE = "/eco-guia/complete/route"
         const val PATH_SYNC_PROGRESS = "/eco-guia/sync/progress"
+        const val PATH_SEND_ALERT = "/eco-guia/simulate/alerts"
     }
 }

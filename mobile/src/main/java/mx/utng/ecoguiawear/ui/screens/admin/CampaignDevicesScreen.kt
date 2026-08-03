@@ -42,7 +42,7 @@ fun CampaignDevicesScreen(
     val repository = remember { mx.utng.ecoguia.shared.data.repository.EcoGuiaRepositoryImpl() }
     val tvDevices = remember { mutableStateListOf<mx.utng.ecoguia.shared.domain.model.RemoteDevice>() }
     var isLoading by remember { mutableStateOf(true) }
-    var selectedTVIndex by remember { mutableStateOf(0) }
+    val selectedDeviceIds = remember { mutableStateListOf<String>() }
     val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(userId) {
@@ -50,9 +50,12 @@ fun CampaignDevicesScreen(
             isLoading = true
             val devices = repository.getUserDevices(userId)
             tvDevices.clear()
+            selectedDeviceIds.clear()
             // Filtrar solo dispositivos de tipo TV o emisor
             val tvsOnly = devices.filter { it.type.lowercase().contains("tv") || it.name.lowercase().contains("tv") }
             tvDevices.addAll(tvsOnly)
+            // Marcar por defecto todas las pantallas encontradas
+            tvsOnly.forEach { selectedDeviceIds.add(it.id) }
         } catch (e: Exception) {
             android.util.Log.e("CampaignDevices", "Error cargando TVs: ${e.message}")
         } finally {
@@ -103,7 +106,7 @@ fun CampaignDevicesScreen(
                 Text("Smart TVs con Sesión Iniciada", color = Color.White, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Selecciona la pantalla donde deseas transmitir la programación '$programTitle'. Solo se permite una transmisión activa por TV.", 
+                    text = "Selecciona una o más pantallas donde deseas transmitir la programación '$programTitle'. Usa las casillas para marcar las pantallas objetivo.", 
                     color = Color.White.copy(alpha = 0.7f), 
                     fontSize = 12.sp
                 )
@@ -112,7 +115,7 @@ fun CampaignDevicesScreen(
 
         // TV Sessions List
         Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-            Text("Pantallas Vinculadas ($currentUserEmail)", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
+            Text("Pantallas Vinculadas (${selectedDeviceIds.size}/${tvDevices.size} Seleccionadas)", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
             
             if (isLoading) {
                 Box(
@@ -136,7 +139,7 @@ fun CampaignDevicesScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "No tienes ninguna Smart TV vinculada en Neon DB actualmente. Vincula tu Smart TV ingresando su código PIN de 6 dígitos en 'Mis Dispositivos'.",
+                            text = "No tienes ninguna Smart TV vinculada actualmente. Vincula tu Smart TV ingresando su código PIN de 6 dígitos en 'Mis Dispositivos'.",
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 12.sp
                         )
@@ -146,11 +149,18 @@ fun CampaignDevicesScreen(
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     items(tvDevices.size) { index ->
                         val tv = tvDevices[index]
+                        val isChecked = selectedDeviceIds.contains(tv.id)
                         DeviceItemToggle(
                             title = tv.name,
                             subtitle = "Sesión activa · ${tv.deviceIdentifier ?: "Conectada"}",
-                            isSelected = selectedTVIndex == index,
-                            onSelect = { selectedTVIndex = index }
+                            isSelected = isChecked,
+                            onSelect = {
+                                if (isChecked) {
+                                    selectedDeviceIds.remove(tv.id)
+                                } else {
+                                    selectedDeviceIds.add(tv.id)
+                                }
+                            }
                         )
                     }
                 }
@@ -163,34 +173,23 @@ fun CampaignDevicesScreen(
         if (tvDevices.isNotEmpty()) {
             Box(modifier = Modifier.padding(24.dp)) {
                 EcoButton(
-                    text = "Iniciar Transmisión en TV",
+                    text = "Iniciar Transmisión (${selectedDeviceIds.size} TV)",
                     onClick = {
-                        val selectedTv = tvDevices.getOrNull(selectedTVIndex)
-                        if (selectedTv != null) {
-                            val rawIdentifier = selectedTv.deviceIdentifier.orEmpty()
-                            val pairingCode = if (rawIdentifier.contains("TV-PIN-")) {
-                                rawIdentifier.substringAfter("TV-PIN-")
-                            } else {
-                                rawIdentifier
-                            }
-                            coroutineScope.launch {
-                                // 1. Transmitir a la TV seleccionada
+                        coroutineScope.launch {
+                            val selectedTvs = tvDevices.filter { selectedDeviceIds.contains(it.id) }
+                            selectedTvs.forEach { tv ->
+                                val rawIdentifier = tv.deviceIdentifier.orEmpty()
+                                val pairingCode = if (rawIdentifier.contains("TV-PIN-")) {
+                                    rawIdentifier.substringAfter("TV-PIN-")
+                                } else {
+                                    rawIdentifier
+                                }
                                 if (pairingCode.isNotBlank()) {
                                     repository.setTvTransmissionProgram(pairingCode, programType)
                                 }
-                                // 2. Transmitir a todas las demás TVs vinculadas del usuario como respaldo
-                                tvDevices.forEach { tv ->
-                                    val code = tv.deviceIdentifier?.removePrefix("TV-PIN-").orEmpty()
-                                    if (code.isNotBlank() && code != pairingCode) {
-                                        repository.setTvTransmissionProgram(code, programType)
-                                    }
-                                }
-                                onManageContentClick()
                             }
-                        } else {
                             onManageContentClick()
                         }
-
                     }
                 )
             }
@@ -238,10 +237,10 @@ fun DeviceItemToggle(
                 Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
             }
             
-            RadioButton(
-                selected = isSelected,
-                onClick = onSelect,
-                colors = RadioButtonDefaults.colors(selectedColor = EcoGuiaColors.Jade)
+            Checkbox(
+                checked = isSelected,
+                onCheckedChange = { onSelect() },
+                colors = CheckboxDefaults.colors(checkedColor = EcoGuiaColors.Jade)
             )
         }
     }

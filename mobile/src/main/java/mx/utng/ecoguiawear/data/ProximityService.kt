@@ -29,8 +29,8 @@ class ProximityService : Service() {
 
     companion object {
         const val TAG = "ProximityService"
-        /** Radio de búsqueda en Neon para la consulta inicial (1 km). */
-        private const val SEARCH_RADIUS_M = 1000
+        /** Radio de búsqueda en Neon para la consulta inicial (5 km). */
+        private const val SEARCH_RADIUS_M = 5000
         /** Intervalo de actualización GPS en milisegundos (10 segundos). */
         private const val LOCATION_INTERVAL_MS = 10_000L
     }
@@ -78,6 +78,11 @@ class ProximityService : Service() {
         }
 
         try {
+            fusedLocationClient.lastLocation.addOnSuccessListener { lastLoc ->
+                if (lastLoc != null) {
+                    serviceScope.launch { checkProximity(lastLoc) }
+                }
+            }
             fusedLocationClient.requestLocationUpdates(request, locationCallback, mainLooper)
             Log.d(TAG, "Servicio de proximidad iniciado correctamente.")
         } catch (e: Exception) {
@@ -89,6 +94,28 @@ class ProximityService : Service() {
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
+
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        Log.d(TAG, "App removida de recientes. Programando auto-reinicio del ProximityService...")
+        try {
+            val restartServiceIntent = Intent(applicationContext, ProximityService::class.java).also {
+                it.setPackage(packageName)
+            }
+            val restartPendingIntent = android.app.PendingIntent.getService(
+                applicationContext, 1, restartServiceIntent,
+                android.app.PendingIntent.FLAG_ONE_SHOT or android.app.PendingIntent.FLAG_IMMUTABLE
+            )
+            val alarmManager = getSystemService(android.content.Context.ALARM_SERVICE) as? android.app.AlarmManager
+            alarmManager?.set(
+                android.app.AlarmManager.ELAPSED_REALTIME,
+                android.os.SystemClock.elapsedRealtime() + 1000,
+                restartPendingIntent
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "Error programando reinicio en onTaskRemoved: ${e.message}")
+        }
+        super.onTaskRemoved(rootIntent)
+    }
 
     override fun onDestroy() {
         super.onDestroy()
@@ -119,10 +146,9 @@ class ProximityService : Service() {
             )
 
             nearbySites.forEach { site ->
-                // Ignorar sitios sin coordenadas o ya notificados
-                val siteLat = site.latitude ?: return@forEach
-                val siteLng = site.longitude ?: return@forEach
-                if (site.id in notifiedSites) return@forEach
+                // Soporte para coordenadas computadas (vía WKT PostGIS o campos directos)
+                val siteLat = site.getComputedLatitude() ?: return@forEach
+                val siteLng = site.getComputedLongitude() ?: return@forEach
 
                 // Calcular distancia real entre usuario y sitio
                 val results = FloatArray(1)
@@ -135,9 +161,16 @@ class ProximityService : Service() {
 
                 // Verificar si el usuario está dentro del radio de detección del sitio
                 if (distanceM <= site.detectionRadiusM) {
-                    Log.d(TAG, "Sitio detectado: ${site.name} a ${distanceM}m (radio: ${site.detectionRadiusM}m)")
-                    emitSiteAlert(site.id, site.name, distanceM)
-                    notifiedSites.add(site.id)
+                    if (site.id !in notifiedSites) {
+                        Log.d(TAG, "Sitio detectado: ${site.name} a ${distanceM}m (radio: ${site.detectionRadiusM}m)")
+                        emitSiteAlert(site.id, site.name, distanceM)
+                        notifiedSites.add(site.id)
+                    }
+                } else {
+                    // Si el usuario ya salió del radio de detección (con un margen de 20m), reseteamos la notificación
+                    if (distanceM > site.detectionRadiusM + 20) {
+                        notifiedSites.remove(site.id)
+                    }
                 }
             }
         } catch (e: Exception) {
@@ -145,22 +178,43 @@ class ProximityService : Service() {
         }
     }
 
-    /**
-     * Emite la notificación de alerta al sistema con el nombre del sitio y la distancia.
-     * Usa un notificationId único por sitio para que cada alerta sea independiente.
-     *
-     * @param siteId UUID del sitio (usado como notificationId hash).
-     * @param siteName Nombre del sitio histórico para mostrar en la notificación.
-     * @param distanceM Distancia aproximada en metros al sitio.
-     */
     private fun emitSiteAlert(siteId: String, siteName: String, distanceM: Int) {
+        // 1. Enviar Broadcast para mostrar Snackbar en la App (In-App notification)
+        val localIntent = Intent("mx.utng.ecoguiawear.PROXIMITY_ALERT").apply {
+            putExtra("siteName", siteName)
+            putExtra("distance", distanceM)
+        }
+        sendBroadcast(localIntent)
+
+        // 2. Enviar alerta al reloj Wear OS
+        serviceScope.launch {
+            try {
+                mx.utng.ecoguiawear.data.wear.WearMessageClient(this@ProximityService).sendAlert(
+                    id = siteId,
+                    message = " $siteName ($distanceM m)",
+                    type = "SITE"
+                )
+            } catch (e: Exception) {
+                Log.e(TAG, "Error enviando alerta a Wear OS: ${e.message}")
+            }
+        }
+
+        // 3. Verificar permiso para notificación del sistema en Android 13+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                Log.w(TAG, "Permiso POST_NOTIFICATIONS no concedido. Solo se mostrará alerta In-App.")
+                return
+            }
+        }
+
         val notificationManager = getSystemService(NOTIFICATION_SERVICE) as android.app.NotificationManager
         val notification = ProximityNotificationHelper.buildSiteAlertNotification(
             context = this,
             siteName = siteName,
             distance = distanceM
         )
-        // Usamos un ID basado en el hash del siteId para notificaciones independientes por sitio
-        notificationManager.notify(siteId.hashCode(), notification)
+        // Usamos un ID positivo basado en el hash del siteId para notificaciones independientes por sitio
+        val notifId = kotlin.math.abs(siteId.hashCode()) + 2000
+        notificationManager.notify(notifId, notification)
     }
 }
