@@ -20,6 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -122,7 +123,10 @@ fun EcoTextField(
     modifier: Modifier = Modifier,
     placeholder: String = "",
     readOnly: Boolean = false,
-    singleLine: Boolean = true
+    singleLine: Boolean = true,
+    visualTransformation: androidx.compose.ui.text.input.VisualTransformation = androidx.compose.ui.text.input.VisualTransformation.None,
+    keyboardOptions: androidx.compose.foundation.text.KeyboardOptions = androidx.compose.foundation.text.KeyboardOptions.Default,
+    trailingIcon: @Composable (() -> Unit)? = null
 ) {
     TextField(
         value = value,
@@ -146,7 +150,10 @@ fun EcoTextField(
         ),
         shape = RoundedCornerShape(16.dp),
         singleLine = singleLine,
-        readOnly = readOnly
+        readOnly = readOnly,
+        visualTransformation = visualTransformation,
+        keyboardOptions = keyboardOptions,
+        trailingIcon = trailingIcon
     )
 }
 
@@ -251,4 +258,81 @@ fun EcoLogo() {
         )
     }
 }
+
+/**
+ * Estado de validación de requisitos de la contraseña.
+ */
+data class PasswordRequirements(
+    val hasMinLength: Boolean = false,
+    val hasUppercase: Boolean = false,
+    val hasLowercase: Boolean = false,
+    val hasDigit: Boolean = false,
+    val hasSpecialChar: Boolean = false
+) {
+    val isValid: Boolean
+        get() = hasMinLength && hasUppercase && hasLowercase && hasDigit && hasSpecialChar
+}
+
+fun calculatePasswordRequirements(password: String): PasswordRequirements {
+    return PasswordRequirements(
+        hasMinLength = password.length >= 8,
+        hasUppercase = password.any { it.isUpperCase() },
+        hasLowercase = password.any { it.isLowerCase() },
+        hasDigit = password.any { it.isDigit() },
+        hasSpecialChar = password.any { !it.isLetterOrDigit() }
+    )
+}
+
+/**
+ * Componente reactivo que muestra los requisitos de seguridad de la contraseña en tiempo real.
+ */
+@Composable
+fun PasswordRequirementsBox(
+    password: String,
+    modifier: Modifier = Modifier
+) {
+    val reqs = remember(password) { calculatePasswordRequirements(password) }
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(EcoGuiaColors.Surface.copy(alpha = 0.4f), RoundedCornerShape(12.dp))
+            .padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Text(
+            text = "Requisitos de la contraseña:",
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Bold,
+            color = EcoGuiaColors.Muted
+        )
+        RequirementRow(text = "Al menos 8 caracteres", isMet = reqs.hasMinLength)
+        RequirementRow(text = "Una letra mayúscula (A-Z)", isMet = reqs.hasUppercase)
+        RequirementRow(text = "Una letra minúscula (a-z)", isMet = reqs.hasLowercase)
+        RequirementRow(text = "Un número (0-9)", isMet = reqs.hasDigit)
+        RequirementRow(text = "Un carácter especial (!@#$%...)", isMet = reqs.hasSpecialChar)
+    }
+}
+
+@Composable
+private fun RequirementRow(text: String, isMet: Boolean) {
+    val color = if (isMet) EcoGuiaColors.Jade else Color.Gray.copy(alpha = 0.7f)
+    val iconText = if (isMet) "✓" else "○"
+
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            text = iconText,
+            color = color,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.width(16.dp)
+        )
+        Text(
+            text = text,
+            color = color,
+            fontSize = 11.sp
+        )
+    }
+}
+
 

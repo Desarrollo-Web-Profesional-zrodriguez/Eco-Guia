@@ -72,4 +72,30 @@ class UserManagementViewModel(
             }
         }
     }
+
+    /**
+     * Elimina definitivamente a un usuario en cascada desde la vista de administración.
+     */
+    fun deleteUser(
+        userId: String,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val success = repository.deleteUserCascade(userId)
+                if (success) {
+                    loadUsers()
+                    onSuccess()
+                } else {
+                    onError("No se pudo eliminar el usuario (cuenta protegida o error en la BD).")
+                }
+            } catch (e: Exception) {
+                onError("Error: ${e.message}")
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
 }

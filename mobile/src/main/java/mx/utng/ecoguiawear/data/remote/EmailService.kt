@@ -1,3 +1,10 @@
+/**
+ * Archivo: EmailService.kt
+ * Autores: ZahirAndres, CesarEnrique
+ * Fecha de última actualización: 2026-07-30
+ * Descripción: Servicio de envío de correos transaccionales (OTP y recuperación de contraseña) vía API v3 de Brevo usando los colores corporativos de Eco-Guía.
+ */
+
 package mx.utng.ecoguiawear.data.remote
 
 import io.ktor.client.HttpClient
@@ -11,6 +18,7 @@ import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import io.ktor.serialization.kotlinx.json.json
+import io.ktor.client.statement.bodyAsText
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
@@ -18,7 +26,7 @@ import kotlinx.serialization.json.putJsonObject
 import kotlinx.serialization.json.Json
 
 class EmailService {
-    private val apiKey = "TU_BREVO_API_KEY_AQUI" 
+    private val apiKey = mx.utng.ecoguiawear.BuildConfig.BREVO_API_KEY
     private val apiUrl = "https://api.brevo.com/v3/smtp/email"
 
     private val client = HttpClient(OkHttp) {
@@ -27,14 +35,7 @@ class EmailService {
         }
     }
 
-    suspend fun sendPasswordRecoveryEmail(toEmail: String, recoveryLink: String): Boolean {
-        if (apiKey == "TU_BREVO_API_KEY_AQUI") {
-            android.util.Log.e("EmailService", "Falta configurar la API Key de Brevo.")
-            // Para fines de prueba y demostración sin API KEY configurada
-            kotlinx.coroutines.delay(2000)
-            return true 
-        }
-
+    suspend fun sendPasswordRecoveryEmail(toEmail: String, recoveryOtp: String): Boolean {
         try {
             val payload = buildJsonObject {
                 putJsonObject("sender") {
@@ -46,32 +47,32 @@ class EmailService {
                         put("email", toEmail)
                     })
                 }
-                put("subject", "Recuperación de contraseña - EcoGuía")
+                put("subject", "Código de Recuperación - EcoGuía")
                 put("htmlContent", """
                     <!DOCTYPE html>
                     <html>
                     <head>
                         <meta charset="UTF-8">
                     </head>
-                    <body style="margin: 0; padding: 0; background-color: #f4f7f6; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #333333;">
-                        <div style="max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
-                            <div style="background: linear-gradient(135deg, #004D40, #00796B); padding: 30px; text-align: center;">
-                                <h1 style="color: #ffffff; margin: 0; font-size: 24px; letter-spacing: 1px;">Eco-Guía</h1>
+                    <body style="margin: 0; padding: 0; background-color: #050B10; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #F7FAFC;">
+                        <div style="max-width: 600px; margin: 40px auto; background-color: #0E2A3F; border-radius: 16px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.4); border: 1px solid #26A69A;">
+                            <div style="background: linear-gradient(135deg, #05111A, #0E2A3F); padding: 35px; text-align: center; border-bottom: 2px solid #C5A059;">
+                                <h1 style="color: #C5A059; margin: 0; font-size: 28px; letter-spacing: 2px;">ECO-GUÍA</h1>
                             </div>
                             <div style="padding: 40px; text-align: center;">
-                                <h2 style="color: #004D40; margin-top: 0; font-size: 22px;">Recuperación de Acceso</h2>
-                                <p style="font-size: 16px; line-height: 1.6; color: #555555; margin-bottom: 30px;">
-                                    Hola, hemos recibido una solicitud para restablecer la contraseña de tu cuenta en Eco-Guía.
+                                <h2 style="color: #26A69A; margin-top: 0; font-size: 22px;">Código de Restablecimiento</h2>
+                                <p style="font-size: 16px; line-height: 1.6; color: #B8C6D1; margin-bottom: 30px;">
+                                    Ingresa el siguiente código de 6 dígitos en la aplicación móvil para restablecer tu contraseña:
                                 </p>
-                                <a href="$recoveryLink" style="display: inline-block; padding: 14px 32px; background-color: #D4AF37; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: bold; border-radius: 30px; box-shadow: 0 4px 6px rgba(212, 175, 55, 0.3);">
-                                    Restablecer Contraseña
-                                </a>
-                                <p style="font-size: 14px; line-height: 1.5; color: #999999; margin-top: 30px;">
-                                    Si no fuiste tú quien solicitó este cambio, por favor ignora este correo. Tu cuenta sigue estando segura.
+                                <div style="display: inline-block; padding: 18px 42px; background-color: #05111A; border: 2px dashed #C5A059; border-radius: 16px; margin-bottom: 30px;">
+                                    <span style="font-size: 34px; font-weight: bold; letter-spacing: 6px; color: #C5A059;">$recoveryOtp</span>
+                                </div>
+                                <p style="font-size: 14px; line-height: 1.5; color: #B8C6D1;">
+                                    Si no solicitaste este cambio, puedes ignorar este mensaje de forma segura.
                                 </p>
                             </div>
-                            <div style="background-color: #f9f9f9; padding: 20px; text-align: center; border-top: 1px solid #eeeeee;">
-                                <p style="margin: 0; font-size: 12px; color: #aaaaaa;">
+                            <div style="background-color: #05111A; padding: 20px; text-align: center; border-top: 1px solid #0E2A3F;">
+                                <p style="margin: 0; font-size: 12px; color: #B8C6D1;">
                                     &copy; 2026 Eco-Guía. Todos los derechos reservados.
                                 </p>
                             </div>
@@ -96,12 +97,6 @@ class EmailService {
     }
 
     suspend fun sendOtpEmail(toEmail: String, username: String, otp: String): Boolean {
-        if (apiKey == "TU_BREVO_API_KEY_AQUI") {
-            android.util.Log.e("EmailService", "Falta configurar la API Key de Brevo.")
-            kotlinx.coroutines.delay(2000)
-            return true 
-        }
-
         try {
             val payload = buildJsonObject {
                 putJsonObject("sender") {
@@ -120,26 +115,27 @@ class EmailService {
                     <head>
                         <meta charset="UTF-8">
                     </head>
-                    <body style="margin: 0; padding: 0; background-color: #f4f7f6; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #333333;">
-                        <div style="max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
-                            <div style="background: linear-gradient(135deg, #004D40, #00796B); padding: 40px; text-align: center;">
-                                <h1 style="color: #ffffff; margin: 0; font-size: 28px; letter-spacing: 1px;">Verificación de Cuenta</h1>
+                    <body style="margin: 0; padding: 0; background-color: #050B10; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #F7FAFC;">
+                        <div style="max-width: 600px; margin: 40px auto; background-color: #0E2A3F; border-radius: 16px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.4); border: 1px solid #26A69A;">
+                            <div style="background: linear-gradient(135deg, #05111A, #0E2A3F); padding: 35px; text-align: center; border-bottom: 2px solid #C5A059;">
+                                <h1 style="color: #C5A059; margin: 0; font-size: 28px; letter-spacing: 2px;">ECO-GUÍA</h1>
                             </div>
                             <div style="padding: 40px; text-align: center;">
-                                <h2 style="color: #004D40; margin-top: 0; font-size: 22px;">Hola, $username</h2>
-                                <p style="font-size: 16px; line-height: 1.6; color: #555555; margin-bottom: 30px;">
+                                <h2 style="color: #26A69A; margin-top: 0; font-size: 22px;">Verificación de Cuenta</h2>
+                                <h3 style="color: #F7FAFC; font-weight: normal; margin-top: 5px;">Hola, $username</h3>
+                                <p style="font-size: 16px; line-height: 1.6; color: #B8C6D1; margin-bottom: 30px;">
                                     Para continuar con tu registro en Eco-Guía, por favor ingresa el siguiente código de 6 dígitos en la aplicación:
                                 </p>
-                                <div style="display: inline-block; padding: 20px 40px; background-color: #e8f5e9; border: 2px dashed #00796B; border-radius: 12px; margin-bottom: 30px;">
-                                    <span style="font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #004D40;">$otp</span>
+                                <div style="display: inline-block; padding: 18px 42px; background-color: #05111A; border: 2px dashed #C5A059; border-radius: 16px; margin-bottom: 30px;">
+                                    <span style="font-size: 34px; font-weight: bold; letter-spacing: 6px; color: #C5A059;">$otp</span>
                                 </div>
-                                <p style="font-size: 14px; line-height: 1.5; color: #999999;">
+                                <p style="font-size: 14px; line-height: 1.5; color: #B8C6D1;">
                                     Si no solicitaste crear una cuenta, puedes ignorar este correo sin problema.
                                 </p>
                             </div>
-                            <div style="background-color: #f9f9f9; padding: 20px; text-align: center; border-top: 1px solid #eeeeee;">
-                                <p style="margin: 0; font-size: 12px; color: #aaaaaa;">
-                                    &copy; 2026 Eco-Guía. El mundo en tus manos.
+                            <div style="background-color: #05111A; padding: 20px; text-align: center; border-top: 1px solid #0E2A3F;">
+                                <p style="margin: 0; font-size: 12px; color: #B8C6D1;">
+                                    &copy; 2026 Eco-Guía. El patrimonio en tus manos.
                                 </p>
                             </div>
                         </div>

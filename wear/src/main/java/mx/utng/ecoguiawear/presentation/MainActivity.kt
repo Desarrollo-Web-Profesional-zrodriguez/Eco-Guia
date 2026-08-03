@@ -13,7 +13,7 @@ import com.google.android.gms.wearable.MessageClient
 import com.google.android.gms.wearable.MessageEvent
 import com.google.android.gms.wearable.Wearable
 import mx.utng.ecoguiawear.data.haptics.HapticController
-import mx.utng.ecoguiawear.data.repository.DemoRadarRepository
+import mx.utng.ecoguiawear.data.repository.RadarRepositoryImpl
 import mx.utng.ecoguiawear.data.wear.LocationHelper
 import mx.utng.ecoguiawear.data.wear.PhoneMessageClient
 import mx.utng.ecoguiawear.data.wear.SensorHelper
@@ -31,7 +31,7 @@ class MainActivity : ComponentActivity(), MessageClient.OnMessageReceivedListene
         installSplashScreen()
         super.onCreate(savedInstanceState)
 
-        val repository = DemoRadarRepository(applicationContext)
+        val repository = RadarRepositoryImpl(applicationContext)
         messageListener = WearMessageListener(repository)
         
         locationHelper = LocationHelper(applicationContext) { location ->
@@ -63,10 +63,14 @@ class MainActivity : ComponentActivity(), MessageClient.OnMessageReceivedListene
             }
 
             LaunchedEffect(Unit) {
-                permissionLauncher.launch(arrayOf(
+                val permissions = mutableListOf(
                     Manifest.permission.ACCESS_FINE_LOCATION,
                     Manifest.permission.ACCESS_COARSE_LOCATION
-                ))
+                )
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                    permissions.add(Manifest.permission.POST_NOTIFICATIONS)
+                }
+                permissionLauncher.launch(permissions.toTypedArray())
             }
 
             EcoGuiaWearTheme {

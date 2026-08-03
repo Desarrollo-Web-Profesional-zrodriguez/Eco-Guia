@@ -16,8 +16,7 @@
 package mx.utng.ecoguiawear.ui.navigation
 
 import androidx.activity.ComponentActivity
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -73,9 +72,13 @@ fun AppNavHost(
 ) {
     NavHost(
         navController = navController,
-        startDestination = "login",
+        startDestination = "splash",
         modifier = modifier
     ) {
+
+        composable("splash") {
+            SplashScreen()
+        }
 
         // ── Auth ──────────────────────────────────────────────────────────────
         composable("login") {
@@ -90,6 +93,23 @@ fun AppNavHost(
                 onRecoverClick = { navController.navigate("recovery") }
             )
         }
+        composable("no_internet") {
+            NoInternetScreen(
+                onRetry = {
+                    val context = navController.context
+                    val connectivityManager = context.getSystemService(android.content.Context.CONNECTIVITY_SERVICE) as? android.net.ConnectivityManager
+                    val network = connectivityManager?.activeNetwork
+                    val capabilities = connectivityManager?.getNetworkCapabilities(network)
+                    val isOnline = capabilities?.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET) == true
+
+                    if (isOnline) {
+                        navController.navigate("exploration") {
+                            popUpTo("no_internet") { inclusive = true }
+                        }
+                    }
+                }
+            )
+        }
         composable("signup") {
             SignUpScreen(
                 viewModel = authViewModel,
@@ -99,14 +119,13 @@ fun AppNavHost(
         }
         composable("recovery") {
             RecoveryScreen(
-                onSendClick = { email -> 
-                    authViewModel.sendRecoveryEmail(
-                        email = email,
-                        onSuccess = { navController.popBackStack() },
-                        onError = { /* Se queda en la pantalla si hay error para reintentar, isLoading = false lo debe controlar el viewmodel o el recompose, pero está local. Lo simplificamos */ navController.popBackStack() }
-                    )
-                },
-                onBackToLogin = { navController.popBackStack() }
+                viewModel = authViewModel,
+                onBackToLogin = { 
+                    authViewModel.logout()
+                    navController.navigate("login") {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
             )
         }
 
@@ -115,13 +134,15 @@ fun AppNavHost(
             ExplorationScreen(
                 onAdminClick = { navController.navigate("more_options") },
                 onOpenRoutes = { navController.navigate("search_experience") },
-                onOpenGeoDropWithSite = { siteId -> navController.navigate("camera_capture/$siteId") },
-                userId = authViewModel.currentUser?.id.orEmpty()
+                onOpenGeoDropWithSite = { targetSiteId -> navController.navigate("camera_capture?siteId=$targetSiteId") },
+                userId = authViewModel.currentUser?.id.orEmpty(),
+                userRole = authViewModel.currentUser?.role.orEmpty()
             )
         }
 
         composable("collection") {
-            MyCollectionScreen(userId = authViewModel.currentUser?.id ?: "guest")
+            val userId = authViewModel.currentUser?.id.orEmpty()
+            MyCollectionScreen(userId = userId)
         }
         composable("profile") {
             ProfileScreen(
@@ -133,19 +154,34 @@ fun AppNavHost(
         composable("edit_profile") {
             EditProfileScreen(
                 user = authViewModel.currentUser,
-                onSaveClick = { newName: String ->
-                    authViewModel.updateProfile(newName)
+                onSaveClick = { newName: String, newBio: String ->
+                    authViewModel.updateProfile(newName, newBio)
                     navController.popBackStack()
                 }
             )
         }
         composable("security") {
-            SecurityScreen(onLogoutClick = {
-                authViewModel.logout()
-                navController.navigate("login") {
-                    popUpTo(0) { inclusive = true }
+            SecurityScreen(
+                user = authViewModel.currentUser,
+                onLogoutClick = {
+                    authViewModel.logout()
+                    navController.navigate("login") {
+                        popUpTo(0) { inclusive = true }
+                    }
+                },
+                onChangePasswordClick = {
+                    navController.navigate("recovery")
+                },
+                onDeleteAccountClick = {
+                    authViewModel.deleteAccountPermanently { success ->
+                        if (success) {
+                            navController.navigate("login") {
+                                popUpTo(0) { inclusive = true }
+                            }
+                        }
+                    }
                 }
-            })
+            )
         }
         composable("more_options") {
             MoreOptionsScreen(
@@ -158,6 +194,9 @@ fun AppNavHost(
                             popUpTo(0) { inclusive = true }
                         }
                     } else {
+                        if (route == "site_registration") {
+                            siteRegistrationViewModel.resetForm()
+                        }
                         navController.navigate(route) { launchSingleTop = true }
                     }
                 }
@@ -199,29 +238,39 @@ fun AppNavHost(
         composable("proximity_alerts") {
             ProximityAlertsScreen()
         }
-        composable("camera_capture/{siteId}") { backStackEntry ->
+        composable("site_anchor_photo/{siteId}") { backStackEntry ->
             val siteId = backStackEntry.arguments?.getString("siteId").orEmpty()
             val geoDropViewModel: mx.utng.ecoguiawear.ui.viewmodel.GeoDropViewModel = viewModel(backStackEntry)
             if (siteId.isNotBlank()) {
-                geoDropViewModel.setTargetSite(siteId, "")
+                geoDropViewModel.setTargetSite(siteId, "", isCreationMode = true)
             }
             CameraGeoDropScreen(
                 onCapture = { _ -> 
                     navController.navigate("anchor_photo") 
                 },
                 userId = authViewModel.currentUser?.id.orEmpty(),
-                onSavedToCollection = {
-                    notificationViewModel.showNotification("¡Cápsula agregada a tu colección!", NotificationType.SUCCESS)
-                    navController.navigate("collection") {
-                        popUpTo("exploration")
+                onSavedToCollection = {},
+                onSkip = {
+                    notificationViewModel.showNotification("Publicación finalizada.", NotificationType.INFO)
+                    navController.navigate("exploration") {
+                        popUpTo("exploration") { inclusive = true }
                     }
                 },
+                isSiteCreationMode = true,
                 geoDropViewModel = geoDropViewModel
             )
         }
 
-        composable("camera_capture") { backStackEntry ->
+        composable("camera_capture?siteId={siteId}") { backStackEntry ->
+            val siteId = backStackEntry.arguments?.getString("siteId").orEmpty()
             val geoDropViewModel: mx.utng.ecoguiawear.ui.viewmodel.GeoDropViewModel = viewModel(backStackEntry)
+            androidx.compose.runtime.LaunchedEffect(siteId) {
+                if (siteId.isNotBlank()) {
+                    geoDropViewModel.setTargetSite(siteId, "", isCreationMode = false)
+                } else {
+                    geoDropViewModel.setTargetSite("", "", isCreationMode = false)
+                }
+            }
             CameraGeoDropScreen(
                 onCapture = { _ -> navController.navigate("anchor_photo") },
                 userId = authViewModel.currentUser?.id.orEmpty(),
@@ -268,13 +317,17 @@ fun AppNavHost(
         }
 
         composable("active_route") {
+            var isFinishing by remember { mutableStateOf(false) }
             ActiveRouteScreen(
                 onFinishRoute = {
+                    if (isFinishing) return@ActiveRouteScreen
+                    isFinishing = true
                     val route = routeViewModel.activeRoute.value
                     val userId = authViewModel.currentUser?.id.orEmpty()
                     if (route != null && userId.isNotBlank()) {
                         routeViewModel.viewModelScope.launch {
-                            val ok = EcoGuiaRepositoryImpl().saveRouteToCollection(userId, route.id)
+                            val context = navController.context.applicationContext
+                            val ok = EcoGuiaRepositoryImpl(context = context).saveRouteToCollection(userId, route.id)
                             android.util.Log.d("AppNavHost", "Guardado de ruta: $ok para routeId=${route.id}")
                             routeViewModel.completeActiveRoute()
                             notificationViewModel.showNotification(
@@ -299,6 +352,7 @@ fun AppNavHost(
         }
         composable("create_route") {
             CreateRouteScreen(
+                userId = authViewModel.currentUser?.id.orEmpty(),
                 onRouteCreated = { navController.popBackStack() },
                 onBack = { navController.popBackStack() },
                 routeViewModel = routeViewModel
@@ -314,7 +368,6 @@ fun AppNavHost(
 
         // ── Admin y Moderación ────────────────────────────────────────────────
         composable("site_registration") {
-
             SiteRegistrationScreen(
                 viewModel = siteRegistrationViewModel,
                 onNext = { navController.navigate("site_content") }
@@ -337,15 +390,16 @@ fun AppNavHost(
                 viewModel = siteRegistrationViewModel,
                 onFinish = {
                     siteRegistrationViewModel.registerSite(
+                        ownerUserId = authViewModel.currentUser?.id,
                         onSuccess = { createdSiteId ->
                             notificationViewModel.showNotification("Sitio publicado con éxito.", NotificationType.SUCCESS)
                             if (createdSiteId != "SUCCESS" && createdSiteId.isNotBlank()) {
-                                navController.navigate("camera_capture/$createdSiteId") {
-                                    popUpTo("exploration")
+                                navController.navigate("site_anchor_photo/$createdSiteId") {
+                                    popUpTo("site_registration") { inclusive = true }
                                 }
                             } else {
                                 navController.navigate("exploration") {
-                                    popUpTo("exploration") { inclusive = true }
+                                    popUpTo("site_registration") { inclusive = true }
                                 }
                             }
                         },
@@ -382,7 +436,7 @@ fun AppNavHost(
             val moderationViewModel: mx.utng.ecoguiawear.ui.viewmodel.ModerationViewModel = viewModel(parentEntry)
             ReportDetailScreen(
                 onResolve = {
-                    notificationViewModel.showNotification("🎉 Decisión de moderación guardada en tiempo real", NotificationType.SUCCESS)
+                    notificationViewModel.showNotification("Decisión de moderación guardada en tiempo real", NotificationType.SUCCESS)
                     navController.popBackStack()
                 },
                 onBack = { navController.popBackStack() },
@@ -407,20 +461,11 @@ fun AppNavHost(
                 currentUserEmail = authViewModel.currentUser?.email ?: "usuario@ecoguia.com",
                 currentUserName = authViewModel.currentUser?.displayName ?: "Usuario EcoGuía",
                 onTVCampaignClick = { navController.navigate("tv_campaign") },
-                onManageClick = { navController.navigate("manage_devices") },
+                onManageClick = {},
                 onStatusClick = { navController.navigate("device_status") }
             )
         }
 
-
-        composable("manage_devices") {
-            ManageDevicesScreen(
-                onConfirmChanges = {
-                    notificationViewModel.showNotification("Cambios guardados.", NotificationType.SUCCESS)
-                    navController.popBackStack()
-                }
-            )
-        }
         composable("device_status") {
             DeviceStatusScreen(onBack = { navController.popBackStack() })
         }
@@ -428,12 +473,17 @@ fun AppNavHost(
         // ── TV y Analítica ────────────────────────────────────────────────────
         composable("tv_campaign") {
             TVCampaignScreen(
+                userId = authViewModel.currentUser?.id.orEmpty(),
+                userRole = authViewModel.currentUser?.role.orEmpty(),
                 onAnalyticsClick = { navController.navigate("visitor_analytics") },
                 onManageDevicesClick = { program -> navController.navigate("campaign_devices/$program") }
             )
         }
         composable("visitor_analytics") {
-            VisitorAnalyticsScreen()
+            VisitorAnalyticsScreen(
+                userId = authViewModel.currentUser?.id.orEmpty(),
+                userRole = authViewModel.currentUser?.role.orEmpty()
+            )
         }
         composable("campaign_devices/{programType}") { backStackEntry ->
             val programType = backStackEntry.arguments?.getString("programType") ?: "gallery"

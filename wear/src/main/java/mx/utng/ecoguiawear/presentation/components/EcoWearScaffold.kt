@@ -53,7 +53,7 @@ fun EcoWearScaffold(
     ) {
         ScalingLazyColumn(
             state = listState,
-            flingBehavior = ScalingLazyColumnDefaults.snapFlingBehavior(state = listState),
+            autoCentering = null,
             modifier = Modifier
                 .fillMaxSize()
                 .rotaryScrollable(
@@ -61,7 +61,7 @@ fun EcoWearScaffold(
                     focusRequester = focusRequester
                 )
                 .focusRequester(focusRequester),
-            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 32.dp),
+            contentPadding = PaddingValues(start = 10.dp, top = 24.dp, end = 10.dp, bottom = 24.dp),
             content = content
         )
     }

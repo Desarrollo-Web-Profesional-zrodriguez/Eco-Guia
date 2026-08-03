@@ -1,3 +1,12 @@
+import java.util.Properties
+
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localProperties.load(localPropertiesFile.inputStream())
+}
+val brevoKey: String = localProperties.getProperty("BREVO_API_KEY") ?: ""
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -17,6 +26,8 @@ android {
         versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField("String", "BREVO_API_KEY", "\"$brevoKey\"")
     }
 
     buildTypes {
@@ -39,6 +50,13 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
+    }
+}
+
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(17))
     }
 }
 
@@ -63,6 +81,7 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     implementation(libs.navigation.compose)
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
 
     // CameraX
     implementation(libs.androidx.camera.core)
@@ -91,5 +110,6 @@ dependencies {
     implementation(libs.coil.compose)
     
     debugImplementation(libs.ui.tooling)
+    implementation("com.google.android.gms:play-services-code-scanner:16.1.0")
 }
 

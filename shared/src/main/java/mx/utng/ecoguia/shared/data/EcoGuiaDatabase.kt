@@ -12,6 +12,7 @@ import mx.utng.ecoguia.shared.domain.model.GeoDropEntity
 import mx.utng.ecoguia.shared.domain.model.RouteEntity
 import mx.utng.ecoguia.shared.domain.model.ConfigEntity
 import mx.utng.ecoguia.shared.domain.model.AlertEntity
+import mx.utng.ecoguia.shared.domain.model.SyncPendingActionEntity
 
 @Dao
 interface EcoGuiaDao {
@@ -47,9 +48,27 @@ interface EcoGuiaDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAlert(alert: AlertEntity)
+
+    @Query("DELETE FROM alerts WHERE id = :id")
+    suspend fun deleteAlert(id: String)
+
+    @Query("DELETE FROM alerts")
+    suspend fun clearAllAlerts()
+
+    @Query("DELETE FROM alerts WHERE timestamp < :cutoffTime")
+    suspend fun deleteOldAlerts(cutoffTime: Long)
+
+    @Query("SELECT * FROM sync_pending_actions ORDER BY timestamp ASC")
+    suspend fun getAllPendingSyncActions(): List<SyncPendingActionEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertPendingSyncAction(action: SyncPendingActionEntity)
+
+    @Query("DELETE FROM sync_pending_actions WHERE id = :id")
+    suspend fun deletePendingSyncAction(id: Long)
 }
 
-@Database(entities = [RouteEntity::class, GeoDropEntity::class, ConfigEntity::class, AlertEntity::class], version = 2)
+@Database(entities = [RouteEntity::class, GeoDropEntity::class, ConfigEntity::class, AlertEntity::class, SyncPendingActionEntity::class], version = 3)
 abstract class EcoGuiaDatabase : RoomDatabase() {
     abstract fun dao(): EcoGuiaDao
 

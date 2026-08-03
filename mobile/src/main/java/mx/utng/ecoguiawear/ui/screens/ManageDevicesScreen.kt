@@ -17,7 +17,10 @@ import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Tv
 import androidx.compose.material.icons.filled.Watch
 import androidx.compose.material3.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.*
+import kotlinx.coroutines.launch
 
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,27 +35,57 @@ import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 
 @Composable
 fun ManageDevicesScreen(
+    userId: String = "",
     onConfirmChanges: () -> Unit
 ) {
+    val repository = remember { mx.utng.ecoguia.shared.data.repository.EcoGuiaRepositoryImpl() }
+    val userDevices = remember { mutableStateListOf<mx.utng.ecoguia.shared.domain.model.RemoteDevice>() }
+    var isLoading by remember { mutableStateOf(true) }
+    val coroutineScope = rememberCoroutineScope()
+
+    fun loadDevices() {
+        coroutineScope.launch {
+            isLoading = true
+            try {
+                if (userId.isNotBlank()) {
+                    val devices = repository.getUserDevices(userId)
+                    userDevices.clear()
+                    userDevices.addAll(devices)
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("ManageDevices", "Error cargando dispositivos: ${e.message}")
+            } finally {
+                isLoading = false
+            }
+        }
+    }
+
+    LaunchedEffect(userId) {
+        loadDevices()
+    }
+
+    val scrollState = rememberScrollState()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
+            .verticalScroll(scrollState)
     ) {
         // Header
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(EcoGuiaColors.DeepBlue)
-                .padding(top = 48.dp, start = 24.dp, end = 24.dp, bottom = 16.dp)
+                .padding(top = 28.dp, start = 20.dp, end = 20.dp, bottom = 8.dp)
         ) {
             Column {
-                Text("Dispositivos", color = Color.White, fontSize = 14.sp)
-                Text("Desvincular", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text("Dispositivos", color = Color.White, fontSize = 12.sp)
+                Text("Desvincular", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
             }
             
             IconButton(
-                onClick = { },
+                onClick = { loadDevices() },
                 modifier = Modifier.align(Alignment.TopEnd)
             ) {
                 Icon(Icons.Default.AddCircle, null, tint = EcoGuiaColors.Gold)
@@ -63,56 +96,67 @@ fun ManageDevicesScreen(
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(horizontal = 16.dp, vertical = 6.dp),
             colors = CardDefaults.cardColors(containerColor = EcoGuiaColors.Surface),
-            shape = RoundedCornerShape(24.dp)
+            shape = RoundedCornerShape(16.dp)
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("Gestión de dispositivos", color = Color.White, fontWeight = FontWeight.Bold)
+            Column(modifier = Modifier.padding(12.dp)) {
+                Text("Gestión de dispositivos", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                 Text(
-                    "Esta acción cortará la conexión en tiempo real con el dispositivo seleccionado del proyecto.", 
+                    "Esta acción cortará la conexión en tiempo real con el dispositivo seleccionado.", 
                     color = Color.White.copy(alpha = 0.7f), 
-                    fontSize = 12.sp
+                    fontSize = 11.sp
                 )
             }
         }
 
-        // Lista de Dispositivos Editables
+        // Lista de Dispositivos Editables Reales
         Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-            Text("Sesiones y Dispositivos Conectados", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
+            Text("Sesiones y Dispositivos Conectados", fontWeight = FontWeight.Bold, fontSize = 14.sp, modifier = Modifier.padding(vertical = 8.dp))
             
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                item {
-                    ManageDeviceItem(
-                        title = "Reloj Wear OS (Galaxy Watch)",
-                        subtitle = "Sesión: mus@ecoguia.com",
-                        icon = Icons.Default.Watch,
-                        actionText = "Cerrar sesión en Reloj"
-                    )
+            if (isLoading) {
+                Box(modifier = Modifier.fillMaxWidth().height(100.dp), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = EcoGuiaColors.Jade, modifier = Modifier.size(28.dp))
                 }
-                item {
-                    ManageDeviceItem(
-                        title = "Smart TV - Lobby Hotel Hidalgo",
-                        subtitle = "Sesión: mus@ecoguia.com",
-                        icon = Icons.Default.Tv,
-                        actionText = "Desvincular TV"
-                    )
-                }
-                item {
-                    ManageDeviceItem(
-                        title = "Smart TV - Sala 2 Museo",
-                        subtitle = "Sesión activa en red local",
-                        icon = Icons.Default.Tv,
-                        actionText = "Desvincular TV"
-                    )
+            } else if (userDevices.isEmpty()) {
+                Text(
+                    text = "No tienes dispositivos adicionales o sesiones secundarias vinculadas.",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(vertical = 12.dp)
+                )
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    userDevices.forEach { device ->
+                        val deviceIcon = when (device.type.lowercase()) {
+                            "watch", "reloj" -> Icons.Default.Watch
+                            else -> Icons.Default.Tv
+                        }
+                        ManageDeviceItem(
+                            title = device.name.ifBlank { "Dispositivo conectado" },
+                            subtitle = "Estado: ${if (device.isActive) "ACTIVO" else "INACTIVO"} · ID: ${device.deviceIdentifier ?: device.id.take(8)}",
+                            icon = deviceIcon,
+                            actionText = "Desvincular",
+                            onRemoveClick = {
+                                coroutineScope.launch {
+                                    try {
+                                        repository.unlinkDevice(device.id)
+                                        userDevices.remove(device)
+                                    } catch (e: Exception) {
+                                        userDevices.remove(device)
+                                    }
+                                }
+                            }
+                        )
+                    }
                 }
             }
         }
 
-        Spacer(modifier = Modifier.weight(1f))
+        Spacer(modifier = Modifier.height(16.dp))
 
         // Action Button
-        Box(modifier = Modifier.padding(24.dp)) {
+        Box(modifier = Modifier.padding(16.dp)) {
             EcoButton(
                 text = "Guardar y confirmar cambios",
                 onClick = onConfirmChanges
@@ -126,7 +170,8 @@ fun ManageDeviceItem(
     title: String,
     subtitle: String = "Sesión activa",
     icon: androidx.compose.ui.graphics.vector.ImageVector,
-    actionText: String = "Quitar"
+    actionText: String = "Quitar",
+    onRemoveClick: () -> Unit = {}
 ) {
     var isRemoved by remember { mutableStateOf(false) }
 
@@ -158,7 +203,10 @@ fun ManageDeviceItem(
             Surface(
                 color = Color(0xFFFFEBEE),
                 shape = RoundedCornerShape(8.dp),
-                modifier = androidx.compose.ui.Modifier.clickable { isRemoved = true }
+                modifier = androidx.compose.ui.Modifier.clickable { 
+                    isRemoved = true 
+                    onRemoveClick()
+                }
             ) {
                 Text(
                     text = actionText,
@@ -177,7 +225,7 @@ fun ManageDeviceItem(
 @Composable
 fun ManageDevicesScreenPreview() {
     EcoGuiaMobileTheme {
-        ManageDevicesScreen({})
+        ManageDevicesScreen(userId = "", onConfirmChanges = {})
     }
 }
 

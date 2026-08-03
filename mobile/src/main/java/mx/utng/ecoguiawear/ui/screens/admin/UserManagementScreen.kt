@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Security
@@ -40,6 +41,7 @@ fun UserManagementScreen(
     val users by userManagementViewModel.users
     val isLoading by userManagementViewModel.isLoading
     var selectedUserForRoleChange by remember { mutableStateOf<RemoteUser?>(null) }
+    var selectedUserForDelete by remember { mutableStateOf<RemoteUser?>(null) }
     var snackbarMessage by remember { mutableStateOf<String?>(null) }
 
     Column(
@@ -83,7 +85,7 @@ fun UserManagementScreen(
             Column(modifier = Modifier.padding(16.dp)) {
                 Text("Administración de Usuarios", color = Color.White, fontWeight = FontWeight.Bold)
                 Text(
-                    "Asigna permisos de Moderador o Usuario Turista. Las cuentas Super Admin permanecen protegidas.",
+                    "Asigna permisos de Moderador, Museo o Turista, o elimina cuentas definitivamente del sistema.",
                     color = Color.White.copy(alpha = 0.7f),
                     fontSize = 12.sp
                 )
@@ -127,7 +129,8 @@ fun UserManagementScreen(
                     items(users) { user ->
                         UserRoleCard(
                             user = user,
-                            onChangeRoleClick = { selectedUserForRoleChange = user }
+                            onChangeRoleClick = { selectedUserForRoleChange = user },
+                            onDeleteClick = { selectedUserForDelete = user }
                         )
                     }
                 }
@@ -225,12 +228,53 @@ fun UserManagementScreen(
             }
         )
     }
+
+    // Modal de Confirmación para Eliminar Usuario por el Administrador
+    if (selectedUserForDelete != null) {
+        val user = selectedUserForDelete!!
+        AlertDialog(
+            onDismissRequest = { selectedUserForDelete = null },
+            title = { Text("¿Eliminar usuario?", color = Color.Red, fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("Se eliminará definitivamente la cuenta de ${user.displayName} (${user.email}).", fontSize = 13.sp)
+                    Text("Toda la información y registros asociados a este usuario serán eliminados en cascada de la base de datos.", fontSize = 12.sp, color = Color.Gray)
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        userManagementViewModel.deleteUser(
+                            userId = user.id,
+                            onSuccess = {
+                                snackbarMessage = "Usuario eliminado con éxito."
+                                selectedUserForDelete = null
+                            },
+                            onError = { err ->
+                                snackbarMessage = err
+                                selectedUserForDelete = null
+                            }
+                        )
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                ) {
+                    Text("Eliminar definitivamente", color = Color.White, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { selectedUserForDelete = null }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
 }
 
 @Composable
 fun UserRoleCard(
     user: RemoteUser,
-    onChangeRoleClick: () -> Unit
+    onChangeRoleClick: () -> Unit,
+    onDeleteClick: () -> Unit
 ) {
     val roleLower = user.role.lowercase()
     val isModerator = roleLower in listOf("moderator", "mod")
@@ -243,9 +287,9 @@ fun UserRoleCard(
     }
 
     val badgeColor = when {
-        isMuseum -> EcoGuiaColors.DeepBlue
-        isModerator -> EcoGuiaColors.Gold
-        else -> EcoGuiaColors.Jade
+        isMuseum -> EcoGuiaColors.Gold
+        isModerator -> EcoGuiaColors.Jade
+        else -> Color(0xFF64B5F6)
     }
 
     Card(
@@ -260,7 +304,7 @@ fun UserRoleCard(
             Box(
                 modifier = Modifier
                     .size(40.dp)
-                    .background(badgeColor.copy(alpha = 0.15f), RoundedCornerShape(12.dp)),
+                    .background(badgeColor.copy(alpha = 0.2f), RoundedCornerShape(12.dp)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -293,12 +337,12 @@ fun UserRoleCard(
             }
 
             Surface(
-                color = badgeColor.copy(alpha = 0.15f),
+                color = if (isMuseum) EcoGuiaColors.DeepBlue else badgeColor.copy(alpha = 0.2f),
                 shape = RoundedCornerShape(8.dp)
             ) {
                 Text(
                     text = badgeText,
-                    color = badgeColor,
+                    color = if (isMuseum) Color.White else badgeColor,
                     fontSize = 9.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
@@ -308,7 +352,16 @@ fun UserRoleCard(
             Spacer(modifier = Modifier.width(4.dp))
 
             TextButton(onClick = onChangeRoleClick) {
-                Text("Cambiar", color = EcoGuiaColors.Jade, fontWeight = FontWeight.Bold)
+                Text("Rol", color = EcoGuiaColors.Jade, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+            }
+
+            IconButton(onClick = onDeleteClick) {
+                Icon(
+                    imageVector = Icons.Default.DeleteForever,
+                    contentDescription = "Eliminar usuario",
+                    tint = Color.Red.copy(alpha = 0.8f),
+                    modifier = Modifier.size(20.dp)
+                )
             }
         }
     }

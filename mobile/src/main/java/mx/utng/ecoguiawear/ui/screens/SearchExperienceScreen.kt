@@ -138,7 +138,7 @@ fun SearchExperienceScreen(
         ) {
             Column(modifier = Modifier.padding(14.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("📍 Rutas cercanas (50 km)", color = Color.White, fontWeight = FontWeight.Bold)
+                    Text(" Rutas cercanas (50 km)", color = Color.White, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.weight(1f))
                     Text("${filteredRoutes.size} encontrada(s)", color = EcoGuiaColors.Gold, fontSize = 11.sp)
                 }

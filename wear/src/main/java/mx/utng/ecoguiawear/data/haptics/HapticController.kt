@@ -22,22 +22,21 @@ class HapticController(context: Context) {
         val vibrator = getVibrator()
         if (!vibrator.hasVibrator()) return
 
-        val baseDuration = when (type) {
-            HapticPulse.LINKED -> 60L
-            HapticPulse.TOGGLE -> 40L
-            HapticPulse.NEARBY -> 90L
-            HapticPulse.ARRIVED -> 140L
+        val duration = when (type) {
+            HapticPulse.LINKED -> 80L
+            HapticPulse.TOGGLE -> 50L
+            HapticPulse.NEARBY -> 120L
+            HapticPulse.ARRIVED -> 200L
         }
-        val multiplier = when (strength) {
-            HapticStrength.LOW -> 0.7f
-            HapticStrength.MEDIUM -> 1f
-            HapticStrength.HIGH -> 1.35f
+        val amplitude = when (strength) {
+            HapticStrength.LOW -> 80
+            HapticStrength.MEDIUM -> 170
+            HapticStrength.HIGH -> 255
         }
-        val duration = (baseDuration * multiplier).toLong()
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             vibrator.vibrate(
-                VibrationEffect.createOneShot(duration, VibrationEffect.DEFAULT_AMPLITUDE)
+                VibrationEffect.createOneShot(duration, amplitude)
             )
         } else {
             @Suppress("DEPRECATION")

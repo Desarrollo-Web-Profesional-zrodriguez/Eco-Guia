@@ -18,6 +18,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -56,6 +57,7 @@ fun SiteDetailSheet(
     userId: String,
     collectionViewModel: CollectionViewModel,
     isWithinRange: Boolean = false,
+    isUserAdmin: Boolean = false,
     onNavigate: () -> Unit,
     onGeoDropClick: () -> Unit = {},
     onDismiss: () -> Unit
@@ -101,7 +103,12 @@ fun SiteDetailSheet(
                     .background(EcoGuiaColors.Jade.copy(alpha = 0.12f), RoundedCornerShape(16.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                Text("🏛️", fontSize = 24.sp)
+                Icon(
+                    imageVector = Icons.Default.AccountBalance,
+                    contentDescription = null,
+                    tint = EcoGuiaColors.Jade,
+                    modifier = Modifier.size(24.dp)
+                )
             }
             Spacer(modifier = Modifier.width(12.dp))
             Column {
@@ -161,8 +168,9 @@ fun SiteDetailSheet(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            // Botón principal de Cápsula Geo-Drop (AR) (Solo visible al estar en rango)
-            if (isWithinRange) {
+            // Se habilita si el usuario está en rango O si es dueño/administrador del sitio
+            val canAddGeoDrop = isWithinRange || site.createdBy == userId || isUserAdmin
+            if (canAddGeoDrop) {
                 Button(
                     onClick = {
                         onDismiss()
@@ -182,11 +190,14 @@ fun SiteDetailSheet(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Capturar / Escanear Geo-Drop (AR)",
+                        text = when {
+                            isUserAdmin -> "Agregar Geo-Drop (Cámara / Galería)"
+                            isWithinRange -> "Capturar Geo-Drop (AR / Galería)"
+                            else -> "Publicar Geo-Drop en mi Sitio"
+                        },
                         fontWeight = FontWeight.Bold,
                         fontSize = 13.sp
                     )
-
                 }
             }
 

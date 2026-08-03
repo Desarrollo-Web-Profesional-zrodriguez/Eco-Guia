@@ -26,14 +26,15 @@ import mx.utng.ecoguiawear.MainActivity
 object ProximityNotificationHelper {
 
     const val PROXIMITY_CHANNEL_ID = "eco_proximity"
-    const val SERVICE_CHANNEL_ID  = "eco_service_bg"
-    const val SERVICE_NOTIF_ID    = 1001
+    const val ROUTES_CHANNEL_ID    = "eco_routes"
+    const val SERVICE_CHANNEL_ID   = "eco_service_bg"
+    const val SERVICE_NOTIF_ID     = 1001
 
     /**
-     * Registra los dos canales de notificación necesarios:
+     * Registra los canales de notificación necesarios:
      * - eco_proximity: alertas de sitio (alta importancia, vibra y suena).
+     * - eco_routes: alertas de inicio y avance de ruta.
      * - eco_service_bg: notificación silenciosa del ForegroundService.
-     * Debe llamarse en Application.onCreate() o antes de mostrar la primera notificación.
      */
     fun createChannels(context: Context) {
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -47,6 +48,19 @@ object ProximityNotificationHelper {
             description = "Notificaciones al acercarte a un sitio histórico."
             enableVibration(true)
             vibrationPattern = longArrayOf(0, 300, 150, 300)
+            lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+        }
+
+        // Canal de alertas de ruta — visible y sonoro
+        val routesChannel = NotificationChannel(
+            ROUTES_CHANNEL_ID,
+            "Alertas de Ruta",
+            NotificationManager.IMPORTANCE_HIGH
+        ).apply {
+            description = "Notificaciones sobre el progreso e inicio de tu ruta activa."
+            enableVibration(true)
+            vibrationPattern = longArrayOf(0, 200, 100, 200)
+            lockscreenVisibility = Notification.VISIBILITY_PUBLIC
         }
 
         // Canal del servicio en segundo plano — silencioso
@@ -60,15 +74,13 @@ object ProximityNotificationHelper {
         }
 
         manager.createNotificationChannel(proximityChannel)
+        manager.createNotificationChannel(routesChannel)
         manager.createNotificationChannel(serviceChannel)
     }
 
     /**
      * Construye la notificación de alerta cuando el usuario entra en el radio de un sitio.
      * Al tocar la notificación, abre la app directamente en la pantalla de exploración.
-     * @param context Contexto de la aplicación.
-     * @param siteName Nombre del sitio histórico detectado.
-     * @param distance Distancia aproximada en metros al sitio.
      */
     fun buildSiteAlertNotification(
         context: Context,
@@ -84,15 +96,90 @@ object ProximityNotificationHelper {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        val defaultSound = android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_NOTIFICATION)
         return NotificationCompat.Builder(context, PROXIMITY_CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_dialog_map)
-            .setContentTitle("📍 ¡Sitio histórico cerca!")
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setContentTitle("Sitio histórico cercano")
             .setContentText("$siteName a ${distance}m de ti")
             .setStyle(
                 NotificationCompat.BigTextStyle()
-                    .bigText("Estás a ${distance}m de «$siteName». Toca para explorar su historia.")
+                    .bigText("Te encuentras a ${distance}m de «$siteName». Toca para explorar su historia.")
             )
             .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setSound(defaultSound)
+            .setDefaults(NotificationCompat.DEFAULT_ALL)
+            .setAutoCancel(true)
+            .setContentIntent(pendingIntent)
+            .setVibrate(longArrayOf(0, 300, 150, 300))
+            .build()
+    }
+
+    /**
+     * Notificación cuando se inicia o se mantiene activa una ruta.
+     */
+    fun buildRouteActiveNotification(
+        context: Context,
+        routeTitle: String,
+        totalWaypoints: Int
+    ): Notification {
+        val tapIntent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            putExtra("open_screen", "exploration")
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            context, 101, tapIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val defaultSound = android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_NOTIFICATION)
+        return NotificationCompat.Builder(context, ROUTES_CHANNEL_ID)
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setContentTitle("Ruta turística iniciada")
+            .setContentText("Navegando: $routeTitle ($totalWaypoints paradas)")
+            .setStyle(
+                NotificationCompat.BigTextStyle()
+                    .bigText("Has iniciado la ruta «$routeTitle» con $totalWaypoints paradas. Tu avance se sincroniza con tu reloj.")
+            )
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setSound(defaultSound)
+            .setDefaults(NotificationCompat.DEFAULT_ALL)
+            .setAutoCancel(true)
+            .setContentIntent(pendingIntent)
+            .setVibrate(longArrayOf(0, 200, 100, 200))
+            .build()
+    }
+
+    /**
+     * Notificación cuando se completa un sitio/parada de la ruta activa.
+     */
+    fun buildSiteCompletedNotification(
+        context: Context,
+        siteTitle: String,
+        visitedCount: Int,
+        totalCount: Int
+    ): Notification {
+        val tapIntent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            putExtra("open_screen", "exploration")
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            context, 102, tapIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val isCompleted = visitedCount >= totalCount
+        val title = if (isCompleted) "¡Ruta completada!" else "Parada completada"
+        val text = if (isCompleted) "¡Felicidades! Has visitado todas las paradas de la ruta turística." else "Has completado «$siteTitle» ($visitedCount de $totalCount)."
+
+        val defaultSound = android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_NOTIFICATION)
+        return NotificationCompat.Builder(context, ROUTES_CHANNEL_ID)
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setContentTitle(title)
+            .setContentText(text)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(text))
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setSound(defaultSound)
+            .setDefaults(NotificationCompat.DEFAULT_ALL)
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
             .setVibrate(longArrayOf(0, 300, 150, 300))
@@ -101,7 +188,7 @@ object ProximityNotificationHelper {
 
     /**
      * Construye la notificación persistente silenciosa que mantiene al ProximityService
-     * en primer plano (requerida por Android para ForegroundService de tipo location).
+     * en primer plano.
      */
     fun buildServiceNotification(context: Context): Notification {
         val tapIntent = Intent(context, MainActivity::class.java).apply {

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Archivo: SiteOperationScreen.kt
  * Autor: Zahir Rodriguez
  * Fecha de última actualización: 2026-07-24
@@ -9,6 +9,8 @@ package mx.utng.ecoguiawear.ui.screens.admin
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -50,9 +52,22 @@ fun SiteOperationScreen(
     
     val timePickerState = rememberTimePickerState()
 
+    val dialogScrollState = rememberScrollState()
+
+    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+    val isLandscape = configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
+
     if (showTimePicker) {
         AlertDialog(
             onDismissRequest = { showTimePicker = false },
+            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
+            shape = RoundedCornerShape(28.dp),
+            modifier = Modifier
+                .widthIn(
+                    min = if (isLandscape) 460.dp else 350.dp,
+                    max = if (isLandscape) 560.dp else 380.dp
+                )
+                .padding(horizontal = 24.dp),
             confirmButton = {
                 TextButton(onClick = {
                     val formattedTime = String.format(Locale.getDefault(), "%02d:%02d", timePickerState.hour, timePickerState.minute)
@@ -64,31 +79,46 @@ fun SiteOperationScreen(
                         showTimePicker = false
                     }
                 }) {
-                    Text(if (pickingOpeningTime) "Siguiente (Cierre)" else "Confirmar")
+                    Text(if (pickingOpeningTime) "Siguiente (Cierre)" else "Confirmar", fontWeight = FontWeight.Bold)
                 }
             },
-            title = { Text(if (pickingOpeningTime) "Seleccionar Apertura" else "Seleccionar Cierre") },
+            dismissButton = {
+                TextButton(onClick = { showTimePicker = false }) {
+                    Text("Cancelar")
+                }
+            },
+            title = { Text(if (pickingOpeningTime) "Seleccionar Apertura" else "Seleccionar Cierre", fontSize = 16.sp, fontWeight = FontWeight.Bold) },
             text = {
-                TimePicker(state = timePickerState)
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(dialogScrollState),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    TimePicker(state = timePickerState)
+                }
             }
         )
     }
+
+    val scrollState = rememberScrollState()
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
+            .verticalScroll(scrollState)
     ) {
-        // ... (Header remains the same)
+        // Header
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(EcoGuiaColors.DeepBlue)
-                .padding(top = 48.dp, start = 24.dp, end = 24.dp, bottom = 16.dp)
+                .padding(top = 28.dp, start = 20.dp, end = 20.dp, bottom = 8.dp)
         ) {
             Column {
-                Text("Operación", color = Color.White, fontSize = 14.sp)
-                Text("Horarios y acceso", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text("Operación", color = Color.White, fontSize = 12.sp)
+                Text("Horarios y acceso", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
             }
             
             IconButton(
@@ -99,73 +129,69 @@ fun SiteOperationScreen(
             }
         }
 
-        // ... (Info Card remains the same)
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(horizontal = 16.dp, vertical = 6.dp),
             colors = CardDefaults.cardColors(containerColor = EcoGuiaColors.Surface),
-            shape = RoundedCornerShape(24.dp)
+            shape = RoundedCornerShape(16.dp)
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("Datos prácticos", color = Color.White, fontWeight = FontWeight.Bold)
-                Text("Información de utilidad necesaria del sitio de interés.", color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp)
+            Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+                Text("Datos prácticos", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                Text("Información de utilidad necesaria del sitio de interés.", color = Color.White.copy(alpha = 0.7f), fontSize = 11.sp)
             }
         }
 
         // Form Section
         Column(
             modifier = Modifier
-                .weight(1f)
-                .padding(horizontal = 16.dp)
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            Text("Horarios y acceso", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
+            Text("Horarios y acceso", fontWeight = FontWeight.Bold, fontSize = 14.sp)
             
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                item {
-                    OutlinedCard(
-                        onClick = { 
-                            pickingOpeningTime = true
-                            showTimePicker = true 
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.outlinedCardColors(containerColor = EcoGuiaColors.Surface.copy(alpha = 0.5f))
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text("HORARIO", color = EcoGuiaColors.Muted, fontSize = 12.sp)
-                                Text(if (hours.isEmpty()) "Seleccionar horario" else hours, color = Color.White)
-                            }
-                            Icon(Icons.Default.AccessTime, null, tint = EcoGuiaColors.Gold)
+            OutlinedCard(
+                onClick = { 
+                    pickingOpeningTime = true
+                    showTimePicker = true 
+                },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.outlinedCardColors(containerColor = EcoGuiaColors.Surface.copy(alpha = 0.5f))
+            ) {
+                Row(
+                    modifier = Modifier.padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("HORARIO", color = EcoGuiaColors.Muted, fontSize = 11.sp)
+                        Text(if (hours.isEmpty()) "Seleccionar horario" else hours, color = Color.White, fontSize = 14.sp)
+                    }
+                    Icon(Icons.Default.AccessTime, null, tint = EcoGuiaColors.Gold)
+                }
+            }
+
+            EcoTextField(
+                value = cost, 
+                onValueChange = { cost = it }, 
+                label = "COSTO",
+                placeholder = "Ej. $85 o Entrada Libre"
+            )
+
+            Column {
+                Text("ACCESIBILIDAD", color = EcoGuiaColors.Muted, fontSize = 11.sp, modifier = Modifier.padding(bottom = 6.dp))
+                EcoChipGroup(
+                    options = accessibilityOptions,
+                    selectedOptions = selectedAccessibility,
+                    onOptionSelected = { option ->
+                        selectedAccessibility = if (selectedAccessibility.contains(option)) {
+                            selectedAccessibility - option
+                        } else {
+                            selectedAccessibility + option
                         }
                     }
-                }
-                item {
-                    EcoTextField(
-                        value = cost, 
-                        onValueChange = { cost = it }, 
-                        label = "COSTO",
-                        placeholder = "Ej. $85 o Entrada Libre"
-                    )
-                }
-                item {
-                    Text("ACCESIBILIDAD", color = EcoGuiaColors.Muted, fontSize = 12.sp, modifier = Modifier.padding(bottom = 8.dp))
-                    EcoChipGroup(
-                        options = accessibilityOptions,
-                        selectedOptions = selectedAccessibility,
-                        onOptionSelected = { option ->
-                            selectedAccessibility = if (selectedAccessibility.contains(option)) {
-                                selectedAccessibility - option
-                            } else {
-                                selectedAccessibility + option
-                            }
-                        }
-                    )
-                }
+                )
             }
         }
 

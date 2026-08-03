@@ -295,11 +295,9 @@ fun PermissionToggleItem(
             Switch(
                 checked = isChecked,
                 onCheckedChange = { newVal -> 
-                    if (newVal && !isGranted) {
-                        // Solicitar permiso si no lo tiene
+                    if (newVal) {
                         permissionLauncher.launch(permission)
-                    } else if (!newVal) {
-                        // Si lo apagan o ya lo tenía y lo quiere apagar, lanzar Settings del sistema
+                    } else {
                         isChecked = false
                         val intent = android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
                             data = android.net.Uri.fromParts("package", context.packageName, null)

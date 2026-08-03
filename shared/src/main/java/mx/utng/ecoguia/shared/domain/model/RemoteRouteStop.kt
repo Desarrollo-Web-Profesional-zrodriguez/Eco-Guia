@@ -21,10 +21,13 @@ import kotlinx.serialization.Serializable
 data class RemoteRouteStop(
     val id: String,
     @SerialName("route_id") val routeId: String,
-    @SerialName("site_id") val siteId: String,
+    @SerialName("site_id") val siteId: String? = null,
+    @SerialName("geo_drop_id") val geoDropId: String? = null,
     @SerialName("stop_order") val stopOrder: Int,
     val instruction: String? = null,
     @SerialName("site_name") val siteName: String? = null,
     val latitude: Double? = null,
     val longitude: Double? = null
-)
+) {
+    val effectiveSiteId: String get() = siteId ?: geoDropId.orEmpty()
+}

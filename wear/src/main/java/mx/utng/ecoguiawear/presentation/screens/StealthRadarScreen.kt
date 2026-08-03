@@ -78,12 +78,12 @@ fun StealthRadarScreen(
                 Button(
                     label = { 
                         Text(
-                            text = "Ajustes",
+                            text = "Ir al Radar",
                             modifier = Modifier.fillMaxWidth(),
                             textAlign = TextAlign.Center
                         ) 
                     },
-                    onClick = onNavigateBack,
+                    onClick = onNavigateNext,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = EcoGuiaColors.Surface.copy(alpha = 0.5f),
                         contentColor = EcoGuiaColors.Text

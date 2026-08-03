@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Stylized Leaf (Eco) in Jade -->
+    <path
+        android:fillColor="#1EA896"
+        android:pathData="M54,20 C54,20 34,40 34,54 C34,65 43,74 54,74 C65,74 74,65 74,54 C74,40 54,20 54,20 Z" />
+
+    <!-- Compass Needle (Guia) in Gold -->
+    <path
+        android:fillColor="#C9A24A"
+        android:pathData="M54,35 L62,54 L54,50 L46,54 Z" />
+
+    <!-- Lower part of the needle (Secondary Gold/Accent) -->
+    <path
+        android:fillColor="#A6833D"
+        android:pathData="M54,65 L46,54 L54,58 L62,54 Z" />
+</vector>

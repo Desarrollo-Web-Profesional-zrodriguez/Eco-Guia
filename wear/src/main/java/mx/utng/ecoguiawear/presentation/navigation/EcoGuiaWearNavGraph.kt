@@ -79,10 +79,10 @@ fun EcoGuiaWearNavGraph(viewModel: RadarViewModel) {
                         AlertsScreen(
                             state = state,
                             onBack = {
-                                navController.navigate(WearRoutes.PAIRING) {
-                                    popUpTo(WearRoutes.PAIRING) { inclusive = true }
-                                }
-                            }
+                                navController.popBackStack()
+                            },
+                            onDeleteAlert = viewModel::deleteAlert,
+                            onClearAll = viewModel::clearAllAlerts
                         )
                     }
                 }

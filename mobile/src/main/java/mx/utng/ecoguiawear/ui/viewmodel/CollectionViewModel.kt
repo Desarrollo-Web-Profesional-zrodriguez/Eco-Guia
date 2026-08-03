@@ -58,9 +58,16 @@ class CollectionViewModel(
             try {
                 val result = repository.getUserCollection(userId)
                 _items.value = result
-                // Sincronizar el mapa de guardados con los IDs reales de la colección
+                // Sincronizar el mapa de guardados con los IDs reales del sitio y de la colección
                 savedSiteIds.clear()
-                result.forEach { savedSiteIds[it.id] = true }
+                result.forEach { item ->
+                    savedSiteIds[item.id] = true
+                    item.rawId?.let { rawId ->
+                        if (rawId.isNotBlank()) {
+                            savedSiteIds[rawId] = true
+                        }
+                    }
+                }
             } catch (e: Exception) {
                 android.util.Log.e("CollectionVM", "Error al cargar colección: ${e.message}")
                 _saveError.value = "No se pudo cargar la colección."
@@ -95,6 +102,7 @@ class CollectionViewModel(
             try {
                 val success = repository.saveSite(userId, siteId)
                 if (success) {
+                    loadCollection(userId)
                     onSuccess()
                 } else {
                     savedSiteIds[siteId] = false
@@ -109,28 +117,82 @@ class CollectionViewModel(
     }
 
     /**
-     * Elimina un sitio de la colección del usuario.
-     * Actualiza el mapa local inmediatamente y recarga la lista.
+     * Elimina un elemento de la colección del usuario.
+     * Si el usuario es el autor del GeoDrop, realiza un borrado definitivo en cascada de la base de datos.
+     * De lo contrario, solo elimina el elemento de la colección del usuario.
      */
-    fun removeSite(userId: String, siteId: String, onSuccess: () -> Unit = {}) {
+    fun removeItem(userId: String, item: RemoteCollectionItem, onSuccess: () -> Unit = {}) {
+        val itemId = item.id
         viewModelScope.launch {
-            savedSiteIds[siteId] = false // Optimistic update del mapa
+            savedSiteIds[itemId] = false // Optimistic update del mapa
             val previousItems = _items.value
-            _items.value = previousItems.filter { it.id != siteId } // Actualización inmediata de la lista UI
+            _items.value = previousItems.filter { it.id != itemId } // Actualización inmediata de la lista UI
             try {
-                val success = repository.removeSavedSite(userId, siteId)
+                val authorId = item.authorId
+                val isAuthor = !authorId.isNullOrBlank() && 
+                    authorId.trim().equals(userId.trim(), ignoreCase = true)
+                val targetId = item.rawId ?: item.id
+                
+                android.util.Log.d("CollectionVM", "Eliminando -> item.id=${item.id}, targetId=$targetId, type=${item.type}, isAuthor=$isAuthor, authorId=$authorId, userId=$userId")
+
+                val success = if (item.type == "site") {
+                    val deletedSite = repository.deleteHistoricalSite(targetId)
+                    repository.removeSavedSite(userId, itemId)
+                    deletedSite || repository.removeSavedSite(userId, itemId)
+                } else if (isAuthor && item.type == "photo") {
+                    val mediaUrl = item.mediaUrl
+                    val deleted = repository.deleteGeoDrop(targetId, userId, mediaUrl)
+                    if (deleted && !mediaUrl.isNullOrBlank()) {
+                        try {
+                            val storageRepo = mx.utng.ecoguiawear.data.remote.FirebaseStorageRepository()
+                            storageRepo.deleteImageFromUrl(mediaUrl)
+                        } catch (fe: Exception) {
+                            android.util.Log.w("CollectionVM", "No se pudo borrar de Firebase Storage: ${fe.message}")
+                        }
+                    }
+                    deleted
+                } else if (isAuthor && item.type == "route") {
+                    val deletedRoute = repository.deleteRoute(targetId)
+                    repository.removeSavedSite(userId, itemId)
+                    deletedRoute
+                } else {
+                    repository.removeSavedSite(userId, itemId)
+                }
+                
                 if (success) {
                     onSuccess()
                 } else {
-                    savedSiteIds[siteId] = true
+                    savedSiteIds[itemId] = true
                     _items.value = previousItems // Revertir si falla en la BD
-                    _saveError.value = "No se pudo eliminar el sitio."
+                    _saveError.value = "No se pudo eliminar el elemento."
                 }
             } catch (e: Exception) {
-                savedSiteIds[siteId] = true
+                savedSiteIds[itemId] = true
                 _items.value = previousItems // Revertir si hay error de red
-                android.util.Log.e("CollectionVM", "Error al eliminar sitio: ${e.message}")
+                android.util.Log.e("CollectionVM", "Error al eliminar elemento: ${e.message}")
                 _saveError.value = "Error de red al eliminar."
+            }
+        }
+    }
+
+    fun removeSite(userId: String, siteId: String, onSuccess: () -> Unit = {}) {
+        savedSiteIds[siteId] = false // Actualización optimista instantánea para la UI
+        val dummyItem = _items.value.firstOrNull { it.id == siteId || it.rawId == siteId }
+        if (dummyItem != null) {
+            removeItem(userId, dummyItem, onSuccess)
+        } else {
+            viewModelScope.launch {
+                try {
+                    val success = repository.removeSavedSite(userId, siteId)
+                    if (success) {
+                        onSuccess()
+                    } else {
+                        savedSiteIds[siteId] = true
+                    }
+                } catch (e: Exception) {
+                    savedSiteIds[siteId] = true
+                    android.util.Log.e("CollectionVM", "Error al remover sitio: ${e.message}")
+                }
             }
         }
     }
@@ -142,8 +204,10 @@ class CollectionViewModel(
     fun toggleSave(userId: String, siteId: String) {
         val currentlySaved = savedSiteIds[siteId] == true
         if (currentlySaved) {
+            savedSiteIds[siteId] = false
             removeSite(userId, siteId)
         } else {
+            savedSiteIds[siteId] = true
             saveSite(userId, siteId)
         }
     }

@@ -38,6 +38,9 @@ import mx.utng.ecoguiawear.ui.components.EcoTopBar
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+
 @Composable
 fun LinkedDevicesScreen(
     userId: String = "",
@@ -77,10 +80,13 @@ fun LinkedDevicesScreen(
         loadDevices()
     }
 
+    val scrollState = rememberScrollState()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
+            .verticalScroll(scrollState)
     ) {
         EcoTopBar(
             title = "Mis Dispositivos",
@@ -142,9 +148,6 @@ fun LinkedDevicesScreen(
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(vertical = 8.dp)
                 )
-                TextButton(onClick = onManageClick) {
-                    Text("Gestión avanzada", color = EcoGuiaColors.Jade, fontWeight = FontWeight.Bold)
-                }
             }
 
             if (isLoading) {
@@ -157,21 +160,18 @@ fun LinkedDevicesScreen(
                     CircularProgressIndicator(color = EcoGuiaColors.Jade)
                 }
             } else {
-                LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     // Teléfono actual (Siempre activo por la sesión iniciada)
-                    item {
-                        UserDeviceSessionItem(
-                            title = "Teléfono Móvil (Este Dispositivo)",
-                            subtitle = "Sesión activa principal · $currentUserEmail",
-                            icon = Icons.Default.Phonelink,
-                            isCurrentDevice = true,
-                            onCloseSession = { }
-                        )
-                    }
+                    UserDeviceSessionItem(
+                        title = "Teléfono Móvil (Este Dispositivo)",
+                        subtitle = "Sesión activa principal · $currentUserEmail",
+                        icon = Icons.Default.Phonelink,
+                        isCurrentDevice = true,
+                        onCloseSession = { }
+                    )
 
                     // Dispositivos reales vinculados en Neon PostgreSQL
-                    items(userDevices.size) { index ->
-                        val dev = userDevices[index]
+                    userDevices.forEach { dev ->
                         UserDeviceSessionItem(
                             title = dev.name,
                             subtitle = "Tipo: ${dev.type.uppercase()} · ${dev.deviceIdentifier ?: "Sincronizado"}",
@@ -187,28 +187,25 @@ fun LinkedDevicesScreen(
                     }
 
                     if (userDevices.isEmpty()) {
-                        item {
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 12.dp),
-                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
-                                shape = RoundedCornerShape(16.dp)
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 12.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier.padding(16.dp),
+                                contentAlignment = Alignment.Center
                             ) {
-                                Box(
-                                    modifier = Modifier.padding(16.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = "No tienes otros dispositivos o Smart TVs vinculadas en este momento. Toca 'Vincular QR' para sincronizar tu TV o Reloj.",
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        fontSize = 12.sp
-                                    )
-                                }
+                                Text(
+                                    text = "No tienes otros dispositivos o Smart TVs vinculadas en este momento. Toca 'Vincular QR' para sincronizar tu TV o Reloj.",
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    fontSize = 12.sp
+                                )
                             }
                         }
                     }
-
                 }
             }
         }
@@ -216,20 +213,72 @@ fun LinkedDevicesScreen(
 
     // Modal de Vinculación Rápida por Código QR / Pin de la TV o Reloj
     if (showQrDialog) {
+        val context = androidx.compose.ui.platform.LocalContext.current
+        val scannerOptions = remember {
+            com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions.Builder()
+                .setBarcodeFormats(com.google.mlkit.vision.barcode.common.Barcode.FORMAT_QR_CODE)
+                .enableAutoZoom()
+                .build()
+        }
+        val scanner = remember {
+            com.google.mlkit.vision.codescanner.GmsBarcodeScanning.getClient(context, scannerOptions)
+        }
+
         AlertDialog(
             onDismissRequest = { showQrDialog = false },
             title = { Text("Vincular Dispositivo por QR / Código", fontWeight = FontWeight.Bold) },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        "Ingresa el código numérico de 6 dígitos mostrado en la Smart TV o Reloj Wear OS para sincronizar la sesión de $currentUserEmail:",
+                        "Escanea el código QR de la Smart TV con la cámara de tu teléfono o ingresa el PIN numérico de 6 dígitos:",
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+
+                    // Botón para Abrir Escáner de Cámara QR Real
+                    Button(
+                        onClick = {
+                            scanner.startScan()
+                                .addOnSuccessListener { barcode ->
+                                    val rawValue = barcode.rawValue.orEmpty().trim()
+                                    if (rawValue.isNotBlank()) {
+                                        pairingCodeInput = rawValue
+                                        coroutineScope.launch {
+                                            val success = repository.pairDeviceByCode(userId, rawValue)
+                                            if (success) {
+                                                pairingMessage = "¡Smart TV vinculada por QR!"
+                                                delay(1000)
+                                                showQrDialog = false
+                                                pairingCodeInput = ""
+                                                pairingMessage = null
+                                                loadDevices()
+                                            } else {
+                                                pairingMessage = "Código PIN inválido o no encontrado. Verifique la TV."
+                                            }
+                                        }
+                                    }
+                                }
+                                .addOnCanceledListener {
+                                    pairingMessage = "Escaneo cancelado"
+                                }
+                                .addOnFailureListener { e ->
+                                    pairingMessage = "Error al escanear: ${e.message}"
+                                }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = EcoGuiaColors.Gold)
+                    ) {
+                        Icon(imageVector = Icons.Default.QrCode, contentDescription = null, tint = Color.Black)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Escanear Código QR", color = Color.Black, fontWeight = FontWeight.Bold)
+                    }
+
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
                     OutlinedTextField(
                         value = pairingCodeInput,
                         onValueChange = { pairingCodeInput = it },
-                        label = { Text("Código de Vinculación (ej. 849201)") },
+                        label = { Text("O ingresa PIN de 6 dígitos (ej. 849201)") },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -252,14 +301,14 @@ fun LinkedDevicesScreen(
                                     pairingMessage = null
                                     loadDevices()
                                 } else {
-                                    pairingMessage = "No se pudo completar la vinculación."
+                                    pairingMessage = "Código PIN inválido o no encontrado. Verifique la TV."
                                 }
                             }
                         }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = EcoGuiaColors.Jade)
                 ) {
-                    Text("Vincular Ahora")
+                    Text("Vincular por PIN")
                 }
             },
             dismissButton = {
@@ -310,13 +359,13 @@ fun UserDeviceSessionItem(
                 Text(
                     text = title,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 13.sp,
-                    color = MaterialTheme.colorScheme.onSurface
+                    fontSize = 14.sp,
+                    color = Color.White
                 )
                 Text(
                     text = subtitle,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 10.sp
+                    color = Color.White.copy(alpha = 0.75f),
+                    fontSize = 11.sp
                 )
             }
 

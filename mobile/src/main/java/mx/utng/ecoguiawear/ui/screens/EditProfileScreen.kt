@@ -1,8 +1,8 @@
-﻿/**
+/**
  * Archivo: EditProfileScreen.kt
- * Autor: ZahirMora
- * Fecha de Ãºltima actualizaciÃ³n: 2026-07-21
- * DescripciÃ³n: Pantalla de ediciÃ³n de perfil. Permite al usuario modificar su nombre completo de forma flexible.
+ * Autores: ZahirAndres, CesarEnrique
+ * Fecha de última actualización: 2026-07-30
+ * Descripción: Pantalla de edición de perfil. Permite al usuario modificar su nombre completo y datos de biografía.
  */
 
 package mx.utng.ecoguiawear.ui.screens
@@ -27,17 +27,16 @@ import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 
 /**
- * Composable que representa la pantalla de ediciÃ³n de perfil.
+ * Composable que representa la pantalla de edición de perfil sin caracteres corruptos.
  */
 @Composable
 fun EditProfileScreen(
     user: RemoteUser?,
-    onSaveClick: (String) -> Unit
+    onSaveClick: (String, String) -> Unit
 ) {
-    // Usamos un solo campo de nombre completo para mayor flexibilidad
     var fullName by remember { mutableStateOf(user?.displayName ?: "") }
     var publicUser by remember { mutableStateOf("@${user?.displayName?.lowercase()?.replace(" ", "_") ?: "usuario"}") }
-    var bio by remember { mutableStateOf("Me gusta descubrir detalles histÃ³ricos y compartir cÃ¡psulas.") }
+    var bio by remember { mutableStateOf(user?.bio ?: "Me gusta descubrir detalles históricos y compartir cápsulas.") }
 
     Column(
         modifier = Modifier
@@ -60,7 +59,7 @@ fun EditProfileScreen(
                 onClick = { },
                 modifier = Modifier.align(Alignment.TopEnd)
             ) {
-                Icon(Icons.Default.Edit, null, tint = Color.White)
+                Icon(Icons.Default.Edit, contentDescription = "Editar", tint = Color.White)
             }
         }
 
@@ -76,7 +75,7 @@ fun EditProfileScreen(
                     "Editar datos",
                     modifier = Modifier.fillMaxWidth(),
                     fontWeight = FontWeight.Bold,
-                    color = EcoGuiaColors.DeepBlue
+                    color = MaterialTheme.colorScheme.onBackground
                 )
             }
             
@@ -85,14 +84,14 @@ fun EditProfileScreen(
             }
             
             item {
-                EcoTextField(value = publicUser, onValueChange = { publicUser = it }, label = "USUARIO PÃšBLICO")
+                EcoTextField(value = publicUser, onValueChange = { publicUser = it }, label = "USUARIO PÚBLICO")
             }
             
             item {
                 EcoTextField(
                     value = bio, 
                     onValueChange = { bio = it }, 
-                    label = "BIOGRAFÃA",
+                    label = "BIOGRAFÍA",
                     modifier = Modifier.height(100.dp)
                 )
             }
@@ -102,7 +101,7 @@ fun EditProfileScreen(
             item {
                 EcoButton(
                     text = "Guardar cambios",
-                    onClick = { if (fullName.isNotBlank()) onSaveClick(fullName) }
+                    onClick = { if (fullName.isNotBlank()) onSaveClick(fullName, bio) }
                 )
             }
         }
@@ -113,7 +112,7 @@ fun EditProfileScreen(
 @Composable
 fun EditProfileScreenPreview() {
     EcoGuiaMobileTheme {
-        EditProfileScreen(null, {})
+        EditProfileScreen(null, { _, _ -> })
     }
 }
 

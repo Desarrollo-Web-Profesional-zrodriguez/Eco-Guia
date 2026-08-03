@@ -28,30 +28,36 @@ import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 import mx.utng.ecoguiawear.ui.viewmodel.SiteRegistrationViewModel
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+
 @Composable
 fun SiteContentScreen(
     viewModel: SiteRegistrationViewModel,
     onNext: () -> Unit
 ) {
-    var historyTitle by remember { mutableStateOf("") }
+    var historyTitle by viewModel.historyTitle
     var shortDesc by viewModel.shortDesc
     var detailedDesc by viewModel.historyDesc
+
+    val scrollState = rememberScrollState()
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
+            .verticalScroll(scrollState)
     ) {
         // Header
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(EcoGuiaColors.DeepBlue)
-                .padding(top = 48.dp, start = 24.dp, end = 24.dp, bottom = 16.dp)
+                .padding(top = 28.dp, start = 20.dp, end = 20.dp, bottom = 8.dp)
         ) {
             Column {
-                Text("Contenido", color = Color.White, fontSize = 14.sp)
-                Text("Historia del sitio", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text("Contenido", color = Color.White, fontSize = 12.sp)
+                Text("Historia del sitio", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
             }
             
             IconButton(
@@ -70,49 +76,44 @@ fun SiteContentScreen(
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(horizontal = 16.dp, vertical = 6.dp),
             colors = CardDefaults.cardColors(containerColor = EcoGuiaColors.Surface),
-            shape = RoundedCornerShape(24.dp)
+            shape = RoundedCornerShape(16.dp)
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("Texto turístico curado", color = Color.White, fontWeight = FontWeight.Bold)
-                Text("Secciones necesarias para datos históricos de la guía.", color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp)
+            Column(modifier = Modifier.padding(12.dp)) {
+                Text("Texto turístico curado", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                Text("Secciones necesarias para datos históricos de la guía.", color = Color.White.copy(alpha = 0.7f), fontSize = 11.sp)
             }
         }
 
         // Form Section
         Column(
             modifier = Modifier
-                .weight(1f)
-                .padding(horizontal = 16.dp)
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            Text("Descripción histórica", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
+            Text("Descripción histórica", fontWeight = FontWeight.Bold, fontSize = 14.sp)
             
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                item {
-                    EcoTextField(value = historyTitle, onValueChange = { historyTitle = it }, label = "TÍTULO DE SECCIÓN")
-                }
-                item {
-                    EcoTextField(
-                        value = shortDesc, 
-                        onValueChange = { shortDesc = it }, 
-                        label = "RESUMEN CORTO",
-                        modifier = Modifier.height(80.dp)
-                    )
-                }
-                item {
-                    EcoTextField(
-                        value = detailedDesc, 
-                        onValueChange = { detailedDesc = it }, 
-                        label = "RELATO DETALLADO",
-                        modifier = Modifier.height(120.dp)
-                    )
-                }
-            }
+            EcoTextField(value = historyTitle, onValueChange = { historyTitle = it }, label = "TÍTULO DE SECCIÓN")
+            EcoTextField(
+                value = shortDesc, 
+                onValueChange = { shortDesc = it }, 
+                label = "RESUMEN CORTO",
+                modifier = Modifier.height(80.dp)
+            )
+            EcoTextField(
+                value = detailedDesc, 
+                onValueChange = { detailedDesc = it }, 
+                label = "RELATO DETALLADO",
+                modifier = Modifier.height(120.dp)
+            )
         }
 
+        Spacer(modifier = Modifier.height(16.dp))
+
         // Action Button
-        Box(modifier = Modifier.padding(24.dp)) {
+        Box(modifier = Modifier.padding(16.dp)) {
             EcoButton(
                 text = "Actualizar contenido",
                 onClick = onNext

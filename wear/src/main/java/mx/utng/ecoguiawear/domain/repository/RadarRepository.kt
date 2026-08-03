@@ -28,6 +28,8 @@ interface RadarRepository {
     fun markRouteCompleted()
     fun dismissRouteCompleted()
     fun selectNextAutoTarget()
+    fun deleteAlert(id: String)
+    fun clearAllAlerts()
     fun selectPreviousAutoTarget()
     fun updateCurrentLocation(lat: Double, lng: Double)
     fun updateHeading(heading: Float)

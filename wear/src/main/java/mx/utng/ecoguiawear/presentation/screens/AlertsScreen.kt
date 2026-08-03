@@ -1,6 +1,7 @@
 package mx.utng.ecoguiawear.presentation.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,23 +15,28 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.wear.compose.foundation.pager.HorizontalPager
-import androidx.wear.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Adjust
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.unit.sp
+import androidx.wear.compose.foundation.pager.HorizontalPager
+import androidx.wear.compose.foundation.pager.rememberPagerState
+import androidx.wear.compose.material.Chip
+import androidx.wear.compose.material.ChipDefaults
 import androidx.wear.compose.material3.HorizontalPageIndicator
 import androidx.wear.compose.material3.Icon
 import androidx.wear.compose.material3.MaterialTheme
@@ -42,7 +48,9 @@ import mx.utng.ecoguiawear.presentation.theme.EcoGuiaWearTheme
 @Composable
 fun AlertsScreen(
     state: RadarUiState,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onDeleteAlert: (String) -> Unit = {},
+    onClearAll: () -> Unit = {}
 ) {
     if (state.alerts.isEmpty()) {
         Box(
@@ -50,7 +58,7 @@ fun AlertsScreen(
                 .fillMaxSize()
                 .background(EcoGuiaColors.Background)
                 .pointerInput(Unit) {
-                    detectDragGestures { change, dragAmount ->
+                    detectDragGestures { _, dragAmount ->
                         if (dragAmount.y < -50) { // Swipe up
                             onBack()
                         }
@@ -58,11 +66,21 @@ fun AlertsScreen(
                 },
             contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = "No hay alertas",
-                style = MaterialTheme.typography.bodySmall,
-                color = EcoGuiaColors.Muted
-            )
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = "No hay alertas",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = EcoGuiaColors.Text
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Se purgan tras 3h",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = EcoGuiaColors.Muted,
+                    fontSize = 11.sp
+                )
+            }
         }
         return
     }
@@ -74,7 +92,7 @@ fun AlertsScreen(
             .fillMaxSize()
             .background(EcoGuiaColors.Background)
             .pointerInput(Unit) {
-                detectDragGestures { change, dragAmount ->
+                detectDragGestures { _, dragAmount ->
                     if (dragAmount.y < -50) { // Swipe up
                         onBack()
                     }
@@ -85,6 +103,7 @@ fun AlertsScreen(
             state = pagerState,
             modifier = Modifier.fillMaxSize()
         ) { page ->
+            if (page >= state.alerts.size) return@HorizontalPager
             val alert = state.alerts[page]
             val icon = when (alert.type) {
                 "GEODROP" -> Icons.Default.LocationOn
@@ -93,23 +112,40 @@ fun AlertsScreen(
             }
             val color = if (alert.type == "SITE") EcoGuiaColors.Gold else EcoGuiaColors.Jade
 
+            val ageMins = ((System.currentTimeMillis() - alert.timestamp) / 60000L).coerceAtLeast(0)
+            val timeText = if (ageMins < 1) "Ahora" else "Hace ${ageMins}m"
+
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(24.dp),
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                Text(
-                    text = "ALERTA ${page + 1}/${state.alerts.size}",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = EcoGuiaColors.Gold,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)
+                ) {
+                    Text(
+                        text = "ALERTA ${page + 1}/${state.alerts.size}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = EcoGuiaColors.Gold,
+                        fontSize = 10.sp
+                    )
+                    Text(
+                        text = timeText,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = EcoGuiaColors.Muted,
+                        fontSize = 10.sp
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
 
                 Box(
                     modifier = Modifier
-                        .size(48.dp)
+                        .size(36.dp)
                         .background(color, CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
@@ -117,25 +153,43 @@ fun AlertsScreen(
                         imageVector = icon,
                         contentDescription = null,
                         tint = EcoGuiaColors.Background,
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(20.dp)
                     )
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
-                
+                Spacer(modifier = Modifier.height(6.dp))
+
                 Text(
                     text = alert.message,
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodySmall,
                     color = EcoGuiaColors.Text,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
+                    maxLines = 2,
+                    fontSize = 12.sp
                 )
 
-                if (page < state.alerts.size - 1) {
-                    Icon(
-                        imageVector = Icons.Default.ChevronRight,
-                        contentDescription = "Desliza para ver más",
-                        tint = EcoGuiaColors.Muted,
-                        modifier = Modifier.padding(top = 8.dp).size(16.dp)
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    // Botón para borrar alerta individual
+                    Chip(
+                        label = { Text("Borrar", fontSize = 10.sp) },
+                        onClick = { onDeleteAlert(alert.id) },
+                        icon = { Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(12.dp)) },
+                        colors = ChipDefaults.secondaryChipColors(backgroundColor = EcoGuiaColors.Surface),
+                        modifier = Modifier.weight(1f).height(32.dp)
+                    )
+
+                    // Botón para borrar todas las alertas
+                    Chip(
+                        label = { Text("Todas", fontSize = 10.sp) },
+                        onClick = onClearAll,
+                        icon = { Icon(Icons.Default.DeleteSweep, contentDescription = null, modifier = Modifier.size(12.dp)) },
+                        colors = ChipDefaults.primaryChipColors(backgroundColor = EcoGuiaColors.Gold),
+                        modifier = Modifier.weight(1f).height(32.dp)
                     )
                 }
             }
@@ -143,7 +197,7 @@ fun AlertsScreen(
 
         HorizontalPageIndicator(
             pagerState = pagerState,
-            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 12.dp),
+            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 6.dp),
             selectedColor = EcoGuiaColors.Jade,
             unselectedColor = EcoGuiaColors.Muted
         )

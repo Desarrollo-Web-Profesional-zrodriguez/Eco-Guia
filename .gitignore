@@ -31,6 +31,9 @@ Thumbs.db
 *.jks
 *.keystore
 google-services.json
+.env
+.env*
+*.env
 
 # Navigation Safe Args
 **/generated/
