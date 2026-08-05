@@ -49,6 +49,9 @@ class GeoDropViewModel(
     private val _isSaving = mutableStateOf(false)
     val isSaving: State<Boolean> = _isSaving
 
+    private val _savingStep = mutableStateOf(1)
+    val savingStep: State<Int> = _savingStep
+
 
     private val _allSites = mutableStateOf<List<mx.utng.ecoguia.shared.domain.model.RemoteHistoricalSite>>(emptyList())
     val allSites: State<List<mx.utng.ecoguia.shared.domain.model.RemoteHistoricalSite>> = _allSites
@@ -243,17 +246,18 @@ class GeoDropViewModel(
 
         viewModelScope.launch {
             _isSaving.value = true
+            _savingStep.value = 1 // Paso 1: GPS y ubicación
             try {
                 val photoFile = _capturedPhoto.value
                 var mediaUrl: String? = null
 
                 if (photoFile != null && photoFile.exists()) {
                     val uri = android.net.Uri.fromFile(photoFile)
-                    // 1. Subir fotografía capturada a Firebase Storage
+                    _savingStep.value = 2 // Paso 2: Subir fotografía a Firebase
                     mediaUrl = firebaseStorageRepo.uploadImage(uri, folder = "geo_drops")
                 }
 
-                // 2. Determinar coordenadas: consultar el sitio específico en PostgreSQL si hay un siteId seleccionado
+                _savingStep.value = 3 // Paso 3: Guardar cápsula en PostgreSQL
                 var siteLat: Double? = null
                 var siteLng: Double? = null
 
@@ -281,15 +285,18 @@ class GeoDropViewModel(
                 )
 
                 if (success) {
+                    _savingStep.value = 4 // Paso 4: Éxito
+                    kotlinx.coroutines.delay(400)
+                    _isSaving.value = false
                     loadGeoDrops()
                     onSuccess()
                 } else {
-                    onError("No se pudo registrar la cápsula en la nube.")
+                    _isSaving.value = false
+                    onError("Error al registrar el GeoDrop.")
                 }
             } catch (e: Exception) {
-                onError("Error: ${e.message}")
-            } finally {
                 _isSaving.value = false
+                onError("Error: ${e.message}")
             }
         }
     }

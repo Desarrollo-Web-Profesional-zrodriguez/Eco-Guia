@@ -41,6 +41,8 @@ import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.ui.viewmodel.GeoDropViewModel
 import mx.utng.ecoguiawear.ui.viewmodel.LocationViewModel
 
+import mx.utng.ecoguiawear.ui.components.GeoDropSavingDialog
+
 /**
  * Pantalla que permite titular, agregar descripción y anclar la foto a la ubicación GPS actual.
  *
@@ -60,6 +62,11 @@ fun AnchorPhotoScreen(
     val capturedPhoto by geoDropViewModel.capturedPhoto
     val currentLocation by locationViewModel.currentLocation
     val isSaving by geoDropViewModel.isSaving
+    val savingStep by geoDropViewModel.savingStep
+
+    if (isSaving) {
+        GeoDropSavingDialog(currentStep = savingStep)
+    }
 
     var title by rememberSaveable { mutableStateOf("") }
     var description by rememberSaveable { mutableStateOf("") }

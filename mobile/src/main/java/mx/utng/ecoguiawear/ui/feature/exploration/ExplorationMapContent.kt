@@ -20,13 +20,16 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -48,10 +51,11 @@ import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
  * Contenido principal del mapa en la pantalla de Exploración.
  *
  * Incluye:
- * - GoogleMap con estilo día/noche automático.
+ * - GoogleMap con estilo día/noche automático o capa satelital.
  * - Marcadores personalizados por categoría para cada sitio cercano.
  * - Círculos de detección alrededor de cada sitio.
  * - Botón de mira que reactiva el seguimiento de la posición del usuario.
+ * - Botón de selector de capa (Normal / Satelital).
  * - Botones de zoom personalizados (+/-).
  *
  * @param modifier Modifier externo (controla tamaño según modo portrait/landscape).
@@ -73,6 +77,7 @@ fun ExplorationMapContent(
     scope: CoroutineScope
 ) {
     val context = LocalContext.current
+    var isSatelliteMap by remember { mutableStateOf(false) }
 
     Box(
         modifier = modifier
@@ -89,13 +94,18 @@ fun ExplorationMapContent(
             } else null
         }
 
+        val mapProperties = remember(currentLocation, isSatelliteMap, mapStyleOptions) {
+            MapProperties(
+                isMyLocationEnabled = currentLocation != null,
+                mapType = if (isSatelliteMap) MapType.HYBRID else MapType.NORMAL,
+                mapStyleOptions = if (isSatelliteMap) null else mapStyleOptions
+            )
+        }
+
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState,
-            properties = MapProperties(
-                isMyLocationEnabled = currentLocation != null,
-                mapStyleOptions = mapStyleOptions
-            ),
+            properties = mapProperties,
             uiSettings = MapUiSettings(
                 myLocationButtonEnabled = false,
                 zoomControlsEnabled = false
@@ -126,23 +136,44 @@ fun ExplorationMapContent(
             }
         }
 
-        // Botón de Mira (Ubicación) — esquina Superior Derecha
-        IconButton(
-            onClick = onFollowUser,
+        // Botones de control superior derecho (Ubicación y Capa de Mapa)
+        Column(
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                .padding(12.dp)
-                .background(
-                    if (isFollowingUser) EcoGuiaColors.Jade else Color.White,
-                    CircleShape
-                )
-                .size(36.dp)
+                .padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Icon(
-                imageVector = Icons.Default.MyLocation,
-                contentDescription = "Mi ubicación",
-                tint = if (isFollowingUser) Color.White else EcoGuiaColors.DeepBlue
-            )
+            IconButton(
+                onClick = onFollowUser,
+                modifier = Modifier
+                    .background(
+                        if (isFollowingUser) EcoGuiaColors.Jade else Color.White,
+                        CircleShape
+                    )
+                    .size(36.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.MyLocation,
+                    contentDescription = "Mi ubicación",
+                    tint = if (isFollowingUser) Color.White else EcoGuiaColors.DeepBlue
+                )
+            }
+
+            IconButton(
+                onClick = { isSatelliteMap = !isSatelliteMap },
+                modifier = Modifier
+                    .background(
+                        if (isSatelliteMap) EcoGuiaColors.Gold else Color.White,
+                        CircleShape
+                    )
+                    .size(36.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Layers,
+                    contentDescription = "Cambiar Capa Mapa",
+                    tint = EcoGuiaColors.DeepBlue
+                )
+            }
         }
 
         // Controles de Zoom Personalizados — esquina Inferior Derecha
