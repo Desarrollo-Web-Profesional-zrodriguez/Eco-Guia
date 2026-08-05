@@ -297,6 +297,7 @@ fun AppNavHost(
                     }
                 },
                 userId = authViewModel.currentUser?.id.orEmpty(),
+                userRole = authViewModel.currentUser?.role.orEmpty(),
                 geoDropViewModel = geoDropViewModel
             )
         }

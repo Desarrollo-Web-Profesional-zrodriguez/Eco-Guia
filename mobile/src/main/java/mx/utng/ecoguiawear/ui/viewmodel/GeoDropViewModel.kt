@@ -61,46 +61,64 @@ class GeoDropViewModel(
 
     val collectedGeoDropIds = androidx.compose.runtime.mutableStateMapOf<String, Boolean>()
 
-    fun loadSites(userLocation: Location? = null) {
+    fun loadSites(userLocation: Location? = null, userId: String = "", userRole: String = "") {
         viewModelScope.launch {
             try {
-                val sites = repository.getHistoricalSites()
+                var sites = repository.getHistoricalSites()
+
+                // Filtrado por Rol
+                if (userRole == "museum_hotel" && userId.isNotBlank()) {
+                    // Rol Museum: solo los sitios donde sea propietario (created_by == userId)
+                    sites = sites.filter { it.createdBy == userId }
+                }
+
                 val targetId = _targetSiteId.value
                 val targetSite = sites.firstOrNull { it.id == targetId }
                 if (targetSite != null && _targetSiteName.value.isNullOrBlank()) {
                     _targetSiteName.value = targetSite.name
                 }
 
-                if (!targetId.isNullOrBlank()) {
-                    // Comportamiento 2: Sitio Seleccionado / Modo Admin -> Incluir el sitio objetivo al inicio sin filtrarlo por 100m
-                    val sorted = if (userLocation != null) {
-                        sites.sortedWith(
-                            compareByDescending<mx.utng.ecoguia.shared.domain.model.RemoteHistoricalSite> { site ->
-                                site.id == targetId
-                            }.thenBy { site ->
-                                val lat = site.getComputedLatitude()
-                                val lng = site.getComputedLongitude()
-                                if (lat != null && lng != null) {
-                                    val results = FloatArray(1)
-                                    Location.distanceBetween(userLocation.latitude, userLocation.longitude, lat, lng, results)
-                                    results[0]
-                                } else Float.MAX_VALUE
-                            }
-                        )
+                if (userRole == "admin" || userRole == "superadmin") {
+                    // Rol Administrador: Todos los sitios
+                    if (!targetId.isNullOrBlank()) {
+                        val sorted = if (userLocation != null) {
+                            sites.sortedWith(
+                                compareByDescending<mx.utng.ecoguia.shared.domain.model.RemoteHistoricalSite> { site ->
+                                    site.id == targetId
+                                }.thenBy { site ->
+                                    val lat = site.getComputedLatitude()
+                                    val lng = site.getComputedLongitude()
+                                    if (lat != null && lng != null) {
+                                        val results = FloatArray(1)
+                                        Location.distanceBetween(userLocation.latitude, userLocation.longitude, lat, lng, results)
+                                        results[0]
+                                    } else Float.MAX_VALUE
+                                }
+                            )
+                        } else {
+                            sites.sortedByDescending { it.id == targetId }
+                        }
+                        _allSites.value = sorted
                     } else {
-                        sites.sortedByDescending { it.id == targetId }
+                        _allSites.value = sites
                     }
-                    _allSites.value = sorted
+                } else if (userRole == "museum_hotel") {
+                    // Rol Museo/Hotel: Mostrar TODOS los sitios que le pertenecen para poder elegir libremente entre sus sitios
+                    _allSites.value = sites
                 } else {
-                    // Comportamiento 1: Modo general / Museos -> Filtrar únicamente sitios cercanos a <= 100 metros
-                    if (userLocation != null) {
-                        val filtered = sites.filter { site ->
+                    // Rol Visitor o Moderator: Restringido al sitio detectado o en rango GPS
+                    if (!targetId.isNullOrBlank()) {
+                        _allSites.value = sites.filter { it.id == targetId }
+                    } else if (userLocation != null) {
+                        val inRangeSites = sites.filter { site ->
                             val lat = site.getComputedLatitude()
                             val lng = site.getComputedLongitude()
                             if (lat != null && lng != null) {
                                 val results = FloatArray(1)
                                 Location.distanceBetween(userLocation.latitude, userLocation.longitude, lat, lng, results)
-                                results[0] <= 100f
+                                val distance = results[0]
+                                val allowedRadius = (site.detectionRadiusM.takeIf { it > 0 } ?: 100).toFloat()
+                                distance <= allowedRadius
                             } else false
                         }.sortedBy { site ->
                             val lat = site.getComputedLatitude()!!
@@ -109,9 +127,17 @@ class GeoDropViewModel(
                             Location.distanceBetween(userLocation.latitude, userLocation.longitude, lat, lng, results)
                             results[0]
                         }
-                        _allSites.value = if (filtered.isNotEmpty()) filtered else sites
+                        
+                        _allSites.value = inRangeSites
+
+                        // Auto-seleccionar el sitio dentro de rango si existe
+                        val firstInRange = inRangeSites.firstOrNull()
+                        if (firstInRange != null) {
+                            _targetSiteId.value = firstInRange.id
+                            _targetSiteName.value = firstInRange.name
+                        }
                     } else {
-                        _allSites.value = sites
+                        _allSites.value = emptyList()
                     }
                 }
             } catch (e: Exception) {
