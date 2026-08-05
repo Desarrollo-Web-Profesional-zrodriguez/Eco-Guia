@@ -41,6 +41,8 @@ import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.ui.viewmodel.GeoDropViewModel
 import mx.utng.ecoguiawear.ui.viewmodel.LocationViewModel
 
+import mx.utng.ecoguiawear.ui.components.GeoDropSavingDialog
+
 /**
  * Pantalla que permite titular, agregar descripción y anclar la foto a la ubicación GPS actual.
  *
@@ -52,6 +54,7 @@ import mx.utng.ecoguiawear.ui.viewmodel.LocationViewModel
 fun AnchorPhotoScreen(
     onAnchorClick: () -> Unit,
     userId: String = "guest",
+    userRole: String = "visitor",
     geoDropViewModel: GeoDropViewModel = viewModel(),
     locationViewModel: LocationViewModel = viewModel()
 ) {
@@ -60,6 +63,11 @@ fun AnchorPhotoScreen(
     val capturedPhoto by geoDropViewModel.capturedPhoto
     val currentLocation by locationViewModel.currentLocation
     val isSaving by geoDropViewModel.isSaving
+    val savingStep by geoDropViewModel.savingStep
+
+    if (isSaving) {
+        GeoDropSavingDialog(currentStep = savingStep)
+    }
 
     var title by rememberSaveable { mutableStateOf("") }
     var description by rememberSaveable { mutableStateOf("") }
@@ -106,8 +114,8 @@ fun AnchorPhotoScreen(
     var selectedSiteId by rememberSaveable(targetSiteId) { mutableStateOf(targetSiteId.orEmpty()) }
     var isSiteDropdownExpanded by rememberSaveable { mutableStateOf(false) }
 
-    LaunchedEffect(currentLocation) {
-        geoDropViewModel.loadSites(currentLocation)
+    LaunchedEffect(currentLocation, userId, userRole) {
+        geoDropViewModel.loadSites(currentLocation, userId = userId, userRole = userRole)
     }
 
     val isCreationMode by geoDropViewModel.isSiteCreationMode
@@ -206,41 +214,51 @@ fun AnchorPhotoScreen(
                                 val selectedSite = allSites.firstOrNull { it.id == selectedSiteId }
                                 val currentSiteName = selectedSite?.name
                                     ?: targetSiteName
-                                    ?: if (selectedSiteId.isNotBlank()) "Sitio seleccionado" else "Selecciona el Sitio Histórico *"
+                                    ?: if (allSites.isNotEmpty()) allSites.first().name else "Fuera del rango de un sitio histórico"
+
+                                val isAdminRole = userRole == "admin" || userRole == "superadmin"
+                                val isMuseumRole = userRole == "museum_hotel"
+                                val isDropdownEnabled = when {
+                                    isAdminRole -> allSites.size > 1
+                                    isMuseumRole -> allSites.size > 1
+                                    else -> false // Para visitor y moderator queda completamente deshabilitado
+                                }
 
                                 EcoTextField(
                                     value = currentSiteName,
                                     onValueChange = {},
                                     label = "SITIO HISTÓRICO PERTENECIENTE *",
-                                    placeholder = "Selecciona una opción",
+                                    placeholder = "Sitio detectado automáticamente",
                                     readOnly = true,
-                                    trailingIcon = {
-                                        Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = EcoGuiaColors.Jade)
-                                    }
+                                    trailingIcon = if (isDropdownEnabled) {
+                                        { Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = EcoGuiaColors.Jade) }
+                                    } else null
                                 )
 
-                                Box(
-                                    modifier = Modifier
-                                        .matchParentSize()
-                                        .clickable { isSiteDropdownExpanded = true }
-                                )
+                                if (isDropdownEnabled) {
+                                    Box(
+                                        modifier = Modifier
+                                            .matchParentSize()
+                                            .clickable { isSiteDropdownExpanded = true }
+                                    )
 
-                                DropdownMenu(
-                                    expanded = isSiteDropdownExpanded,
-                                    onDismissRequest = { isSiteDropdownExpanded = false },
-                                    modifier = Modifier
-                                        .fillMaxWidth(0.85f)
-                                        .background(EcoGuiaColors.Surface)
-                                ) {
-                                    allSites.forEach { site ->
-                                        DropdownMenuItem(
-                                            text = { Text(site.name, color = Color.White, fontSize = 14.sp) },
-                                            onClick = {
-                                                selectedSiteId = site.id
-                                                geoDropViewModel.setTargetSite(site.id, site.name, isCreationMode = false)
-                                                isSiteDropdownExpanded = false
-                                            }
-                                        )
+                                    DropdownMenu(
+                                        expanded = isSiteDropdownExpanded,
+                                        onDismissRequest = { isSiteDropdownExpanded = false },
+                                        modifier = Modifier
+                                            .fillMaxWidth(0.85f)
+                                            .background(EcoGuiaColors.Surface)
+                                    ) {
+                                        allSites.forEach { site ->
+                                            DropdownMenuItem(
+                                                text = { Text(site.name, color = Color.White, fontSize = 14.sp) },
+                                                onClick = {
+                                                    selectedSiteId = site.id
+                                                    geoDropViewModel.setTargetSite(site.id, site.name, isCreationMode = false)
+                                                    isSiteDropdownExpanded = false
+                                                }
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -395,41 +413,51 @@ fun AnchorPhotoScreen(
                                 val selectedSite = allSites.firstOrNull { it.id == selectedSiteId }
                                 val currentSiteName = selectedSite?.name
                                     ?: targetSiteName
-                                    ?: if (selectedSiteId.isNotBlank()) "Sitio seleccionado" else "Selecciona el Sitio Histórico *"
+                                    ?: if (allSites.isNotEmpty()) allSites.first().name else "Fuera del rango de un sitio histórico"
+
+                                val isAdminRole = userRole == "admin" || userRole == "superadmin"
+                                val isMuseumRole = userRole == "museum_hotel"
+                                val isDropdownEnabled = when {
+                                    isAdminRole -> allSites.size > 1
+                                    isMuseumRole -> allSites.size > 1
+                                    else -> false // Para visitor y moderator queda completamente deshabilitado
+                                }
 
                                 EcoTextField(
                                     value = currentSiteName,
                                     onValueChange = {},
                                     label = "SITIO HISTÓRICO PERTENECIENTE *",
-                                    placeholder = "Selecciona una opción",
+                                    placeholder = "Sitio detectado automáticamente",
                                     readOnly = true,
-                                    trailingIcon = {
-                                        Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = EcoGuiaColors.Jade)
-                                    }
+                                    trailingIcon = if (isDropdownEnabled) {
+                                        { Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = EcoGuiaColors.Jade) }
+                                    } else null
                                 )
 
-                                Box(
-                                    modifier = Modifier
-                                        .matchParentSize()
-                                        .clickable { isSiteDropdownExpanded = true }
-                                )
+                                if (isDropdownEnabled) {
+                                    Box(
+                                        modifier = Modifier
+                                            .matchParentSize()
+                                            .clickable { isSiteDropdownExpanded = true }
+                                    )
 
-                                DropdownMenu(
-                                    expanded = isSiteDropdownExpanded,
-                                    onDismissRequest = { isSiteDropdownExpanded = false },
-                                    modifier = Modifier
-                                        .fillMaxWidth(0.85f)
-                                        .background(EcoGuiaColors.Surface)
-                                ) {
-                                    allSites.forEach { site ->
-                                        DropdownMenuItem(
-                                            text = { Text(site.name, color = Color.White, fontSize = 14.sp) },
-                                            onClick = {
-                                                selectedSiteId = site.id
-                                                geoDropViewModel.setTargetSite(site.id, site.name, isCreationMode = false)
-                                                isSiteDropdownExpanded = false
-                                            }
-                                        )
+                                    DropdownMenu(
+                                        expanded = isSiteDropdownExpanded,
+                                        onDismissRequest = { isSiteDropdownExpanded = false },
+                                        modifier = Modifier
+                                            .fillMaxWidth(0.85f)
+                                            .background(EcoGuiaColors.Surface)
+                                    ) {
+                                        allSites.forEach { site ->
+                                            DropdownMenuItem(
+                                                text = { Text(site.name, color = Color.White, fontSize = 14.sp) },
+                                                onClick = {
+                                                    selectedSiteId = site.id
+                                                    geoDropViewModel.setTargetSite(site.id, site.name, isCreationMode = false)
+                                                    isSiteDropdownExpanded = false
+                                                }
+                                            )
+                                        }
                                     }
                                 }
                             }

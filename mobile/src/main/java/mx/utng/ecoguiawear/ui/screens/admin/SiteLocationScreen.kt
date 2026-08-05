@@ -14,6 +14,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -57,6 +58,8 @@ fun SiteLocationScreen(
         }
     }
 
+    var isSatelliteMap by remember { mutableStateOf(false) }
+
     val configuration = androidx.compose.ui.platform.LocalConfiguration.current
     val isLandscape = configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
 
@@ -94,6 +97,14 @@ fun SiteLocationScreen(
             } else null
         }
 
+        val currentMapProperties = remember(isSatelliteMap, mapStyleOptions) {
+            MapProperties(
+                mapType = if (isSatelliteMap) MapType.HYBRID else MapType.NORMAL,
+                isBuildingEnabled = true,
+                mapStyleOptions = if (isSatelliteMap) null else mapStyleOptions
+            )
+        }
+
         if (isLandscape) {
             // Diseño en 2 columnas para modo Horizontal
             Row(
@@ -105,7 +116,7 @@ fun SiteLocationScreen(
                 // Mapa a la izquierda
                 Box(
                     modifier = Modifier
-                        .weight(1f)
+                        .weight(1.2f)
                         .fillMaxHeight()
                         .clip(RoundedCornerShape(20.dp))
                         .background(MaterialTheme.colorScheme.surfaceVariant)
@@ -117,11 +128,7 @@ fun SiteLocationScreen(
                             lat = latLng.latitude
                             lng = latLng.longitude
                         },
-                        properties = MapProperties(
-                            mapType = MapType.NORMAL,
-                            isBuildingEnabled = true,
-                            mapStyleOptions = mapStyleOptions
-                        ),
+                        properties = currentMapProperties,
                         uiSettings = MapUiSettings(zoomControlsEnabled = false, myLocationButtonEnabled = false)
                     ) {
                         if (lat != 0.0 && lng != 0.0) {
@@ -137,6 +144,22 @@ fun SiteLocationScreen(
                                 strokeWidth = 2f
                             )
                         }
+                    }
+
+                    // Botón para alternar Capas (Mapa / Satélite)
+                    IconButton(
+                        onClick = { isSatelliteMap = !isSatelliteMap },
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(10.dp)
+                            .background(if (isSatelliteMap) EcoGuiaColors.Gold else Color.White, androidx.compose.foundation.shape.CircleShape)
+                            .size(36.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Layers,
+                            contentDescription = "Cambiar Capa Mapa",
+                            tint = if (isSatelliteMap) EcoGuiaColors.DeepBlue else EcoGuiaColors.DeepBlue
+                        )
                     }
                 }
 
@@ -179,17 +202,14 @@ fun SiteLocationScreen(
                 }
             }
         } else {
-            // Diseño vertical con Scroll
-            val scrollState = rememberScrollState()
+            // Diseño vertical: El Mapa ocupa altura fija y el formulario inferior usa scroll
             Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(scrollState)
+                modifier = Modifier.fillMaxSize()
             ) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(240.dp)
+                        .height(430.dp)
                         .padding(12.dp)
                         .clip(RoundedCornerShape(20.dp))
                         .background(MaterialTheme.colorScheme.surfaceVariant)
@@ -201,11 +221,7 @@ fun SiteLocationScreen(
                             lat = latLng.latitude
                             lng = latLng.longitude
                         },
-                        properties = MapProperties(
-                            mapType = MapType.NORMAL,
-                            isBuildingEnabled = true,
-                            mapStyleOptions = mapStyleOptions
-                        ),
+                        properties = currentMapProperties,
                         uiSettings = MapUiSettings(zoomControlsEnabled = false, myLocationButtonEnabled = false)
                     ) {
                         if (lat != 0.0 && lng != 0.0) {
@@ -222,12 +238,31 @@ fun SiteLocationScreen(
                             )
                         }
                     }
+
+                    // Botón para alternar Capas (Mapa / Satélite)
+                    IconButton(
+                        onClick = { isSatelliteMap = !isSatelliteMap },
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(10.dp)
+                            .background(if (isSatelliteMap) EcoGuiaColors.Gold else Color.White, androidx.compose.foundation.shape.CircleShape)
+                            .size(36.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Layers,
+                            contentDescription = "Cambiar Capa Mapa",
+                            tint = EcoGuiaColors.DeepBlue
+                        )
+                    }
                 }
 
+                val bottomScrollState = rememberScrollState()
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                        .weight(1f)
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .verticalScroll(bottomScrollState),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Text("Ubicación y radio", fontWeight = FontWeight.Bold)
