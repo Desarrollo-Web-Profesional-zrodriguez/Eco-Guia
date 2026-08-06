@@ -52,7 +52,10 @@ import mx.utng.ecoguiawear.tv.ui.theme.JadeGreen
 import mx.utng.ecoguiawear.tv.ui.theme.SurfaceDark
 
 /**
- * Composable que renderiza el panel de ranking semanal y métricas turísticas en la Smart TV.
+ * Composable principal que renderiza el panel de ranking semanal y métricas turísticas en la Smart TV.
+ *
+ * Administra el ciclo de vida de la sesión activa, la carga asíncrona de cápsulas GeoDrops desde Neon PostgreSQL,
+ * la paginación automatizada en bloques de 3 elementos y la intercepción de eventos de control remoto en modo kiosco.
  *
  * @param isKioskLocked Indica si la pantalla se encuentra bloqueada en modo de exhibición protegida.
  * @param onToggleKioskLock Callback para alternar el estado de bloqueo kiosco.
