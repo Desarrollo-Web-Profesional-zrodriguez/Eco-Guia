@@ -324,9 +324,40 @@ EcoGuiaWear/
 4. :tv       → Depende de :shared
 ```
 
-> Para instrucciones detalladas de instalación de los APKs en dispositivos físicos, consulta la  
-> 📄 **[Guía de Instalación — Ver PDF generado del proyecto]**  
-> (Solicitar al equipo de desarrollo el documento PDF oficial de instalación)
+> Para instrucciones detalladas de instalación de los APKs en dispositivos físicos, consulta el  
+> 📄 **[Manual de Instalación PDF del Proyecto](file:///c:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/resources/documents/Eco-Guia-Manual-Instalacion.pdf)**  
+
+<br>
+
+---
+
+## 🛠️ Manual de Desarrollo y Secuencia de Trabajo
+
+Para comprender, compilar y replicar de manera exitosa la arquitectura de **Eco-Guía**, se debe seguir el siguiente orden secuencial de estudio e implementación entre los distintos módulos:
+
+```
+1. README Principal (Raíz)   -> Entendimiento global del proyecto, base de datos Neon DB y setup inicial.
+         │
+         ▼
+2. Módulo :shared            -> Modelos compartidos (Room/Neon), repositorios y clientes HTTP (Ktor/MQTT).
+         │
+         ▼
+3. Módulo :mobile            -> App nativa de teléfono (Jetpack Compose), MVVM, mapas y servicios de proximidad.
+         │
+         ▼
+4. Módulo :wear              -> App Wear OS, brújula háptica y Data Layer API.
+         │
+         ▼
+5. Módulo :tv                -> App Android TV (Compose for TV), Portal 360°, modo kiosco y servidor local.
+```
+
+### 📋 Pasos a Seguir para Comenzar a Trabajar:
+
+1. **Paso 1:** Comenzar leyendo este documento raíz (`README.md`) para entender el esquema de base de datos PostgreSQL en Neon, la estructura Gradle y los requisitos previos de Android Studio.
+2. **Paso 2:** Estudiar el módulo compartible `:shared` y compilarlo ejecutando `./gradlew :shared:assembleDebug`.
+3. **Paso 3:** Seguir el tutorial paso a paso del módulo móvil en **[mobile/README.md](file:///c:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/README.md)** para construir la app base de Android Phone.
+4. **Paso 4:** Continuar con el tutorial del módulo wearable en **[wear/README.md](file:///c:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/wear/README.md)** para vincular el reloj inteligente.
+5. **Paso 5:** Finalizar con la guía del módulo de televisión en **[tv/README.md](file:///c:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/tv/README.md)** para la experiencia en pantalla grande.
 
 <br>
 
@@ -429,3 +460,4 @@ Para el desarrollo detallado de cada módulo, consulta su README específico:
   <p><b>Eco-Guía</b> — <i>Impulsando el Turismo Cultural con Tecnología de Vanguardia.</i></p>
   <p><i>Zahir Andrés Rodríguez Mora &amp; Cesar Enrique Garay García — UTNG GIDS6092</i></p>
 </div>
+
