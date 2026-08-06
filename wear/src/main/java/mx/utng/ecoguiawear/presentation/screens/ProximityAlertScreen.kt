@@ -1,3 +1,12 @@
+/**
+ * Pantalla informativa de proximidad a un sitio turístico detectado en Wear OS.
+ *
+ * Ofrece accesos rápidos para abrir el visor AR en el teléfono móvil o marcar la llegada de forma manual.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 package mx.utng.ecoguiawear.presentation.screens
 
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -12,6 +21,17 @@ import mx.utng.ecoguiawear.presentation.components.EcoWearScaffold
 import mx.utng.ecoguiawear.presentation.components.ScreenHeader
 import mx.utng.ecoguiawear.presentation.theme.EcoGuiaColors
 
+/**
+ * Pantalla de aviso de proximidad a un punto de interés.
+ *
+ * @param state Estado global reactivo del radar.
+ * @param onOpenPhone Callback para abrir la cámara de Geo-Drops en el smartphone.
+ * @param onArrived Callback para marcar el punto como alcanzado.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 @Composable
 fun ProximityAlertScreen(
     state: RadarUiState,

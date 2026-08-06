@@ -1,3 +1,13 @@
+/**
+ * Pantalla informativa de proximidad a un punto patrimonial o sitio turístico en Wear OS.
+ *
+ * Ofrece detalles breves sobre el patrimonio cultural detectado e instruye al usuario a consultar
+ * la app móvil para visualizar el contenido multimedia e IA generativa.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 package mx.utng.ecoguiawear.presentation.screens
 
 import androidx.compose.foundation.clickable
@@ -12,6 +22,16 @@ import mx.utng.ecoguiawear.presentation.components.EcoWearScaffold
 import mx.utng.ecoguiawear.presentation.components.ScreenHeader
 import mx.utng.ecoguiawear.presentation.theme.EcoGuiaColors
 
+/**
+ * Pantalla de aviso de sitio patrimonial próximo.
+ *
+ * @param state Estado global reactivo del radar.
+ * @param onBackToRadar Callback para volver al radar.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 @Composable
 fun SiteNearbyScreen(
     state: RadarUiState,

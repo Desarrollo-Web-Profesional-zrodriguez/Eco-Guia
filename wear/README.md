@@ -1,352 +1,643 @@
-<div align="center">
-  <h1>⌚ Módulo <code>wear</code> — Eco-Guía Wear OS</h1>
-  <p><strong>Guía de Desarrollo — Archivos e Indicaciones por Paso</strong></p>
-  <div>
-    <img src="https://img.shields.io/badge/Kotlin-2.1.0-blue?style=for-the-badge&logo=kotlin">
-    <img src="https://img.shields.io/badge/Wear_Compose-1.x-4285F4?style=for-the-badge&logo=wear-os">
-    <img src="https://img.shields.io/badge/Horologist-0.x-orange?style=for-the-badge">
-    <img src="https://img.shields.io/badge/minSdk-30-green?style=for-the-badge&logo=android">
-    <img src="https://img.shields.io/badge/compileSdk-34-green?style=for-the-badge&logo=android">
-    <img src="https://img.shields.io/badge/Android_Studio-Meerkat_2025.1.1-3DDC84?style=for-the-badge&logo=androidstudio">
-  </div>
-</div>
+# Guía Paso a Paso: Construyendo el Módulo Wear OS de Eco-Guía
 
-<br>
-
-> ⚠️ **Dependencia de `shared`:** El módulo `wear` consume `EcoGuiaRepository` de `:shared` para cargar sitios históricos y sincronizar rutas. `:shared` debe compilarse antes de trabajar en `:wear`. Consulta el [README raíz](../README.md) para la configuración del entorno global.
-
-> ⚠️ **Dependencia de `mobile`:** Para probar la comunicación Wear ↔ Phone en emuladores, el módulo `:mobile` debe estar corriendo simultáneamente en un emulador de teléfono emparejado.
-
-<br>
+Esta guía documenta y desglosa paso a paso la arquitectura, configuración y construcción completa del módulo **Wear OS (Smartwatch)** de **Eco-Guía Dolores Hidalgo**, explicando las decisiones de diseño para pantallas circulares AMOLED, el cálculo de azimut y navegación con brújula háptica, la sincronización en tiempo real vía **Wearable Data Layer API** y la gestión de batería optimizada.
 
 ---
 
-## 📋 Versiones y Configuración del Módulo
+## Objetivo de Esta Guía
 
-| Parámetro | Valor |
-|-----------|-------|
-| `namespace` | `mx.utng.ecoguiawear` |
-| `applicationId` | `mx.utng.ecoguiawear` |
-| `compileSdk` | 34 |
-| `minSdk` | 30 (Wear OS 3+) |
-| `targetSdk` | 34 |
-| `versionName` | 1.0.0 |
-| `JVM Target` | 17 |
-| `buildFeatures` | `compose = true` |
+Al estudiar y seguir esta guía, comprenderás:
 
-<br>
+1. Cómo estructurar una aplicación moderna para **Wear OS 3+ (API 30+)** utilizando **Kotlin 2.1**, **Jetpack Compose for Wear OS (`androidx.wear.compose.material3`)** y componentes de **Horologist**.
+2. Cómo implementar un **Radar Háptico de Proximidad** que calcula distancias geodésicas en tiempo real (Haversine) y guía al usuario hacia monumentos históricos mediante vibraciones sensoriales configurables.
+3. Cómo construir una **Brújula Digital Suavizada** con sensores de orientación (`TYPE_ROTATION_VECTOR`) y representación visual animada (`CompassArrow`).
+4. Cómo orquestar la comunicación bidireccional entre el Smartwatch y el Teléfono Móvil mediante **Google Play Services Wearable** (`MessageClient`, `WearableListenerService`, `CapabilityClient`).
+5. Cómo diseñar una experiencia táctil intuitiva mediante **carruseles horizontales (`HorizontalPager`)**, soporte para corona rotatoria (*Rotary input*) y **Modo Discreto (*Stealth Mode*)** para navegación sin emisión de luz.
 
 ---
 
-## 🗂️ Estructura Completa del Módulo
+## FASE 1: Configuración Inicial del Entorno y Build System
 
-```
-wear/
-└── src/main/java/mx/utng/ecoguiawear/
-    ├── data/
-    │   ├── haptics/
-    │   │   └── HapticController.kt
-    │   ├── repository/
-    │   │   ├── RadarRepositoryImpl.kt
-    │   │   └── extensions/
-    │   │       ├── RadarAlertsExt.kt
-    │   │       ├── RadarAutoSearchExt.kt
-    │   │       └── RadarRouteSyncExt.kt
-    │   └── wear/
-    │       ├── EcoWearMessageService.kt
-    │       ├── LocationHelper.kt
-    │       ├── PhoneMessageClient.kt
-    │       ├── SensorHelper.kt
-    │       └── WearMessageListener.kt
-    ├── domain/
-    │   ├── model/
-    │   │   └── RadarModels.kt
-    │   └── repository/
-    │       └── RadarRepository.kt
-    └── presentation/
-        ├── MainActivity.kt
-        ├── RadarViewModel.kt
-        ├── components/
-        │   ├── CircularStatus.kt
-        │   ├── CompassArrow.kt
-        │   └── EcoWearScaffold.kt
-        ├── navigation/
-        │   ├── EcoGuiaWearNavGraph.kt
-        │   └── RadarPagerScreen.kt
-        ├── screens/
-        │   ├── AlertsScreen.kt
-        │   ├── ArrivalScreen.kt
-        │   ├── CompassScreen.kt
-        │   ├── HapticSettingsScreen.kt
-        │   ├── PairingScreen.kt
-        │   ├── ProximityAlertScreen.kt
-        │   ├── RadarScreen.kt
-        │   ├── RouteCompletedWearScreen.kt
-        │   ├── RouteSummaryScreen.kt
-        │   ├── SiteNearbyScreen.kt
-        │   └── StealthRadarScreen.kt
-        └── theme/
+### Paso 1.1: Configurar el Catálogo de Versiones (`gradle/libs.versions.toml`)
+
+Wear OS requiere dependencias específicas de Compose for Wear, Horologist para layouts con corona rotatoria y Play Services Wearable para sincronización.
+
+```toml
+[versions]
+agp = "8.8.0"
+kotlin = "2.1.0"
+composeBom = "2025.01.00"
+wearCompose = "1.4.0"
+wearComposeMaterial3 = "1.0.0-alpha29"
+horologist = "0.7.0-alpha02"
+playServicesWearable = "19.0.0"
+playServicesLocation = "21.3.0"
+
+[libraries]
+wear-compose-foundation = { group = "androidx.wear.compose", name = "compose-foundation", version.ref = "wearCompose" }
+wear-compose-material = { group = "androidx.wear.compose", name = "compose-material", version.ref = "wearCompose" }
+wear-compose-material3 = { group = "androidx.wear.compose", name = "compose-material3", version.ref = "wearComposeMaterial3" }
+wear-compose-navigation = { group = "androidx.wear.compose", name = "compose-navigation", version.ref = "wearCompose" }
+horologist-compose-layout = { group = "com.google.android.horologist", name = "horologist-compose-layout", version.ref = "horologist" }
+play-services-wearable = { group = "com.google.android.gms", name = "play-services-wearable", version.ref = "playServicesWearable" }
+play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
 ```
 
-<br>
+> **CONCEPTO CLAVE:** Horologist complementa Wear Compose proveyendo `AppScaffold` y `ScreenScaffold`, componentes que gestionan automáticamente el indicador de hora del sistema (`TimeText`) y la vinculación con la corona rotatoria (*Rotary input*).
 
 ---
 
-## 📄 Descripción Línea a Línea por Archivo
+### Paso 1.2: Configurar `wear/build.gradle.kts`
+
+El módulo `:wear` se configura como aplicación ejecutable independiente (`com.android.application`) pero consume directamente el módulo de lógica compartida `:shared` para modelos y acceso a Room.
+
+```kotlin
+plugins {
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.compose)
+}
+
+android {
+    namespace = "mx.utng.ecoguiawear"
+    compileSdk = 37
+
+    defaultConfig {
+        applicationId = "mx.utng.ecoguiawear"
+        minSdk = 30
+        targetSdk = 37
+        versionCode = 1
+        versionName = "1.0.0"
+    }
+
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+        }
+    }
+
+    buildFeatures {
+        compose = true
+    }
+}
+
+dependencies {
+    implementation(project(":shared"))
+    implementation(libs.activity.compose)
+    implementation(libs.core.splashscreen)
+    implementation(libs.kotlinx.coroutines.play.services)
+    implementation(libs.lifecycle.viewmodel.compose)
+    implementation(libs.play.services.wearable)
+    implementation(libs.play.services.location)
+    implementation(libs.wear.compose.material3)
+    implementation(libs.wear.compose.navigation)
+    implementation(libs.horologist.compose.layout)
+}
+```
 
 ---
 
-### `wear/build.gradle.kts`
+### Paso 1.3: Configurar el Manifiesto (`wear/src/main/AndroidManifest.xml`)
 
-- **Bloque de plugins:** Aplicar `android.application` y `kotlin.compose`; no requiere `google.services` a menos que se agregue Firebase en el futuro.
-- **Bloque `android`:** Declarar `namespace = "mx.utng.ecoguiawear"`, `compileSdk = 34`, `defaultConfig` con `applicationId`, `minSdk = 30`, `targetSdk = 34`, `versionCode` y `versionName`.
-- **`compileOptions` y `kotlin.compilerOptions`:** Configurar JVM 17 en ambos.
-- **`buildFeatures`:** Activar solo `compose = true`.
-- **Bloque `dependencies`:** Primera línea: `implementation(project(":shared"))`; luego agregar `horologist.compose.layout`, `wear.compose.foundation`, `wear.compose.material`, `wear.compose.navigation`, `androidx.core.splashscreen`, `play.services.wearable`, `play.services.location`.
+El manifiesto define los permisos de sensores, hardware de reloj y declara el servicio receptor de mensajes en segundo plano.
 
----
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-### `wear/src/main/AndroidManifest.xml`
+    <!-- Declaración obligatoria de dispositivo wearable -->
+    <uses-feature
+        android:name="android.hardware.type.watch"
+        android:required="true" />
 
-- **`uses-feature`:** Declarar `android.hardware.type.watch` para identificar el módulo como app de reloj.
-- **Permisos requeridos:** `BODY_SENSORS`, `ACCESS_FINE_LOCATION`, `VIBRATE`, `WAKE_LOCK`, `INTERNET`.
-- **`MainActivity`:** Declarar como launcher con category `android.intent.category.DEFAULT` y `com.google.intent.category.BROWSABLE` para Wear OS; incluir el meta-data de standalone app (`com.google.android.wearable.standalone = true`).
-- **`EcoWearMessageService`:** Declarar como `<service>` exportado; agregar intent-filter con la acción `com.google.android.gms.wearable.MESSAGE_RECEIVED` y el data path `/eco-site-selected`.
+    <!-- Permisos de hardware y sensores -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
----
+    <application
+        android:allowBackup="true"
+        android:icon="@drawable/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@android:style/Theme.DeviceDefault">
 
-### `domain/model/RadarModels.kt`
+        <meta-data
+            android:name="com.google.android.wearable.standalone"
+            android:value="false" />
+        <meta-data
+            android:name="com.google.android.gms.wearable.capabilities"
+            android:resource="@array/android_wear_capabilities" />
 
-- **Bloque 1 — KDoc:** Descripción: modelos de dominio del radar de proximidad; autores y fecha.
-- **Bloque 2 — `RadarState` (data class):** Estado completo del radar; campos: `isConnected: Boolean` (estado de conexión con el teléfono), `targetSite: SiteTarget?` (sitio objetivo actual), `distanceMeters: Float` (distancia calculada al objetivo), `azimuthDegrees: Float` (ángulo hacia el objetivo respecto al norte), `isHapticEnabled: Boolean` (si la vibración está activa), `isRouteActive: Boolean` (si hay una ruta en progreso), `routeProgress: Int` (índice de la parada actual).
-- **Bloque 3 — `SiteTarget` (data class):** Datos mínimos del sitio para el radar; campos: `id: Int`, `name: String`, `latitude: Double`, `longitude: Double`, `categoryName: String`.
-- **Bloque 4 — `HapticPattern` (enum class):** Patrones de vibración disponibles: `SINGLE_PULSE` (llegada), `SLOW_TRIPLE` (proximidad lejana), `FAST_TRIPLE` (proximidad cercana), `LONG_BUZZ` (alerta crítica).
+        <activity
+            android:name=".presentation.MainActivity"
+            android:exported="true"
+            android:theme="@android:style/Theme.DeviceDefault">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
 
----
-
-### `domain/repository/RadarRepository.kt`
-
-- **Bloque 1 — KDoc:** Descripción: interfaz del repositorio de radar; define el contrato de acceso a datos para el módulo wear; autores y fecha.
-- **Bloque 2 — `getNearestSite(lat, lon)`:** Función suspendida; recibe coordenadas del usuario; retorna el `SiteTarget?` más cercano calculado por la capa de datos.
-- **Bloque 3 — `getActiveSites()`:** Retorna un `Flow<List<SiteTarget>>` con todos los sitios históricos activos; se observa desde el `RadarViewModel`.
-- **Bloque 4 — `syncRouteFromPhone(routeJson)`:** Función suspendida; recibe el JSON de la ruta enviada por el teléfono; parsea y almacena las paradas en memoria o Room; retorna `Unit`.
-- **Bloque 5 — `updateRadarTarget(site)`:** Actualiza el sitio objetivo actual del radar; se llama cuando el usuario selecciona un sitio desde el teléfono.
-
----
-
-### `data/haptics/HapticController.kt`
-
-- **Bloque 1 — KDoc:** Descripción: controlador del motor háptico del reloj; centraliza todos los patrones de vibración de la app; autores y fecha.
-- **Bloque 2 — Constructor:** Recibe `context: Context`; obtiene el `Vibrator` o `VibratorManager` según el API level del dispositivo (usar `VibratorManager` en API 31+, `Vibrator` en API 30).
-- **Bloque 3 — `vibrate(pattern)`:** Recibe un `HapticPattern`; ejecuta el patrón de vibración correspondiente usando `VibrationEffect.createWaveform` o `VibrationEffect.createOneShot` según el patrón; no bloquea el hilo principal.
-- **Bloque 4 — `cancel()`:** Detiene cualquier vibración en curso; llamar desde el `RadarViewModel` al salir de la pantalla.
-
----
-
-### `data/repository/RadarRepositoryImpl.kt`
-
-- **Bloque 1 — KDoc:** Descripción: implementación del `RadarRepository`; carga sitios de `EcoGuiaRepository` (shared), calcula distancias y azimut; autores y fecha.
-- **Bloque 2 — Constructor:** Recibe `sharedRepo: EcoGuiaRepository` (del módulo shared) y `context: Context`.
-- **Bloque 3 — `getActiveSites()`:** Llama a `sharedRepo.getHistoricalSites()`; mapea los resultados al modelo `SiteTarget` del módulo wear; retorna como `Flow`.
-- **Bloque 4 — `getNearestSite(lat, lon)`:** Obtiene la lista de sitios; para cada uno calcula la distancia haversine entre la posición del usuario y el sitio; retorna el sitio con la distancia mínima.
-- **Bloque 5 — `calculateHaversineDistance(lat1, lon1, lat2, lon2)`:** Función privada de cálculo de distancia; fórmula haversine estándar; retorna la distancia en metros como `Float`.
-- **Bloque 6 — `calculateAzimuth(userLat, userLon, targetLat, targetLon)`:** Calcula el ángulo en grados (0–360°) desde la posición del usuario hacia el sitio objetivo usando `atan2`; retorna `Float`.
-
----
-
-### `data/repository/extensions/RadarAlertsExt.kt`
-
-- **Bloque 1 — KDoc:** Descripción: extensiones de `RadarRepositoryImpl` para la lógica de alertas de proximidad; autores y fecha.
-- **Bloque 2 — `RadarRepositoryImpl.shouldTriggerAlert(distanceMeters)`:** Función de extensión; evalúa si la distancia actual amerita una alerta; umbrales definidos: <500m = alerta leve, <100m = alerta media, <20m = alerta crítica; retorna un `AlertLevel` enum.
-- **Bloque 3 — `RadarRepositoryImpl.getHapticPatternForDistance(distanceMeters)`:** Mapea la distancia al patrón háptico correspondiente usando los `AlertLevel` y `HapticPattern` definidos en `RadarModels.kt`; retorna `HapticPattern`.
+        <!-- Servicio receptor de eventos de la capa de datos Wearable -->
+        <service
+            android:name=".data.wear.EcoWearMessageService"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.google.android.gms.wearable.BIND_LISTENER" />
+            </intent-filter>
+        </service>
+    </application>
+</manifest>
+```
 
 ---
 
-### `data/repository/extensions/RadarAutoSearchExt.kt`
+## FASE 2: Capa de Dominio (Domain Layer)
 
-- **Bloque 1 — KDoc:** Descripción: extensiones para la búsqueda automática del sitio más cercano en segundo plano; autores y fecha.
-- **Bloque 2 — `RadarRepositoryImpl.startAutoSearch(locationFlow)`:** Función de extensión que recibe un `Flow<Location>`; para cada nueva ubicación del usuario llama a `getNearestSite()`; si el resultado cambia respecto al objetivo anterior, notifica al `RadarViewModel` vía `SharedFlow`.
-- **Bloque 3 — `RadarRepositoryImpl.stopAutoSearch()`:** Cancela el job de búsqueda automática en curso.
+### Paso 2.1: Modelos de Datos del Radar (`domain/model/RadarModels.kt`)
 
----
+La capa de dominio define el estado completo de la interfaz de usuario (`RadarUiState`), los objetivos de radar (`RadarTarget`), las paradas de ruta (`Waypoint`, `RouteSummary`) y los modos operativos (`RadarMode`, `HapticStrength`).
 
-### `data/repository/extensions/RadarRouteSyncExt.kt`
+```kotlin
+enum class TargetType {
+    HISTORIC_SITE,
+    GEO_DROP
+}
 
-- **Bloque 1 — KDoc:** Descripción: extensiones para sincronizar la ruta activa recibida del teléfono; autores y fecha.
-- **Bloque 2 — `RadarRepositoryImpl.syncRouteFromPhone(routeJson)`:** Implementación del método de la interfaz; parsea el JSON usando Kotlinx Serialization; almacena la lista de `SiteTarget` de la ruta en memoria; emite las paradas como `Flow` para que el `RadarViewModel` las consuma.
-- **Bloque 3 — `RadarRepositoryImpl.getNextRouteStop(currentIndex)`:** Retorna el siguiente `SiteTarget` en la lista de paradas de la ruta activa; retorna `null` si no hay más paradas.
-- **Bloque 4 — `RadarRepositoryImpl.markStopReached(stopIndex)`:** Actualiza el índice actual de la ruta; envía una notificación al teléfono via `PhoneMessageClient` informando el progreso.
+enum class RadarMode {
+    PAUSED,
+    SCANNING,
+    FOLLOWING_ARROW,
+    ARRIVED
+}
 
----
+enum class HapticStrength {
+    LOW,
+    MEDIUM,
+    HIGH
+}
 
-### `data/wear/LocationHelper.kt`
+data class RadarTarget(
+    val id: String,
+    val title: String,
+    val subtitle: String,
+    val type: TargetType,
+    val distanceMeters: Int,
+    val bearingDegrees: Float,
+    val latitude: Double? = null,
+    val longitude: Double? = null,
+    val isAutoTarget: Boolean = false
+)
 
-- **Bloque 1 — KDoc:** Descripción: helper para obtener la ubicación GPS del reloj; autores y fecha.
-- **Bloque 2 — Constructor:** Recibe `context: Context`; inicializa `FusedLocationProviderClient`.
-- **Bloque 3 — `getCurrentLocation()`:** Función suspendida; verifica el permiso `ACCESS_FINE_LOCATION`; llama a `fusedLocationClient.getCurrentLocation(Priority.HIGH_ACCURACY, null).await()`; retorna `Location?`.
-- **Bloque 4 — `getLocationFlow()`:** Retorna un `Flow<Location>` que emite la ubicación actualizada cada 3 segundos usando `locationFlow` del Play Services; usado por `RadarAutoSearchExt`.
+data class RouteSummary(
+    val title: String,
+    val visitedStops: Int,
+    val totalStops: Int,
+    val nextStop: String,
+    val estimatedMinutes: Int,
+    val waypoints: List<Waypoint> = emptyList()
+)
 
----
+data class Waypoint(
+    val id: String,
+    val title: String,
+    val latitude: Double,
+    val longitude: Double,
+    val isReached: Boolean = false
+)
 
-### `data/wear/SensorHelper.kt`
+data class HapticSettings(
+    val enabled: Boolean = true,
+    val strength: HapticStrength = HapticStrength.MEDIUM
+)
 
-- **Bloque 1 — KDoc:** Descripción: helper para leer los sensores de orientación del reloj; autores y fecha.
-- **Bloque 2 — Constructor:** Recibe `context: Context`; obtiene el `SensorManager`; referencia al sensor `TYPE_ROTATION_VECTOR`.
-- **Bloque 3 — `getAzimuthFlow()`:** Retorna un `Flow<Float>` que emite el azimut calculado (0–360°); internamente registra un `SensorEventListener` y usa `SensorManager.getRotationMatrixFromVector` + `SensorManager.getOrientation` para extraer el azimut; convierte radianes a grados.
-- **Bloque 4 — `unregister()`:** Desregistra el `SensorEventListener`; llamar en `onDestroy` de `MainActivity`.
+data class AlertEntity(
+    val id: String,
+    val message: String,
+    val type: String,
+    val timestamp: Long
+)
 
----
-
-### `data/wear/EcoWearMessageService.kt`
-
-- **Bloque 1 — KDoc:** Descripción: `WearableListenerService` que recibe mensajes del teléfono móvil; autores y fecha.
-- **Bloque 2 — `onMessageReceived(messageEvent)`:** Sobreescribe el método de `WearableListenerService`; usa `when(messageEvent.path)` para manejar cada tipo de mensaje:
-  - Path `/eco-site-selected`: parsea el JSON del sitio y llama a `radarRepo.updateRadarTarget()`.
-  - Path `/eco-route-sync`: parsea el JSON de la ruta y llama a `radarRepo.syncRouteFromPhone()`.
-  - Path `/eco-disconnect`: limpia el estado del radar al desconectarse el teléfono.
-- **Bloque 3 — Instanciación del repositorio:** Obtener `EcoGuiaDatabase` y `EcoGuiaRepositoryImpl` de `shared`; construir `RadarRepositoryImpl`; dado que el servicio no tiene un ViewModel, acceder directamente al repositorio.
-
----
-
-### `data/wear/WearMessageListener.kt`
-
-- **Bloque 1 — KDoc:** Descripción: clase auxiliar que procesa los mensajes recibidos del teléfono; separa la lógica del `EcoWearMessageService`; autores y fecha.
-- **Bloque 2 — `processMessage(path, payload)`:** Recibe el path y los bytes del mensaje; los parsea como JSON; retorna un `WearMessage` (sealed class) con los tipos `SiteSelected`, `RouteSynced`, `Disconnect`.
-- **Bloque 3 — `WearMessage` (sealed class):** Define los tipos de mensajes posibles con sus datos parseados; ubicado en el mismo archivo o en `RadarModels.kt`.
-
----
-
-### `data/wear/PhoneMessageClient.kt`
-
-- **Bloque 1 — KDoc:** Descripción: cliente para enviar mensajes desde el reloj al teléfono; autores y fecha.
-- **Bloque 2 — `notifyArrival(context, siteId)`:** Función suspendida; obtiene los nodos conectados con `Wearable.getNodeClient(context).connectedNodes.await()`; para cada nodo envía el mensaje al path `/wear-arrival` con el `siteId` como payload.
-- **Bloque 3 — `requestNearestSite(context, lat, lon)`:** Envía al teléfono la ubicación actual del reloj para que el teléfono calcule y responda con el sitio más cercano; path `/wear-location-update`.
-
----
-
-### `presentation/MainActivity.kt`
-
-- **Bloque 1 — KDoc:** Descripción: actividad principal del módulo Wear OS; punto de entrada de la app; inicializa los helpers y el grafo de navegación; autores y fecha.
-- **Bloque 2 — `MainActivity : ComponentActivity(), MessageClient.OnMessageReceivedListener`:** Hereda de `ComponentActivity` e implementa `OnMessageReceivedListener` para recibir mensajes del teléfono directamente en la actividad.
-- **Bloque 3 — Campos de la actividad:** `messageListener: WearMessageListener`, `locationHelper: LocationHelper`, `sensorHelper: SensorHelper`; declarados como `lateinit var`.
-- **Bloque 4 — `onCreate`:** Llamar a `installSplashScreen()` antes de `super.onCreate`; instanciar los helpers; registrar `Wearable.getMessageClient(this).addListener(this)`; llamar a `setContent` con `EcoGuiaWearTheme` conteniendo `EcoGuiaWearNavGraph`.
-- **Bloque 5 — `onResume` / `onPause`:** Registrar y desregistrar el `MessageClient.OnMessageReceivedListener` para evitar fugas de memoria.
-- **Bloque 6 — `onDestroy`:** Llamar a `sensorHelper.unregister()`; cancelar cualquier corrutina activa.
-- **Bloque 7 — `onMessageReceived(messageEvent)`:** Implementación de la interfaz; delega a `messageListener.processMessage(messageEvent.path, messageEvent.data)`; actualiza el `RadarViewModel` con el resultado.
-
----
-
-### `presentation/RadarViewModel.kt`
-
-- **Bloque 1 — KDoc:** Descripción: ViewModel central del módulo wear; gestiona el estado del radar, la brújula y las alertas hápticas; autores y fecha.
-- **Bloque 2 — Constructor:** Recibe `RadarRepository`, `HapticController`, `LocationHelper`, `SensorHelper`.
-- **Bloque 3 — Estado:** `_radarState: MutableStateFlow<RadarState>` expuesto como `StateFlow<RadarState>`; representa el estado completo del radar observable desde la UI.
-- **Bloque 4 — `startRadar()`:** Lanza corrutinas en `viewModelScope` para: (a) observar `LocationHelper.getLocationFlow()` y actualizar distancia y azimut; (b) observar `SensorHelper.getAzimuthFlow()` y actualizar el azimut en `_radarState`; (c) verificar alertas hápticas con `radarRepo.shouldTriggerAlert(distance)` en cada actualización de ubicación.
-- **Bloque 5 — `stopRadar()`:** Cancela el job activo del radar; llama a `hapticController.cancel()`.
-- **Bloque 6 — `selectSite(site)`:** Actualiza `_radarState` con el nuevo `targetSite`; inicia el cálculo de distancia y azimut hacia ese sitio.
-- **Bloque 7 — `triggerHaptic(pattern)`:** Llama a `hapticController.vibrate(pattern)` en el dispatcher apropiado.
-- **Bloque 8 — `onRouteReceived(routeJson)`:** Llama a `radarRepo.syncRouteFromPhone(routeJson)`; actualiza el estado para mostrar el resumen de ruta.
-
----
-
-### `presentation/components/EcoWearScaffold.kt`
-
-- **Bloque 1 — KDoc:** Descripción: Scaffold base para todas las pantallas del reloj; autores y fecha.
-- **Bloque 2 — `EcoWearScaffold` composable:** Recibe `content: @Composable () → Unit`; usa `Scaffold` de Wear Compose; incluye `TimeText` en la parte superior (muestra la hora del reloj); aplica fondo oscuro (#000000) adecuado para pantallas AMOLED circulares; envuelve el contenido con `ScalingLazyColumnDefaults` si aplica.
-
----
-
-### `presentation/components/CompassArrow.kt`
-
-- **Bloque 1 — KDoc:** Descripción: flecha animada de brújula que apunta hacia el sitio objetivo; autores y fecha.
-- **Bloque 2 — `CompassArrow` composable:** Recibe `azimuth: Float` (ángulo en grados respecto al norte, 0–360°); usa `animateFloatAsState` con `tween` para suavizar la rotación; dibuja la flecha usando `Canvas` + `DrawScope.rotate(azimuth)` o con un `Image` + `Modifier.rotate(azimuth)`; la flecha apunta hacia el norte (0°) en su estado base y rota según el azimut recibido.
-
----
-
-### `presentation/components/CircularStatus.kt`
-
-- **Bloque 1 — KDoc:** Descripción: indicador circular de estado de conexión y GPS; autores y fecha.
-- **Bloque 2 — `CircularStatus` composable:** Recibe `isConnected: Boolean` y `hasGps: Boolean`; muestra un círculo pequeño en la esquina de la pantalla; verde si ambos están activos, amarillo si solo uno, rojo si ninguno; incluye un tooltip al pulsar con el detalle del estado.
+data class RadarUiState(
+    val isLinkedToPhone: Boolean = false,
+    val isStealthMode: Boolean = false,
+    val mode: RadarMode = RadarMode.PAUSED,
+    val isGpsEnabled: Boolean = true,
+    val isCameraReady: Boolean = true,
+    val alerts: List<AlertEntity> = emptyList(),
+    val currentHeading: Float = 0f,
+    val target: RadarTarget = RadarTarget(
+        id = "none",
+        title = "Esperando objetivo",
+        subtitle = "Selecciona un sitio en el móvil",
+        type = TargetType.HISTORIC_SITE,
+        distanceMeters = 0,
+        bearingDegrees = 0f
+    ),
+    val routeSummary: RouteSummary = RouteSummary(
+        title = "Sin ruta activa",
+        visitedStops = 0,
+        totalStops = 0,
+        nextStop = "Esperando ruta desde móvil",
+        estimatedMinutes = 0,
+        waypoints = emptyList()
+    ),
+    val hapticSettings: HapticSettings = HapticSettings(),
+    val lastAlert: String = "Radar listo",
+    val isRouteCompleted: Boolean = false,
+    val nearbyAutoTargets: List<RadarTarget> = emptyList(),
+    val selectedAutoIndex: Int = 0
+)
+```
 
 ---
 
-### `presentation/navigation/EcoGuiaWearNavGraph.kt`
+### Paso 2.2: Contrato del Repositorio (`domain/repository/RadarRepository.kt`)
 
-- **Bloque 1 — KDoc:** Descripción: grafo de navegación completo del módulo Wear OS usando `SwipeDismissableNavHost`; autores y fecha.
-- **Bloque 2 — `WearRoutes` object:** Define las rutas de navegación como constantes `String`: `PAIRING`, `RADAR`, `COMPASS`, `ALERTS`, `HAPTIC_SETTINGS`, `ROUTE_SUMMARY`, `ROUTE_COMPLETED`, `ARRIVAL`, `SITE_NEARBY`, `PROXIMITY_ALERT`, `STEALTH`.
-- **Bloque 3 — `EcoGuiaWearNavGraph` composable:** Recibe el `RadarViewModel`; usa `rememberSwipeDismissableNavController()`; el `startDestination` es `PAIRING` si no hay conexión con el teléfono, o `RADAR` si ya está vinculado; el deslizamiento hacia la derecha activa el `SwipeDismissableNavHost` built-in para retroceder.
-- **Bloque 4 — Rutas declaradas:** Un `composable(WearRoutes.RADAR)` por cada pantalla; las pantallas de alerta (`PROXIMITY_ALERT`, `SITE_NEARBY`, `ARRIVAL`) se navegan programáticamente desde `RadarViewModel` al detectar la proximidad.
+Define las operaciones del radar, flujos reactivos de estado y métodos de sincronización con el teléfono móvil.
 
----
+```kotlin
+interface RadarRepository {
+    val radarState: StateFlow<RadarUiState>
 
-### `presentation/navigation/RadarPagerScreen.kt`
-
-- **Bloque 1 — KDoc:** Descripción: pantalla paginadora que permite deslizarse horizontalmente entre `RadarScreen` y `CompassScreen`; autores y fecha.
-- **Bloque 2 — `RadarPagerScreen` composable:** Recibe el `RadarViewModel`; usa `HorizontalPager` de Wear Compose con 2 páginas: índice 0 = `RadarScreen`, índice 1 = `CompassScreen`; incluye `HorizontalPageIndicator` en la parte inferior para que el usuario sepa en qué página está.
-
----
-
-### Pantallas (`presentation/screens/`)
-
-Cada pantalla del reloj sigue la misma estructura de archivo:
-
-| Sección | Indicación |
-|---------|-----------|
-| **KDoc del archivo** | Nombre, descripción de la pantalla, autores, fecha |
-| **`@Composable fun NombreScreen`** | Recibe `viewModel: RadarViewModel` y `navController` |
-| **Estado observable** | `val radarState by viewModel.radarState.collectAsState()` |
-| **`EcoWearScaffold`** | Envuelve todo el contenido de la pantalla |
-| **Contenido** | Layout circular adaptado a pantalla redonda usando `ScalingLazyColumn` o `Box` centrado |
-| **Navegación** | `LaunchedEffect` con condiciones del `radarState` para navegar automáticamente |
-
-Pantallas y su función principal:
-
-| Archivo | Función principal de la pantalla |
-|---------|----------------------------------|
-| `RadarScreen.kt` | Pantalla principal: muestra la distancia en metros al sitio objetivo, el nombre del sitio y un indicador visual circular de proximidad; el círculo se contrae conforme el usuario se acerca |
-| `CompassScreen.kt` | Muestra el componente `CompassArrow` rotando en tiempo real según el azimut del `RadarViewModel`; incluye el nombre del sitio objetivo en la parte inferior |
-| `AlertsScreen.kt` | Lista de alertas de proximidad activas con `ScalingLazyColumn`; cada ítem muestra el nombre del sitio, la distancia y la hora de la alerta; permite desactivar alertas individuales |
-| `ArrivalScreen.kt` | Pantalla de confirmación visual al llegar al sitio (distancia < 20m); animación de celebración; botón "Siguiente parada" si hay ruta activa |
-| `HapticSettingsScreen.kt` | Controles de intensidad háptica (Baja/Media/Alta) con sliders circulares de Wear Compose; toggle para activar/desactivar completamente la vibración |
-| `PairingScreen.kt` | Pantalla de espera mientras se establece la conexión con el teléfono; muestra animación de búsqueda; al conectar navega automáticamente a `RadarScreen` |
-| `ProximityAlertScreen.kt` | Alerta inmediata al cruzar el umbral de 100m; vibra con `SLOW_TRIPLE`; muestra el nombre del sitio y la distancia; botón "Ver en radar" navega a `RadarScreen` |
-| `RouteCompletedWearScreen.kt` | Pantalla de celebración al completar todas las paradas de la ruta; muestra el tiempo total, los sitios visitados y un mensaje de felicitación |
-| `RouteSummaryScreen.kt` | Resumen de la ruta activa: nombre, total de paradas, parada actual (índice), siguiente sitio con su distancia |
-| `SiteNearbyScreen.kt` | Notificación pequeña de sitio muy cercano (<30m); vibra con `FAST_TRIPLE`; diseño compacto para no interrumpir demasiado al usuario |
-| `StealthRadarScreen.kt` | Radar en modo discreto: fondo completamente negro, sin texto visible; solo la vibración háptica indica la proximidad; activo cuando el usuario quiere usar el radar sin distracciones visuales |
-
-<br>
+    fun setLinkedToPhone(linked: Boolean)
+    fun startRadar()
+    fun toggleRadar()
+    fun toggleStealthMode()
+    fun setStealthMode(enabled: Boolean)
+    fun setAlerts(alerts: List<AlertEntity>)
+    fun setPermissions(gps: Boolean, camera: Boolean)
+    fun setDistance(distance: Int)
+    fun setRouteProgress(visited: Int, total: Int)
+    fun simulateApproach()
+    fun resetDemo()
+    fun completeArrival()
+    fun updateHaptics(enabled: Boolean, strength: HapticStrength)
+    fun refreshNearbyTargets()
+    fun setSyncTarget(id: String, name: String, lat: Double, lng: Double)
+    fun setSyncRoute(title: String, waypoints: List<Waypoint>)
+    fun clearActiveRoute()
+    fun markRouteCompleted()
+    fun dismissRouteCompleted()
+    fun selectNextAutoTarget()
+    fun selectPreviousAutoTarget()
+    fun deleteAlert(id: String)
+    fun clearAllAlerts()
+    fun updateCurrentLocation(lat: Double, lng: Double)
+    fun updateHeading(heading: Float)
+}
+```
 
 ---
 
-## 🔗 Integración con `shared` y `mobile`
+## FASE 3: Capa de Datos y Sensores del Reloj (Data Layer)
 
-| Componente `wear` | Componente relacionado | Propósito |
-|-------------------|----------------------|-----------|
-| `RadarRepositoryImpl` | `EcoGuiaRepository` (shared) | Cargar sitios históricos desde Neon DB |
-| `EcoWearMessageService` | `WearMessageClient` (mobile) | Recibir el sitio seleccionado desde el teléfono |
-| `PhoneMessageClient` | `MobileWearListenerService` (mobile) | Enviar notificaciones de llegada al teléfono |
-| `RadarRouteSyncExt` | `RouteViewModel` (mobile) | Sincronizar la ruta activa enviada por el teléfono |
+### Paso 3.1: Controlador Háptico (`data/haptics/HapticController.kt`)
 
-**Path de mensajes Wear ↔ Mobile:**
+Gestiona el actuador vibratorio del reloj mediante `Vibrator` o `VibratorManager` (Android 12+), ofreciendo patrones de pulsación táctil según el tipo de evento y la intensidad configurada.
 
-| Path | Dirección | Contenido |
-|------|-----------|-----------|
-| `/eco-site-selected` | Mobile → Wear | JSON del `HistoricalSite` seleccionado en el teléfono |
-| `/eco-route-sync` | Mobile → Wear | JSON de la ruta activa con sus paradas |
-| `/eco-disconnect` | Mobile → Wear | Señal de desconexión; limpiar estado del radar |
-| `/wear-arrival` | Wear → Mobile | `siteId` del sitio al que llegó el usuario |
-| `/wear-location-update` | Wear → Mobile | Coordenadas GPS actuales del reloj |
+```kotlin
+enum class HapticPulse {
+    LINKED,
+    TOGGLE,
+    NEARBY,
+    ARRIVED
+}
 
-<br>
+class HapticController(context: Context) {
+    private val appContext = context.applicationContext
+
+    fun pulse(type: HapticPulse, strength: HapticStrength) {
+        val vibrator = getVibrator()
+        if (!vibrator.hasVibrator()) return
+
+        val duration = when (type) {
+            HapticPulse.LINKED -> 80L
+            HapticPulse.TOGGLE -> 50L
+            HapticPulse.NEARBY -> 120L
+            HapticPulse.ARRIVED -> 200L
+        }
+        val amplitude = when (strength) {
+            HapticStrength.LOW -> 80
+            HapticStrength.MEDIUM -> 170
+            HapticStrength.HIGH -> 255
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            vibrator.vibrate(
+                VibrationEffect.createOneShot(duration, amplitude)
+            )
+        } else {
+            @Suppress("DEPRECATION")
+            vibrator.vibrate(duration)
+        }
+    }
+
+    private fun getVibrator(): Vibrator {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val manager = appContext.getSystemService(VibratorManager::class.java)
+            manager.defaultVibrator
+        } else {
+            @Suppress("DEPRECATION")
+            appContext.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+        }
+    }
+}
+```
 
 ---
 
-## 🧑‍💻 Desarrolladores
+### Paso 3.2: Implementación del Repositorio (`data/repository/RadarRepositoryImpl.kt`)
 
-| Nombre | Rol |
-|--------|-----|
-| Zahir Andrés Rodríguez Mora | Desarrollador Principal |
-| Cesar Enrique Garay García | Desarrollador |
+Coordina la persistencia en Room (`EcoGuiaDatabase`), el repositorio remoto (`EcoGuiaRepositoryImpl`), el controlador háptico y el filtro pasabajas para suavizar la rotación del compás.
 
-**Institución:** Universidad Tecnológica del Norte de Guanajuato (UTNG) — Grupo GIDS6092
+```kotlin
+class RadarRepositoryImpl(context: Context) : RadarRepository {
+    internal val db = EcoGuiaDatabase.getDatabase(context)
+    internal val dao = db.dao()
+    internal val remoteRepository = EcoGuiaRepositoryImpl()
+    internal val hapticController = HapticController(context)
+    internal val scope = CoroutineScope(Dispatchers.IO)
+
+    internal val _radarState = MutableStateFlow(RadarUiState())
+    override val radarState: StateFlow<RadarUiState> = _radarState.asStateFlow()
+
+    internal var currentLat: Double = 0.0
+    internal var currentLng: Double = 0.0
+    private var smoothedHeading: Float = 0f
+
+    init {
+        initStealthModeListener()
+        initAlertsListener()
+    }
+
+    override fun updateHeading(heading: Float) {
+        val diff = Math.abs(heading - smoothedHeading)
+        if (diff > EcoGuiaConfig.COMPASS_HEADING_THRESHOLD_DEGREES) {
+            val factor = EcoGuiaConfig.COMPASS_SMOOTHING_FACTOR
+            smoothedHeading += factor * (heading - smoothedHeading)
+            _radarState.update { it.copy(currentHeading = smoothedHeading) }
+        }
+    }
+}
+```
+
+---
+
+### Paso 3.3: Extensiones Modulares de Lógica (`data/repository/extensions/`)
+
+Para mantener una arquitectura limpia y desacoplada, la lógica especializada se organiza en tres funciones de extensión:
+
+1. **`RadarAlertsExt.kt`:** Administra el almacenamiento persistente de alertas en Room, la purga automática de notificaciones de más de 3 horas y la emisión de avisos de proximidad con throttle de 30 minutos por sitio.
+2. **`RadarAutoSearchExt.kt`:** Consulta los sitios turísticos en SQLite o Neon PostgreSQL y selecciona automáticamente el objetivo más cercano calculando la distancia Haversine y el ángulo de rumbo geodésico (*bearing*).
+3. **`RadarRouteSyncExt.kt`:** Sincroniza rutas guiadas con múltiples waypoints, actualiza el progreso paso a paso y emite vibraciones hápticas y notificaciones de llegada (`ARRIVED`) al acercarse a menos de 30 metros del hito activo.
+
+---
+
+### Paso 3.4: Manejo de Sensores y FusedLocation (`data/wear/`)
+
+* **`LocationHelper.kt`:** Inicializa `FusedLocationProviderClient` solicitando ubicaciones de alta precisión (`Priority.PRIORITY_HIGH_ACCURACY`) con balance de consumo de batería.
+* **`SensorHelper.kt`:** Registra el sensor `TYPE_ROTATION_VECTOR` y calcula la matriz de orientación del dispositivo respecto al campo magnético terrestre para generar el azimut continuo.
+
+---
+
+### Paso 3.5: Comunicación Wearable Data Layer (`data/wear/`)
+
+* **`PhoneMessageClient.kt`:** Envía mensajes RPC al teléfono emparejado mediante `Wearable.getMessageClient()` (e.g. `/wear-arrival`, `/wear-location-update`).
+* **`WearMessageListener.kt`:** Procesa los mensajes recibidos desde el teléfono decodificando payloads JSON (rutas completas `/eco-route-sync`, objetivo seleccionado `/eco-site-selected`, o alerta de proximidad `/eco-proximity-alert`).
+* **`EcoWearMessageService.kt`:** Hereda de `WearableListenerService` permitiendo despertar la app de reloj y registrar datos recibidos aun cuando la pantalla se encuentre suspendida.
+
+---
+
+## FASE 4: Capa de Presentación (Presentation Layer & UI)
+
+### Paso 4.1: Sistema de Diseño y Tokens Wear (`presentation/theme/EcoGuiaWearTheme.kt`)
+
+La paleta cromática utiliza negro profundo (`#050B10`) para optimizar el consumo en displays AMOLED, con acentos en Jade colonial (`#26A69A`) y Oro histórico (`#C5A059`).
+
+```kotlin
+object EcoGuiaColors {
+    val Background = Color(0xFF050B10)
+    val Surface = Color(0xFF0E2A3F)
+    val DeepBlue = Color(0xFF05111A)
+    val Gold = Color(0xFFC5A059)
+    val Jade = Color(0xFF26A69A)
+    val Text = Color(0xFFF7FAFC)
+    val Muted = Color(0xFFB8C6D1)
+    val Alert = Color(0xFFE4B84A)
+}
+
+@Composable
+fun EcoGuiaWearTheme(content: @Composable () -> Unit) {
+    val colorScheme = ColorScheme(
+        primary = EcoGuiaColors.Jade,
+        onPrimary = EcoGuiaColors.Background,
+        secondary = EcoGuiaColors.Gold,
+        onSecondary = EcoGuiaColors.Background,
+        background = EcoGuiaColors.Background,
+        onBackground = EcoGuiaColors.Text,
+        surfaceContainer = EcoGuiaColors.Surface,
+        onSurface = EcoGuiaColors.Text,
+        error = EcoGuiaColors.Alert,
+        onError = EcoGuiaColors.Background
+    )
+
+    MaterialTheme(
+        colorScheme = colorScheme,
+        content = content
+    )
+}
+```
+
+---
+
+### Paso 4.2: Componentes Reutilizables de Reloj (`presentation/components/`)
+
+1. **`EcoWearScaffold.kt`:** Envoltorio base para pantallas de reloj que integra `AppScaffold`, `TimeText` y `ScalingLazyColumn` con soporte de scroll rotatorio para la corona física.
+2. **`CompassArrow.kt`:** Renderiza la aguja de navegación apuntando dinámicamente según la diferencia angular entre la orientación del reloj y el azimut del objetivo histórico.
+3. **`CircularStatus.kt`:** Indicador circular de progreso que ilustra el porcentaje de avance de la ruta o la distancia remanente hacia el destino.
+
+---
+
+### Paso 4.3: State Management con `RadarViewModel.kt`
+
+El `RadarViewModel` expone el estado inmutable `radarState` y conecta la interacción de los composables con las operaciones del `RadarRepository`.
+
+```kotlin
+class RadarViewModel(
+    private val repository: RadarRepository,
+    private val phoneMessageClient: PhoneMessageClient
+) : ViewModel() {
+
+    val state: StateFlow<RadarUiState> = repository.radarState
+
+    fun toggleRadar() = repository.toggleRadar()
+    fun toggleStealthMode() = repository.toggleStealthMode()
+    fun updateHaptics(enabled: Boolean, strength: HapticStrength = HapticStrength.MEDIUM) =
+        repository.updateHaptics(enabled, strength)
+    fun selectNextAutoTarget() = repository.selectNextAutoTarget()
+    fun selectPreviousAutoTarget() = repository.selectPreviousAutoTarget()
+    fun completeArrival() = repository.completeArrival()
+    fun dismissRouteCompleted() = repository.dismissRouteCompleted()
+    fun deleteAlert(id: String) = repository.deleteAlert(id)
+    fun clearAllAlerts() = repository.clearAllAlerts()
+
+    fun openPhoneCamera() {
+        phoneMessageClient.notifyOpenPhoneCamera()
+    }
+}
+```
+
+---
+
+### Paso 4.4: Navegación y Paginador Horizontal (`presentation/navigation/`)
+
+La aplicación implementa navegación por gestos con `SwipeDismissableNavHost` y un carrusel táctil de 4 páginas (`HorizontalPager`):
+
+```kotlin
+@Composable
+fun RadarPagerScreen(
+    viewModel: RadarViewModel,
+    onNavigateToPairing: () -> Unit,
+    onNavigateToAlerts: () -> Unit
+) {
+    val state by viewModel.state.collectAsState()
+    val isRouteActive = state.routeSummary.waypoints.isNotEmpty()
+    val pageCount = if (isRouteActive) 4 else 3
+    val pagerState = rememberPagerState(pageCount = { pageCount })
+    val scope = rememberCoroutineScope()
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxSize()
+        ) { page ->
+            when (page) {
+                0 -> StealthRadarScreen(state = state, onToggleStealth = viewModel::toggleStealthMode, ...)
+                1 -> RadarScreen(state = state, onToggleRadar = viewModel::toggleRadar, ...)
+                2 -> CompassScreen(state = state, ...)
+                3 -> if (isRouteActive) RouteSummaryScreen(state = state, ...)
+            }
+        }
+
+        HorizontalPageIndicator(
+            pageIndicatorState = object : PageIndicatorState {
+                override val pageCount: Int = pageCount
+                override val pageOffset: Float = pagerState.currentPageOffsetFraction
+                override val selectedPage: Int = pagerState.currentPage
+            },
+            modifier = Modifier.align(Alignment.BottomCenter)
+        )
+    }
+}
+```
+
+---
+
+### Paso 4.5: Catálogo de Pantallas Wear (`presentation/screens/`)
+
+| Pantalla | Archivo | Propósito y Función |
+|---|---|---|
+| **Pairing** | `PairingScreen.kt` | Diagnóstico de conexión inicial: estado de enlace con el smartphone, GPS y cámara. |
+| **Radar Principal** | `RadarScreen.kt` | Vista central del radar con aguja de rumbo, distancia en metros y selector de sitios cercanos. |
+| **Brújula** | `CompassScreen.kt` | Aguja ampliada con rotación en tiempo real para orientación direccional en caminatas. |
+| **Modo Discreto** | `StealthRadarScreen.kt` | Navegación a ciegas con pantalla atenuada y guía exclusiva por pulsos hápticos. |
+| **Historial de Alertas** | `AlertsScreen.kt` | Carrusel horizontal de notificaciones de sitios y geodrops con soporte de borrado. |
+| **Llegada** | `ArrivalScreen.kt` | Diálogo de llegada a un hito (0 m) con botón para activar visor AR en el teléfono. |
+| **Resumen de Ruta** | `RouteSummaryScreen.kt` | Indicador circular con progreso de paradas visitadas respecto al total (ej. 3/8). |
+| **Ruta Completada** | `RouteCompletedWearScreen.kt` | Diálogo modal de felicitación con trofeo al culminar todas las paradas del recorrido. |
+| **Ajustes Hápticos** | `HapticSettingsScreen.kt` | Selector de niveles de intensidad de vibración (Suave, Media, Alta). |
+| **Sitio Cercano** | `SiteNearbyScreen.kt` | Alerta compacta al ingresar al perímetro de un nuevo sitio patrimonial. |
+| **Alerta Proximidad** | `ProximityAlertScreen.kt` | Notificación interactiva con accesos rápidos para inspeccionar el punto de interés. |
+
+---
+
+### Paso 4.6: Actividad Principal (`presentation/MainActivity.kt`)
+
+`MainActivity` coordina el ciclo de vida del reloj, registra los listeners de sensores y Play Services Wearable, e inicializa el grafo de navegación `EcoGuiaWearNavGraph`.
+
+```kotlin
+class MainActivity : ComponentActivity() {
+
+    private lateinit var sensorHelper: SensorHelper
+    private lateinit var locationHelper: LocationHelper
+    private lateinit var phoneMessageClient: PhoneMessageClient
+    private lateinit var radarRepository: RadarRepository
+    private lateinit var radarViewModel: RadarViewModel
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        
+        sensorHelper = SensorHelper(this)
+        locationHelper = LocationHelper(this)
+        phoneMessageClient = PhoneMessageClient(this)
+        radarRepository = RadarRepositoryImpl(this)
+        radarViewModel = RadarViewModel(radarRepository, phoneMessageClient)
+
+        setContent {
+            EcoGuiaWearTheme {
+                EcoGuiaWearNavGraph(viewModel = radarViewModel)
+            }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        sensorHelper.startListening { heading ->
+            radarRepository.updateHeading(heading)
+        }
+        locationHelper.startLocationUpdates { lat, lng ->
+            radarRepository.updateCurrentLocation(lat, lng)
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        sensorHelper.stopListening()
+        locationHelper.stopLocationUpdates()
+    }
+}
+```
+
+---
+
+## FASE 5: Integración y Comunicación Multidispositivo
+
+### Canales de Comunicación Wearable Data Layer
+
+| Path de Mensaje | Origen ➔ Destino | Payload | Acción Ejecutada |
+|---|---|---|---|
+| `/eco-site-selected` | Mobile ➔ Wear | JSON con `id`, `nombre`, `lat`, `lng` | Establece el nuevo objetivo activo en el radar. |
+| `/eco-route-sync` | Mobile ➔ Wear | JSON con `title` y `waypoints[]` | Sincroniza la ruta turística guiada en el reloj. |
+| `/eco-proximity-alert` | Mobile ➔ Wear | String con mensaje de proximidad | Dispara alerta visual y vibración táctil en el reloj. |
+| `/wear-arrival` | Wear ➔ Mobile | `siteId` (String) | Notifica al teléfono la llegada física del usuario. |
+| `/wear-open-camera` | Wear ➔ Mobile | Empty / Ping | Solicita al teléfono iniciar la cámara AR de Geo-Drops. |
+| `/wear-location-update` | Wear ➔ Mobile | Latitud y Longitud | Comparte coordenadas precisas del reloj al teléfono. |
+
+---
+
+## Desarrolladores y Créditos
+
+* **Zahir Andrés Rodríguez Mora** — *Desarrollador Principal & Arquitectura Android*
+* **Cesar Enrique Garay García** — *Desarrollador & Integración Wear OS*
+
+**Institución:** Universidad Tecnológica del Norte de Guanajuato (UTNG) — *Ingeniería en Desarrollo y Gestión de Software*

@@ -1,11 +1,14 @@
 /**
- * Archivo: RadarRepositoryImpl.kt
- * Autor: EcoGuia Team
- * Fecha de última actualización: 2026-08-02
- * Descripción: Repositorio principal de datos para la aplicación Wear OS.
- * Implementa RadarRepository delegando responsabilidades complejas en extensiones modulares.
+ * Implementación principal del repositorio de navegación y radar de proximidad para Wear OS.
+ *
+ * Coordina la base de datos local SQLite/Room, la sincronización remota mediante [EcoGuiaRepositoryImpl],
+ * el motor de vibración háptica [HapticController] y el cálculo de rumbos y distancias mediante
+ * extensiones modulares.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
  */
-
 package mx.utng.ecoguiawear.data.repository
 
 import android.content.Context
@@ -24,6 +27,15 @@ import mx.utng.ecoguiawear.data.repository.extensions.*
 import mx.utng.ecoguiawear.domain.model.*
 import mx.utng.ecoguiawear.domain.repository.RadarRepository
 
+/**
+ * Repositorio de datos y lógica de radar en el reloj inteligente.
+ *
+ * @param context Contexto de la aplicación para inicializar Room y servicios de hardware.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 class RadarRepositoryImpl(context: Context) : RadarRepository {
 
     internal val db = EcoGuiaDatabase.getDatabase(context)

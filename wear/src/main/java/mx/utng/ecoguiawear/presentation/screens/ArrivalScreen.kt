@@ -1,3 +1,13 @@
+/**
+ * Pantalla de confirmación de llegada a un hito o monumento histórico en Wear OS.
+ *
+ * Muestra el indicador visual de 0 metros, mensaje de éxito y opciones para abrir el visor AR
+ * en el teléfono o continuar con la siguiente parada de la ruta.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 package mx.utng.ecoguiawear.presentation.screens
 
 import androidx.compose.foundation.layout.Spacer
@@ -24,6 +34,17 @@ import mx.utng.ecoguiawear.presentation.components.EcoWearScaffold
 import mx.utng.ecoguiawear.presentation.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.presentation.theme.EcoGuiaWearTheme
 
+/**
+ * Pantalla modal o de destino para eventos de arribo a destino.
+ *
+ * @param state Estado global reactivo del radar.
+ * @param onOpenPhone Callback para solicitar la apertura de la cámara en el teléfono.
+ * @param onContinue Callback para registrar la parada y avanzar de waypoint.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 @Composable
 fun ArrivalScreen(
     state: RadarUiState,
@@ -90,6 +111,7 @@ fun ArrivalScreen(
     }
 }
 
+/** Previsualización en el entorno de desarrollo Compose. */
 @Preview(device = Devices.WEAR_OS_SMALL_ROUND, showSystemUi = true)
 @Composable
 fun ArrivalScreenPreview() {

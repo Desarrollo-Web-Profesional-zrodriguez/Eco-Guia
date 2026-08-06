@@ -1,8 +1,13 @@
 /**
- * Archivo: RadarAlertsExt.kt
- * Descripción: Extensión para la gestión y purga de alertas en Room DB para el reloj.
+ * Extensiones del repositorio para la administración, persistencia y depuración de alertas en Room DB.
+ *
+ * Mantiene la reactividad del modo discreto y asegura que el historial de notificaciones
+ * de proximidad en el smartwatch se mantenga optimizado y libre de registros obsoletos (>3 horas).
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
  */
-
 package mx.utng.ecoguiawear.data.repository.extensions
 
 import kotlinx.coroutines.flow.update
@@ -10,6 +15,9 @@ import kotlinx.coroutines.launch
 import mx.utng.ecoguiawear.data.repository.RadarRepositoryImpl
 import mx.utng.ecoguiawear.domain.model.AlertEntity
 
+/**
+ * Inicializa el observador reactivo sobre la clave de configuración del modo discreto en Room DB.
+ */
 internal fun RadarRepositoryImpl.initStealthModeListener() {
     scope.launch {
         dao.getConfigFlow("stealth_mode").collect { config ->
@@ -19,6 +27,9 @@ internal fun RadarRepositoryImpl.initStealthModeListener() {
     }
 }
 
+/**
+ * Inicializa la escucha de alertas registradas en base de datos local y purga registros anteriores a 3 horas.
+ */
 internal fun RadarRepositoryImpl.initAlertsListener() {
     scope.launch {
         val threeHoursAgo = System.currentTimeMillis() - (3 * 3600 * 1000L)
@@ -43,6 +54,11 @@ internal fun RadarRepositoryImpl.initAlertsListener() {
     }
 }
 
+/**
+ * Guarda una colección de alertas de proximidad en la base de datos Room.
+ *
+ * @param alerts Lista de entidades [AlertEntity] a persistir.
+ */
 internal fun RadarRepositoryImpl.saveAlertsExt(alerts: List<AlertEntity>) {
     scope.launch {
         alerts.forEach { 
@@ -51,6 +67,11 @@ internal fun RadarRepositoryImpl.saveAlertsExt(alerts: List<AlertEntity>) {
     }
 }
 
+/**
+ * Elimina una alerta específica de la base de datos y del estado de la interfaz.
+ *
+ * @param id Identificador único de la alerta.
+ */
 internal fun RadarRepositoryImpl.deleteAlertExt(id: String) {
     scope.launch {
         try {
@@ -64,6 +85,9 @@ internal fun RadarRepositoryImpl.deleteAlertExt(id: String) {
     }
 }
 
+/**
+ * Purga todas las alertas almacenadas en el reloj.
+ */
 internal fun RadarRepositoryImpl.clearAllAlertsExt() {
     scope.launch {
         try {

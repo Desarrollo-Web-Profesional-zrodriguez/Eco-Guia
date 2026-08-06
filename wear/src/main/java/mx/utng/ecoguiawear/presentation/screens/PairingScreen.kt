@@ -1,3 +1,13 @@
+/**
+ * Pantalla inicial de verificación de estado y emparejamiento con el teléfono móvil en Wear OS.
+ *
+ * Muestra el estado de vinculación Bluetooth/Wearable, disponibilidad de permisos GPS y estado
+ * de la cámara/módulo AR del móvil.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 package mx.utng.ecoguiawear.presentation.screens
 
 import androidx.compose.foundation.background
@@ -36,6 +46,18 @@ import mx.utng.ecoguiawear.presentation.components.EcoWearScaffold
 import mx.utng.ecoguiawear.presentation.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.presentation.theme.EcoGuiaWearTheme
 
+/**
+ * Pantalla de conexión y estado inicial con el smartphone.
+ *
+ * @param state Estado global reactivo del radar.
+ * @param onPairWithPhone Callback para forzar el emparejamiento.
+ * @param onStartDemo Callback para iniciar el modo demostración.
+ * @param onViewAlerts Callback opcional para navegar a las alertas.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 @Composable
 fun PairingScreen(
     state: RadarUiState,
@@ -96,6 +118,17 @@ fun PairingScreen(
     }
 }
 
+/**
+ * Tarjeta individual de indicador de conectividad de servicios periféricos.
+ *
+ * @param icon Icono del servicio.
+ * @param text Etiqueta descriptiva del servicio.
+ * @param isActive Indicador de estado activo / vinculado.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 @Composable
 fun StatusCard(icon: ImageVector, text: String, isActive: Boolean) {
     val backgroundColor = if (isActive) {
@@ -146,6 +179,7 @@ fun StatusCard(icon: ImageVector, text: String, isActive: Boolean) {
     }
 }
 
+/** Previsualización de la pantalla de emparejamiento. */
 @Preview(device = Devices.WEAR_OS_SMALL_ROUND, showSystemUi = true)
 @Composable
 fun PairingScreenPreview() {

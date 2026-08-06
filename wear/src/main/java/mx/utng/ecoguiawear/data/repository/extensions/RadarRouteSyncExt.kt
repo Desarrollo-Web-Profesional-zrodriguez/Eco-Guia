@@ -1,8 +1,14 @@
 /**
- * Archivo: RadarRouteSyncExt.kt
- * Descripción: Extensión para la sincronización de rutas activas, waypoints y cálculo GPS del reloj.
+ * Extensiones del repositorio para la sincronización de rutas activas, waypoints y cálculo geodésico en Wear OS.
+ *
+ * Administra el avance punto por punto de rutas turísticas transmitidas desde el teléfono,
+ * calculando la distancia Haversine, el rumbo angular hacia el hito activo y disparando
+ * los eventos de llegada con pulsos hápticos [HapticPulse.ARRIVED].
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
  */
-
 package mx.utng.ecoguiawear.data.repository.extensions
 
 import kotlinx.coroutines.flow.update
@@ -11,6 +17,14 @@ import mx.utng.ecoguiawear.data.haptics.HapticPulse
 import mx.utng.ecoguiawear.data.repository.RadarRepositoryImpl
 import mx.utng.ecoguiawear.domain.model.*
 
+/**
+ * Configura un objetivo geográfico individual transmitido desde el teléfono móvil.
+ *
+ * @param id Identificador del sitio.
+ * @param name Nombre descriptivo del sitio.
+ * @param lat Coordenada de latitud.
+ * @param lng Coordenada de longitud.
+ */
 internal fun RadarRepositoryImpl.setSyncTargetExt(id: String, name: String, lat: Double, lng: Double) {
     _radarState.update {
         it.copy(
@@ -32,6 +46,12 @@ internal fun RadarRepositoryImpl.setSyncTargetExt(id: String, name: String, lat:
     recalculateRadarExt()
 }
 
+/**
+ * Carga e inicializa una ruta turística guiada con múltiples puntos de paso ([Waypoint]).
+ *
+ * @param title Nombre de la ruta turística.
+ * @param waypoints Lista de hitos que componen el trayecto.
+ */
 internal fun RadarRepositoryImpl.setSyncRouteExt(title: String, waypoints: List<Waypoint>) {
     android.util.Log.d("RadarRepo", "Cargando ruta: $title con ${waypoints.size} puntos.")
     _radarState.update {
@@ -51,6 +71,9 @@ internal fun RadarRepositoryImpl.setSyncRouteExt(title: String, waypoints: List<
     updateTargetFromRouteExt()
 }
 
+/**
+ * Cancela y limpia la ruta turística activa en el reloj, restaurando el modo de escaneo automático.
+ */
 internal fun RadarRepositoryImpl.clearActiveRouteExt() {
     android.util.Log.d("RadarRepo", "Cancelando ruta activa en el reloj.")
     _radarState.update {
@@ -82,6 +105,12 @@ internal fun RadarRepositoryImpl.clearActiveRouteExt() {
     }
 }
 
+/**
+ * Actualiza el progreso de hitos alcanzados y avanza al siguiente waypoint de la ruta.
+ *
+ * @param visited Cantidad de puntos ya visitados.
+ * @param total Total de puntos que integran la ruta.
+ */
 internal fun RadarRepositoryImpl.setRouteProgressExt(visited: Int, total: Int) {
     _radarState.update { state ->
         val updatedWaypoints = state.routeSummary.waypoints.mapIndexed { index, wp ->
@@ -119,6 +148,9 @@ internal fun RadarRepositoryImpl.setRouteProgressExt(visited: Int, total: Int) {
     recalculateRadarExt()
 }
 
+/**
+ * Simula una reducción de distancia hacia el objetivo para pruebas visuales en emuladores.
+ */
 internal fun RadarRepositoryImpl.simulateApproachExt() {
     _radarState.update { state ->
         if (state.mode == RadarMode.PAUSED) {
@@ -153,6 +185,9 @@ internal fun RadarRepositoryImpl.simulateApproachExt() {
     }
 }
 
+/**
+ * Marca como completada la parada actual y prepara la transición hacia el siguiente punto de paso.
+ */
 internal fun RadarRepositoryImpl.completeArrivalExt() {
     _radarState.update { state ->
         val nextVisited = (state.routeSummary.visitedStops + 1).coerceAtMost(state.routeSummary.totalStops)
@@ -174,6 +209,12 @@ internal fun RadarRepositoryImpl.completeArrivalExt() {
     }
 }
 
+/**
+ * Actualiza las coordenadas de ubicación del reloj y dispara recálculos o búsquedas periódicas.
+ *
+ * @param lat Latitud GPS actual.
+ * @param lng Longitud GPS actual.
+ */
 internal fun RadarRepositoryImpl.updateCurrentLocationExt(lat: Double, lng: Double) {
     currentLat = lat
     currentLng = lng
@@ -192,6 +233,9 @@ internal fun RadarRepositoryImpl.updateCurrentLocationExt(lat: Double, lng: Doub
     recalculateRadarExt()
 }
 
+/**
+ * Extrae el siguiente waypoint no visitado y lo configura como el objetivo activo del radar.
+ */
 internal fun RadarRepositoryImpl.updateTargetFromRouteExt() {
     _radarState.update { state ->
         val waypoints = state.routeSummary.waypoints
@@ -228,6 +272,9 @@ internal fun RadarRepositoryImpl.updateTargetFromRouteExt() {
     recalculateRadarExt()
 }
 
+/**
+ * Recalcula la distancia y rumbo geodésico hacia el objetivo activo y evalúa la proximidad.
+ */
 internal fun RadarRepositoryImpl.recalculateRadarExt() {
     _radarState.update { state ->
         val target = state.target

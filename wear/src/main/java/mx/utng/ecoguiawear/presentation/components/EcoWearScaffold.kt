@@ -1,3 +1,13 @@
+/**
+ * Estructura visual base (Scaffold) y soporte para bisel rotatorio (Rotary Input) en Wear OS.
+ *
+ * Envuelve las pantallas dentro de un [androidx.wear.compose.material3.ScreenScaffold] con soporte
+ * para [androidx.wear.compose.foundation.lazy.ScalingLazyColumn] y fondo negro AMOLED de alta eficiencia energética.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 package mx.utng.ecoguiawear.presentation.components
 
 import androidx.compose.foundation.background
@@ -27,6 +37,17 @@ import androidx.wear.compose.material3.Text
 import kotlinx.coroutines.android.awaitFrame
 import mx.utng.ecoguiawear.presentation.theme.EcoGuiaColors
 
+/**
+ * Contenedor estándar para listas escalables con soporte de corona rotatoria o bisel físico.
+ *
+ * @param modifier Modificador visual opcional.
+ * @param requestFocus Indica si el contenedor debe solicitar el foco rotatorio al componerse.
+ * @param content Bloque DSL con los elementos a renderizar dentro de [ScalingLazyColumn].
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 @Composable
 fun EcoWearScaffold(
     modifier: Modifier = Modifier,
@@ -36,10 +57,8 @@ fun EcoWearScaffold(
     val listState = rememberScalingLazyListState()
     val focusRequester = remember { FocusRequester() }
 
-    // Habilita el foco de forma robusta al entrar o cambiar de página
     LaunchedEffect(requestFocus) {
         if (requestFocus) {
-            // Esperamos un frame para asegurar que el componente esté listo para recibir el foco
             awaitFrame()
             focusRequester.requestFocus()
         }
@@ -67,6 +86,16 @@ fun EcoWearScaffold(
     }
 }
 
+/**
+ * Encabezado común para títulos de sección y subtítulos en pantallas Wear OS.
+ *
+ * @param title Título principal de la vista.
+ * @param subtitle Subtítulo o descripción breve opcional.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 @Composable
 fun ScreenHeader(title: String, subtitle: String? = null) {
     Column(

@@ -1,3 +1,13 @@
+/**
+ * Pantalla de control del Modo Discreto (Stealth Mode) en Wear OS.
+ *
+ * Permite alternar la navegación sin emitir luz en pantalla, confiando únicamente en las alertas
+ * y patrones de pulsación háptica suave del smartwatch.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 package mx.utng.ecoguiawear.presentation.screens
 
 import androidx.compose.foundation.layout.Arrangement
@@ -22,6 +32,19 @@ import mx.utng.ecoguiawear.presentation.components.EcoWearScaffold
 import mx.utng.ecoguiawear.presentation.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.presentation.theme.EcoGuiaWearTheme
 
+/**
+ * Pantalla de configuración del modo silencioso y discreto.
+ *
+ * @param state Estado global reactivo del radar.
+ * @param onToggleStealth Callback para alternar el estado del modo discreto.
+ * @param onNavigateNext Callback para desplazarse a la siguiente página (Radar).
+ * @param onNavigateBack Callback para regresar al emparejamiento.
+ * @param requestFocus Solicita foco rotatorio si la página está activa.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 @Composable
 fun StealthRadarScreen(
     state: RadarUiState,
@@ -95,6 +118,7 @@ fun StealthRadarScreen(
     }
 }
 
+/** Previsualización de la pantalla de modo discreto. */
 @Preview(device = Devices.WEAR_OS_SMALL_ROUND, showSystemUi = true)
 @Composable
 fun StealthRadarScreenPreview() {

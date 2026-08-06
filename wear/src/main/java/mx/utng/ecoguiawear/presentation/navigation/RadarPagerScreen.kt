@@ -1,3 +1,13 @@
+/**
+ * Contenedor de páginas horizontales (HorizontalPager) para la navegación táctil en Wear OS.
+ *
+ * Permite alternar mediante deslizamiento lateral entre el Modo Discreto, el Radar Principal,
+ * la Brújula con aguja animada y el Resumen de la Ruta Turística activa.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 package mx.utng.ecoguiawear.presentation.navigation
 
 import android.os.Build
@@ -26,6 +36,17 @@ import mx.utng.ecoguiawear.presentation.screens.RouteSummaryScreen
 import mx.utng.ecoguiawear.presentation.screens.StealthRadarScreen
 import mx.utng.ecoguiawear.presentation.theme.EcoGuiaColors
 
+/**
+ * Pantalla contenedora de paginación horizontal en el smartwatch.
+ *
+ * @param viewModel ViewModel del radar.
+ * @param onNavigateToPairing Callback para volver a la pantalla de emparejamiento.
+ * @param onNavigateToAlerts Callback para navegar al historial de alertas.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 @Composable
 fun RadarPagerScreen(
     viewModel: RadarViewModel,
