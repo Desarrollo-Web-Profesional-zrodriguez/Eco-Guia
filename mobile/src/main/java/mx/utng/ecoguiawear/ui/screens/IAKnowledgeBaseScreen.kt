@@ -1,10 +1,11 @@
 /**
  * Archivo: IAKnowledgeBaseScreen.kt
- * Autor: ZahirMora / CesarEnrique
- * Fecha de última actualización: 2026-07-27
- * Descripción: Pantalla de entrenamiento e ingesta de conocimiento para la IA de Miguel Hidalgo.
+ *
+ * Pantalla de entrenamiento e ingesta de conocimiento para la IA de Miguel Hidalgo.
  * Permite al Super Admin ingresar nuevas preguntas/respuestas sugeridas, cargar información
  * de la base de datos de Neon y regenerar dinámicamente la base de conocimiento local (JSON).
+ *
+ * @since 2026-08-05
  */
 
 package mx.utng.ecoguiawear.ui.screens
@@ -34,8 +35,21 @@ import mx.utng.ecoguiawear.ui.components.EcoButton
 import mx.utng.ecoguiawear.ui.components.EcoTextField
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 
+/**
+ * Modelo de datos para un par de pregunta y respuesta de entrenamiento histórico.
+ *
+ * @property question Pregunta o consulta formulada.
+ * @property answer Respuesta histórica y contextual correspondiente.
+ * @property category Categoría temática de la interacción.
+ */
 data class QAPair(val question: String, val answer: String, val category: String = "General")
 
+/**
+ * Pantalla composable para administrar la base de conocimientos y entrenamiento del bot IA.
+ *
+ * @param userId Identificador del usuario administrador.
+ * @param onBack Callback para regresar a la pantalla previa.
+ */
 @Composable
 fun IAKnowledgeBaseScreen(
     userId: String = "",

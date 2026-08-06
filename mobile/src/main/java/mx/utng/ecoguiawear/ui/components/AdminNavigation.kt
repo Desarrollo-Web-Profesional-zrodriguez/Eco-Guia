@@ -1,8 +1,9 @@
 /**
  * Archivo: AdminNavigation.kt
- * Autor: ZahirMora
- * Fecha de última actualización: 2026-07-22
- * Descripción: Barra de navegación inferior especializada para el panel de administración.
+ *
+ * Componente de barra de navegación inferior especializada para el panel de control administrativo y de moderación.
+ *
+ * @since 2026-08-05
  */
 
 package mx.utng.ecoguiawear.ui.components
@@ -22,6 +23,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 
+/**
+ * Barra de navegación inferior para roles de administrador y moderador.
+ *
+ * @param currentRoute Ruta actualmente seleccionada en el grafo de navegación.
+ * @param onNavigate Callback invocado al seleccionar un destino en la barra.
+ */
 @Composable
 fun AdminBottomBar(
     currentRoute: String,

@@ -1,8 +1,9 @@
 /**
  * Archivo: AdminSummaryScreen.kt
- * Autor: ZahirMora
- * Fecha de última actualización: 2026-07-22
- * Descripción: Pantalla principal del panel de administración que muestra un resumen de actividad.
+ *
+ * Pantalla principal del panel de administración que muestra un resumen general de actividad, analíticas y accesos a submódulos.
+ *
+ * @since 2026-08-05
  */
 
 package mx.utng.ecoguiawear.ui.screens.admin
@@ -27,6 +28,11 @@ import mx.utng.ecoguiawear.ui.components.AdminBottomBar
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 
+/**
+ * Pantalla composable de resumen general y dashboard administrativo.
+ *
+ * @param onNavigate Callback para navegar hacia cualquier sección administrativa seleccionada.
+ */
 @Composable
 fun AdminSummaryScreen(
     onNavigate: (String) -> Unit

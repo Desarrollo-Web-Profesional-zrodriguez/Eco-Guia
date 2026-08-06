@@ -1,13 +1,10 @@
 /**
  * Archivo: CommonComponents.kt
- * Autores: ZahirAndres, CesarEnrique
- * Fecha de última actualización: 2026-07-26
- * Descripción: Biblioteca de componentes de UI reutilizables para mantener la consistencia
- * visual en toda la aplicación EcoGuía. Incluye EcoTopBar, EcoBackground, EcoTextField,
- * EcoChipGroup, EcoButton y EcoLogo.
  *
- * Todos los componentes siguen el sistema de diseño EcoGuiaColors y se adaptan
- * automáticamente al modo oscuro mediante MaterialTheme.colorScheme.
+ * Biblioteca de componentes de UI reutilizables para mantener la consistencia visual en toda la aplicación EcoGuía.
+ * Incluye cabeceras, fondos con degradados, campos de texto, grupos de filtros y botones de acción.
+ *
+ * @since 2026-08-05
  */
 
 package mx.utng.ecoguiawear.ui.components
@@ -31,15 +28,12 @@ import androidx.compose.ui.unit.sp
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 
 /**
- * Header estándar Material3 para las pantallas de la app.
+ * Cabecera superior estándar para las pantallas de la aplicación.
  *
- * Usa [MaterialTheme.colorScheme] para adaptarse automÃ¡ticamente al modo oscuro/claro.
- * Compatible con edge-to-edge gracias a [WindowInsets.statusBars].
- *
- * @param title       Texto principal del header (usa typography.titleLarge)
- * @param subtitle    Texto secundario debajo del tÃ­tulo (usa typography.bodyMedium, opcional)
- * @param actionIcon  Icono de acciÃ³n en la esquina superior derecha (opcional)
- * @param onActionClick Callback para el icono de acciÃ³n (opcional)
+ * @param title Título principal de la pantalla.
+ * @param subtitle Subtítulo descriptivo secundario.
+ * @param actionIcon Ícono de acción opcional para la esquina superior derecha.
+ * @param onActionClick Callback invocado al presionar el ícono de acción.
  */
 @Composable
 fun EcoTopBar(
@@ -97,7 +91,9 @@ fun EcoTopBar(
 }
 
 /**
- * Fondo con degradado vertical oficial de la aplicaciÃ³n.
+ * Fondo con degradado vertical oficial de la aplicación.
+ *
+ * @param content Contenido composable que se renderizará sobre el fondo con degradado.
  */
 @Composable
 fun EcoBackground(
@@ -113,7 +109,15 @@ fun EcoBackground(
 }
 
 /**
- * Campo de texto personalizado con bordes redondeados y estilo oscuro.
+ * Campo de texto estilizado con esquinas redondeadas y temática oscura.
+ *
+ * @param value Texto actual del campo.
+ * @param onValueChange Callback invocado al modificar el contenido.
+ * @param label Etiqueta flotante del campo.
+ * @param modifier Modificador de diseño.
+ * @param placeholder Texto de sugerencia cuando el campo está vacío.
+ * @param readOnly Indica si el campo es de solo lectura.
+ * @param singleLine Indica si el texto debe limitarse a una sola línea horizontal.
  */
 @Composable
 fun EcoTextField(
@@ -158,7 +162,12 @@ fun EcoTextField(
 }
 
 /**
- * Grupo de chips para selección múltiple o única.
+ * Grupo desplazable horizontal de chips de filtrado.
+ *
+ * @param options Lista de opciones disponibles.
+ * @param selectedOptions Conjunto de opciones actualmente seleccionadas.
+ * @param onOptionSelected Callback invocado al pulsar sobre una opción.
+ * @param modifier Modificador de diseño.
  */
 @Composable
 fun EcoChipGroup(
@@ -167,7 +176,6 @@ fun EcoChipGroup(
     onOptionSelected: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // Usamos una LazyRow para evitar problemas de compatibilidad con FlowRow en ciertas versiones
     LazyRow(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -198,7 +206,13 @@ fun EcoChipGroup(
 }
 
 /**
- * Botón con degradado Jade o fondo blanco.
+ * Botón principal de acción con soporte para degradado temático Jade o fondo sólido.
+ *
+ * @param text Texto del botón.
+ * @param onClick Callback de acción al pulsar el botón.
+ * @param modifier Modificador de diseño.
+ * @param useGradient Indica si se debe aplicar el degradado Jade característico.
+ * @param enabled Indica si el botón está habilitado para interacción.
  */
 @Composable
 fun EcoButton(
@@ -240,7 +254,7 @@ fun EcoButton(
 }
 
 /**
- * Logotipo central estilizado.
+ * Logotipo central institucional de Eco-Guía con ícono destacado y contenedor con esquinas redondeadas.
  */
 @Composable
 fun EcoLogo() {

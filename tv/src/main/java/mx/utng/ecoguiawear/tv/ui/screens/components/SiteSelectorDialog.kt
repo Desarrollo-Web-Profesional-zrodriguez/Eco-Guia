@@ -1,3 +1,15 @@
+/**
+ * Diálogo modal para la selección y conmutación de sitios históricos en Smart TV.
+ *
+ * Proporciona una interfaz adaptada a control remoto D-Pad con búsqueda filtrable en tiempo real:
+ * - Permite al administrador o encargado del museo conmutar el sitio exhibido en la pantalla.
+ * - Muestra distintivos visuales por tipo de punto de interés (museo, hotel, parque, restaurante).
+ * - Marca de forma explícita el sitio actualmente activo en la sesión.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 package mx.utng.ecoguiawear.tv.ui.screens.components
 
 import androidx.compose.foundation.background
@@ -40,8 +52,17 @@ import androidx.tv.material3.Text
 import mx.utng.ecoguia.shared.domain.model.RemoteHistoricalSite
 
 /**
- * Diálogo adaptado para Android TV que permite al usuario seleccionar
- * un sitio histórico de una lista filtrable, usando el D-Pad del control remoto.
+ * Diálogo interactivo para seleccionar el sitio histórico activo a visualizar en la Smart TV.
+ *
+ * @param sites Lista completa de sitios históricos disponibles para el usuario.
+ * @param currentSiteId Identificador único del sitio actualmente seleccionado.
+ * @param isAdmin Indica si el usuario autenticado tiene permisos globales de administrador.
+ * @param onSiteSelected Callback invocado al confirmar la selección de un nuevo [RemoteHistoricalSite].
+ * @param onDismiss Callback invocado para descartar o cerrar el diálogo.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
  */
 @Composable
 fun SiteSelectorDialog(
@@ -196,6 +217,13 @@ fun SiteSelectorDialog(
     }
 }
 
+/**
+ * Elemento individual para renderizar cada sitio en la lista con selector táctil o de D-Pad.
+ *
+ * @param site Instancia del sitio histórico.
+ * @param isSelected Booleano que indica si este elemento es el que está actualmente en uso.
+ * @param onClick Acción a ejecutar al pulsar el botón correspondiente.
+ */
 @Composable
 private fun SiteItem(
     site: RemoteHistoricalSite,

@@ -1,10 +1,11 @@
 /**
  * Archivo: GeoDropViewModel.kt
- * Autores: ZahirAndres, CesarEnrique
- * Fecha de última actualización: 2026-07-26
- * Descripción: ViewModel encargado de gestionar el estado de los Geo-Drops (cápsulas digitales),
- * el cálculo dinámico de distancia GPS entre el usuario y las cápsulas en AR,
- * y la persistencia de fotografías ancladas hacia la base de datos Neon PostgreSQL.
+ *
+ * ViewModel encargado de gestionar el estado de los Geo-Drops (cápsulas digitales de memoria),
+ * el cálculo dinámico de distancia GPS en realidad aumentada y la carga y anclaje
+ * de fotografías hacia Firebase Storage y la base de datos Neon PostgreSQL.
+ *
+ * @since 2026-08-05
  */
 
 package mx.utng.ecoguiawear.ui.viewmodel
@@ -21,6 +22,11 @@ import mx.utng.ecoguia.shared.domain.model.RemoteGeoDrop
 import mx.utng.ecoguia.shared.domain.repository.EcoGuiaRepository
 import java.io.File
 
+/**
+ * ViewModel que gestiona la detección de proximidad a cápsulas GeoDrop, captura fotográfica y registro en la nube.
+ *
+ * @param repository Repositorio de datos para operaciones de cápsulas digitales.
+ */
 class GeoDropViewModel(
     private val repository: EcoGuiaRepository = EcoGuiaRepositoryImpl()
 ) : ViewModel() {
@@ -162,6 +168,9 @@ class GeoDropViewModel(
 
     /**
      * Verifica si un GeoDrop específico ya fue capturado/guardado por el usuario.
+     *
+     * @param userId Identificador del usuario.
+     * @param dropId Identificador del Geo-Drop.
      */
     fun checkGeoDropStatus(userId: String, dropId: String) {
         if (dropId.isBlank() || collectedGeoDropIds.containsKey(dropId)) return
@@ -177,6 +186,9 @@ class GeoDropViewModel(
 
     /**
      * Actualiza la distancia GPS hacia todos los Geo-Drops cercanos y selecciona el más próximo.
+     *
+     * @param userLocation Coordenadas GPS actuales del usuario.
+     * @param userId Identificador del usuario para verificar estado de captura.
      */
     fun updateProximity(userLocation: Location?, userId: String = "") {
         if (userLocation == null || _geoDrops.value.isEmpty()) return
@@ -222,6 +234,12 @@ class GeoDropViewModel(
         _distanceToClosest.value = if (minDistance != Float.MAX_VALUE) minDistance.toInt() else null
     }
 
+    /**
+     * Selecciona manualmente un Geo-Drop activo de la lista.
+     *
+     * @param drop Cápsula seleccionada.
+     * @param userId Identificador de usuario opcional para verificar su estado de colección.
+     */
     fun selectGeoDrop(drop: RemoteGeoDrop, userId: String = "") {
         _closestGeoDrop.value = drop
         val dropId = drop.id
@@ -230,10 +248,12 @@ class GeoDropViewModel(
         }
     }
 
-
-
     /**
      * Guarda en memoria la fotografía capturada y el sitio destino obligatorio.
+     *
+     * @param file Archivo temporal de imagen.
+     * @param siteId Identificador del sitio histórico asociado.
+     * @param siteName Nombre descriptivo del sitio.
      */
     fun setCapturedPhoto(file: File, siteId: String? = null, siteName: String? = null) {
         _capturedPhoto.value = file
@@ -243,6 +263,9 @@ class GeoDropViewModel(
 
     /**
      * Establece el sitio obligatorio al que pertenecerá el Geo-Drop.
+     *
+     * @param siteId Identificador del sitio histórico.
+     * @param siteName Nombre del sitio.
      */
     fun setTargetSite(siteId: String, siteName: String, isCreationMode: Boolean = false) {
         _targetSiteId.value = siteId
@@ -254,8 +277,14 @@ class GeoDropViewModel(
 
     /**
      * Ancla la fotografía capturada subiéndola a Firebase Storage e insertándola en Neon con su site_id obligatorio.
+     *
+     * @param title Título de la cápsula de memoria.
+     * @param description Breve descripción o mensaje.
+     * @param location Coordenadas geográficas donde se ancló el drop.
+     * @param userId Identificador del usuario creador.
+     * @param onSuccess Callback ejecutado tras el anclaje exitoso.
+     * @param onError Callback invocado si ocurre un error.
      */
-
     fun anchorGeoDrop(
         title: String,
         description: String,
@@ -327,10 +356,13 @@ class GeoDropViewModel(
         }
     }
 
-
-
     /**
      * Guarda un Geo-Drop público detectado en el entorno a la colección personal del usuario.
+     *
+     * @param userId Identificador del usuario coleccionista.
+     * @param geoDrop Objeto del Geo-Drop a coleccionar.
+     * @param onSuccess Callback invocado al añadirlo exitosamente.
+     * @param onError Callback invocado si ocurre un error.
      */
     fun saveExistingGeoDropToCollection(
         userId: String,

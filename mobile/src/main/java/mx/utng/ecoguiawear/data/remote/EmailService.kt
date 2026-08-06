@@ -1,8 +1,10 @@
 /**
  * Archivo: EmailService.kt
- * Autores: ZahirAndres, CesarEnrique
- * Fecha de última actualización: 2026-07-30
- * Descripción: Servicio de envío de correos transaccionales (OTP y recuperación de contraseña) vía API v3 de Brevo usando los colores corporativos de Eco-Guía.
+ *
+ * Cliente HTTP REST para la API de Brevo (v3) que gestiona el envío transaccional de correos
+ * electrónicos para recuperación de contraseñas mediante OTP y verificación de nuevas cuentas.
+ *
+ * @since 2026-08-05
  */
 
 package mx.utng.ecoguiawear.data.remote
@@ -25,6 +27,9 @@ import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
 import kotlinx.serialization.json.Json
 
+/**
+ * Servicio encargado de la comunicación con la pasarela de correos transaccionales Brevo.
+ */
 class EmailService {
     private val apiKey = mx.utng.ecoguiawear.BuildConfig.BREVO_API_KEY
     private val apiUrl = "https://api.brevo.com/v3/smtp/email"
@@ -35,6 +40,13 @@ class EmailService {
         }
     }
 
+    /**
+     * Envía un correo con el código OTP para restablecer la contraseña del usuario.
+     *
+     * @param toEmail Dirección de correo electrónico del destinatario.
+     * @param recoveryOtp Código OTP numérico de recuperación.
+     * @return `true` si el correo fue aceptado por la API de Brevo; `false` en caso de error.
+     */
     suspend fun sendPasswordRecoveryEmail(toEmail: String, recoveryOtp: String): Boolean {
         try {
             val payload = buildJsonObject {
@@ -96,6 +108,14 @@ class EmailService {
         }
     }
 
+    /**
+     * Envía un correo electrónico con el código numérico OTP de 6 dígitos para la verificación de nueva cuenta.
+     *
+     * @param toEmail Dirección de correo electrónico del destinatario.
+     * @param username Nombre del usuario destinatario.
+     * @param otp Código de verificación de 6 dígitos.
+     * @return `true` si el correo fue procesado con éxito; `false` si ocurrió un error en la solicitud HTTP.
+     */
     suspend fun sendOtpEmail(toEmail: String, username: String, otp: String): Boolean {
         try {
             val payload = buildJsonObject {

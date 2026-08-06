@@ -1,16 +1,11 @@
 /**
  * Archivo: MainActivity.kt
- * Autores: ZahirAndres, CesarEnrique
- * Fecha de última actualización: 2026-07-26
- * Descripción: Actividad principal y punto de entrada de la aplicación EcoGuía. Configura el
- * Scaffold global, la barra de navegación adaptativa (portrait/landscape), el SnackBar de
- * notificaciones reactivas y delega el grafo de navegación completo a [AppNavHost].
  *
- * Funciones destacadas:
- * - MainActivity: Actividad ComponentActivity con edge-to-edge y tema unificado.
- * - MainAppContainer: Orquestador de estado global (permisos, sesión, orientación).
- * - ControlPanel: Panel interno de pruebas y gestión de cápsulas GeoDrop.
- * - sendMessage: Envío de mensajes al nodo Wear OS conectado.
+ * Actividad principal y punto de entrada de la aplicación EcoGuía Mobile.
+ * Configura el Scaffold global con diseño adaptativo (portrait con BottomBar y landscape con NavigationRail),
+ * orquesta el estado de sesión y permisos, y delega el grafo de navegación completo a [AppNavHost].
+ *
+ * @since 2026-07-26
  */
 
 package mx.utng.ecoguiawear
@@ -55,11 +50,17 @@ import androidx.activity.enableEdgeToEdge
 import mx.utng.ecoguiawear.ui.viewmodel.RouteViewModel
 
 /**
- * Actividad principal. Establece el tema y delega toda la composición a [MainAppContainer].
+ * Actividad principal de la aplicación móvil.
+ * Hereda de [ComponentActivity], habilita el modo edge-to-edge y establece la composición visual con [MainAppContainer].
  */
 class MainActivity : ComponentActivity() {
     private val repository = EcoGuiaRepositoryImpl()
 
+    /**
+     * Inicializa la actividad, configura el diseño de pantalla completa y renderiza el tema visual.
+     *
+     * @param savedInstanceState Estado previamente guardado de la actividad, si existe.
+     */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         mx.utng.ecoguia.shared.config.EcoGuiaConfig.appContext = applicationContext

@@ -1,10 +1,10 @@
 /**
  * Archivo: CameraGeoDropScreen.kt
- * Autores: ZahirAndres, CesarEnrique
- * Fecha de última actualización: 2026-07-26
- * Descripción: Interfaz de cámara real (CameraX) con visor y retícula de Realidad Aumentada (AR Overlay).
- * Calcula dinámicamente la distancia al Geo-Drop más cercano usando la ubicación GPS actual
- * y permite capturar fotos para anclarlas a la ubicación física del usuario.
+ *
+ * Interfaz de cámara integrada con CameraX y capa de Realidad Aumentada (AR Overlay),
+ * calculando la proximidad dinámica a cápsulas digitales y permitiendo la captura física para anclaje.
+ *
+ * @since 2026-08-05
  */
 
 package mx.utng.ecoguiawear.ui.screens
@@ -61,8 +61,10 @@ import java.util.concurrent.Executors
 /**
  * Pantalla que visualiza la cámara con retícula AR overlay reactiva a Geo-Drops cercanos.
  *
- * @param onCapture Callback cuando la foto se captura exitosamente.
- * @param geoDropViewModel ViewModel de gestión de Geo-Drops y estado.
+ * @param onCapture Callback ejecutado tras capturar una fotografía con éxito.
+ * @param userId Identificador del usuario autenticado.
+ * @param onSavedToCollection Callback invocado al añadir un drop existente a la colección.
+ * @param geoDropViewModel ViewModel de gestión de Geo-Drops y estado de captura.
  * @param locationViewModel ViewModel para obtener las coordenadas GPS actuales.
  */
 @Composable

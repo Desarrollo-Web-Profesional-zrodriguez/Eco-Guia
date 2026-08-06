@@ -1,8 +1,9 @@
 /**
  * Archivo: EditProfileScreen.kt
- * Autores: ZahirAndres, CesarEnrique
- * Fecha de última actualización: 2026-07-30
- * Descripción: Pantalla de edición de perfil. Permite al usuario modificar su nombre completo y datos de biografía.
+ *
+ * Pantalla de edición de perfil. Permite al usuario modificar su nombre completo y datos de biografía.
+ *
+ * @since 2026-08-05
  */
 
 package mx.utng.ecoguiawear.ui.screens
@@ -27,7 +28,10 @@ import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 
 /**
- * Composable que representa la pantalla de edición de perfil sin caracteres corruptos.
+ * Pantalla composable para editar el perfil del usuario.
+ *
+ * @param user Datos actuales del usuario remoto.
+ * @param onSaveClick Callback invocado con el nuevo nombre completo y biografía para guardar cambios.
  */
 @Composable
 fun EditProfileScreen(

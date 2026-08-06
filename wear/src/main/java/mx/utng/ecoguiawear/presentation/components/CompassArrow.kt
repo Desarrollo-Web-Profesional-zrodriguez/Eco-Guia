@@ -1,3 +1,13 @@
+/**
+ * Renderizador en Canvas de la rosa de los vientos y aguja de navegación en Wear OS.
+ *
+ * Dibuja los círculos concéntricos de mira telescópica, retícula en cruz y aguja estilizada
+ * en tono dorado que rota dinámicamente según el rumbo objetivo.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 package mx.utng.ecoguiawear.presentation.components
 
 import androidx.compose.foundation.Canvas
@@ -10,6 +20,16 @@ import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.unit.dp
 import mx.utng.ecoguiawear.presentation.theme.EcoGuiaColors
 
+/**
+ * Aguja de brújula animada con mira telescópica orientada al azimut objetivo.
+ *
+ * @param bearingDegrees Ángulo de rotación en grados respecto a la vertical superior (0° a 360°).
+ * @param modifier Modificador de diseño Compose.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 @Composable
 fun CompassArrow(
     bearingDegrees: Float,

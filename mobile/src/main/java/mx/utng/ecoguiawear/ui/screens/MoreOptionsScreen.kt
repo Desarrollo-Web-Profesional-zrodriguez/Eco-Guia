@@ -1,13 +1,9 @@
 /**
  * Archivo: MoreOptionsScreen.kt
- * Autor: Zahir Andres
- * Fecha de última actualización: 2026-07-25
- * Descripción: Pantalla completa que muestra la cuadrícula de opciones adicionales del sistema.
- * Todas las opciones están habilitadas para cualquier usuario.
  *
- * Funciones destacadas:
- * - MoreOptionsScreen: Renderiza la cuadrícula de accesos rápidos a Mi Colección, Rutas,
- *   Crear Ruta, Alta de Sitio, IA, Dispositivos, Modo Offline y Permisos.
+ * Pantalla completa que muestra la cuadrícula de opciones y herramientas complementarias del sistema Eco-Guía.
+ *
+ * @since 2026-08-05
  */
 
 package mx.utng.ecoguiawear.ui.screens
@@ -34,7 +30,11 @@ import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 
 /**
- * Composable que representa la pantalla completa de "Menú Más Opciones".
+ * Pantalla composable de catálogo extendido de opciones y herramientas avanzadas.
+ *
+ * @param isSuperAdmin Habilita o restringe accesos de nivel súper administrador.
+ * @param isModerator Habilita o restringe accesos con privilegios de moderador cultural.
+ * @param onOptionClick Callback invocado con la ruta/clave seleccionada por el usuario.
  */
 @Composable
 fun MoreOptionsScreen(

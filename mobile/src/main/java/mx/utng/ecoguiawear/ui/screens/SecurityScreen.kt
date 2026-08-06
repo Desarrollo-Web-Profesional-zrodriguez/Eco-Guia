@@ -1,8 +1,9 @@
 /**
  * Archivo: SecurityScreen.kt
- * Autores: ZahirAndres, CesarEnrique
- * Fecha de última actualización: 2026-07-30
- * Descripción: Pantalla de gestión de cuenta y seguridad con datos reales del usuario.
+ *
+ * Pantalla de gestión de cuenta y seguridad del usuario, con accesos a cambio de credenciales y cierre de sesión.
+ *
+ * @since 2026-08-05
  */
 
 package mx.utng.ecoguiawear.ui.screens
@@ -31,7 +32,12 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 
 /**
- * Composable que representa la pantalla de seguridad con datos reales de la cuenta.
+ * Pantalla composable de configuración de cuenta, privacidad y seguridad.
+ *
+ * @param user Datos del usuario actualmente autenticado.
+ * @param onLogoutClick Callback ejecutado para cerrar la sesión activa del usuario.
+ * @param onChangePasswordClick Callback para cambiar contraseña.
+ * @param onDeleteAccountClick Callback para solicitar eliminación de cuenta.
  */
 @Composable
 fun SecurityScreen(

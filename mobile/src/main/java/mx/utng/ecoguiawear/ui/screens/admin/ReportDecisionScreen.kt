@@ -1,8 +1,9 @@
 /**
  * Archivo: ReportDecisionScreen.kt
- * Autor: ZahirMora
- * Fecha de última actualización: 2026-07-22
- * Descripción: Pantalla para tomar una decisión final sobre un incidente de seguridad.
+ *
+ * Pantalla para tomar una decisión final (aprobar, rechazar o archivar) sobre un incidente o reporte de seguridad.
+ *
+ * @since 2026-08-05
  */
 
 package mx.utng.ecoguiawear.ui.screens.admin
@@ -26,6 +27,12 @@ import androidx.compose.ui.unit.sp
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 
+/**
+ * Pantalla composable para dictaminar resolución sobre un reporte de seguridad.
+ *
+ * @param onBack Callback para cancelar y volver a la vista previa.
+ * @param onResolve Callback ejecutado tras asentar la decisión tomada.
+ */
 @Composable
 fun ReportDecisionScreen(
     onBack: () -> Unit,

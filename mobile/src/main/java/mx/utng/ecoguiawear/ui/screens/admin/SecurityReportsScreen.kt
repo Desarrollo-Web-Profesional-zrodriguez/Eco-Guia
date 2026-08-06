@@ -1,8 +1,9 @@
 /**
  * Archivo: SecurityReportsScreen.kt
- * Autor: ZahirMora
- * Fecha de última actualización: 2026-07-22
- * Descripción: Pantalla que lista los reportes de seguridad críticos del sistema.
+ *
+ * Pantalla que lista los reportes de seguridad e incidentes críticos del sistema.
+ *
+ * @since 2026-08-05
  */
 
 package mx.utng.ecoguiawear.ui.screens.admin
@@ -26,6 +27,11 @@ import mx.utng.ecoguiawear.ui.components.AdminBottomBar
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 
+/**
+ * Pantalla composable para visualizar incidentes y vulnerabilidades de seguridad reportadas.
+ *
+ * @param onNavigate Callback para navegar entre secciones de administración.
+ */
 @Composable
 fun SecurityReportsScreen(
     onNavigate: (String) -> Unit

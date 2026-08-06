@@ -1,17 +1,11 @@
 /**
  * Archivo: LocationViewModel.kt
- * Autor: Zahir Andres
- * Fecha de última actualización: 2026-07-25
- * Descripción: Gestiona la ubicación del usuario en tiempo real, carga sitios históricos cercanos
- * utilizando geofencing lógico y dispara alertas de proximidad para interactuar con el entorno.
- * También controla el ciclo de vida del ProximityService (Opción C).
  *
- * Funciones destacadas:
- * - startLocationUpdates: Inicia el rastreo GPS con alta precisión (foreground).
- * - fetchNearbySites: Consulta Neon para obtener sitios en un radio de 50km y calcula distancias.
- * - syncTargetWithWatch: Envía el sitio objetivo al reloj Wear OS.
- * - startProximityService: Inicia el ForegroundService de geofencing en segundo plano.
- * - stopProximityService: Detiene el ForegroundService de geofencing.
+ * Gestiona la ubicación del usuario en tiempo real mediante el proveedor FusedLocationProviderClient,
+ * consulta sitios históricos cercanos en un radio de cobertura, calcula distancias de proximidad,
+ * sincroniza sitios objetivos con el dispositivo Wear OS y controla el ciclo de vida del [ProximityService].
+ *
+ * @since 2026-08-05
  */
 
 package mx.utng.ecoguiawear.ui.viewmodel
@@ -35,6 +29,11 @@ import mx.utng.ecoguia.shared.domain.repository.EcoGuiaRepository
 import mx.utng.ecoguiawear.data.ProximityService
 import mx.utng.ecoguiawear.data.wear.WearMessageClient
 
+/**
+ * ViewModel que expone el flujo reactivo de ubicación GPS, sitios históricos detectados y estado del servicio de geofencing.
+ *
+ * @param repository Repositorio de datos para consulta de sitios y categorías turísticas.
+ */
 class LocationViewModel(
     private val repository: EcoGuiaRepository = EcoGuiaRepositoryImpl()
 ) : ViewModel() {
@@ -66,7 +65,9 @@ class LocationViewModel(
     private var locationCallback: LocationCallback? = null
 
     /**
-     * Inicia el rastreo de ubicación en tiempo real.
+     * Inicia el rastreo continuo de ubicación en primer plano utilizando FusedLocationProviderClient.
+     *
+     * @param context Contexto de la aplicación o actividad.
      */
     @SuppressLint("MissingPermission")
     fun startLocationUpdates(context: Context) {
@@ -110,7 +111,7 @@ class LocationViewModel(
     }
 
     /**
-     * Detiene el rastreo de ubicación.
+     * Detiene el rastreo y suscripción a las actualizaciones de ubicación del proveedor GPS.
      */
     fun stopLocationUpdates() {
         locationCallback?.let {
@@ -119,7 +120,7 @@ class LocationViewModel(
     }
 
     /**
-     * Carga todos los sitios históricos activos sin restricción de distancia (ideal para crear rutas).
+     * Carga todos los sitios históricos activos y sus categorías sin restricción de distancia.
      */
     fun loadAllHistoricalSites() {
         viewModelScope.launch {
@@ -230,7 +231,9 @@ class LocationViewModel(
     }
 
     /**
-     * Sincroniza un sitio seleccionado con el reloj inteligente.
+     * Sincroniza un sitio seleccionado con el reloj inteligente Wear OS.
+     *
+     * @param site Sitio histórico a transmitir.
      */
     fun syncTargetWithWatch(site: RemoteHistoricalSite) {
         viewModelScope.launch {
@@ -244,6 +247,7 @@ class LocationViewModel(
      * Inicia el [ProximityService] como ForegroundService de tipo location.
      * Debe llamarse después de confirmar que el usuario concedió ACCESS_BACKGROUND_LOCATION
      * y POST_NOTIFICATIONS (API 33+).
+     *
      * @param context Contexto de la aplicación o actividad.
      */
     fun startProximityService(context: Context) {
@@ -264,6 +268,7 @@ class LocationViewModel(
 
     /**
      * Detiene el [ProximityService] y actualiza el estado observable.
+     *
      * @param context Contexto de la aplicación o actividad.
      */
     fun stopProximityService(context: Context) {
@@ -280,6 +285,8 @@ class LocationViewModel(
     /**
      * Sincroniza el estado visual con las preferencias guardadas, para que el Toggle
      * no se reinicie si el usuario sale y vuelve a la pantalla.
+     *
+     * @param context Contexto de la aplicación.
      */
     fun syncProximityState(context: Context) {
         val prefs = context.getSharedPreferences("eco_prefs", Context.MODE_PRIVATE)
@@ -290,6 +297,9 @@ class LocationViewModel(
         }
     }
 
+    /**
+     * Libera las actualizaciones de ubicación al destruirse el ViewModel.
+     */
     override fun onCleared() {
         super.onCleared()
         stopLocationUpdates()

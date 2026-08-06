@@ -1,8 +1,9 @@
 /**
  * Archivo: OfflineRouteScreen.kt
- * Autor: ZahirMora
- * Fecha de última actualización: 2026-08-01
- * Descripción: Pantalla que muestra el contenido y estado de la base de datos local para acceso sin conexión.
+ *
+ * Pantalla que muestra el contenido de una ruta descargada y el estado de la base de datos local para navegación y acceso sin conexión.
+ *
+ * @since 2026-08-05
  */
 
 package mx.utng.ecoguiawear.ui.screens
@@ -33,10 +34,12 @@ import kotlinx.coroutines.launch
 import mx.utng.ecoguia.shared.data.EcoGuiaDatabase
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
-
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 
+/**
+ * Pantalla composable para visualizar rutas descargadas offline.
+ */
 @Composable
 fun OfflineRouteScreen() {
     val context = LocalContext.current

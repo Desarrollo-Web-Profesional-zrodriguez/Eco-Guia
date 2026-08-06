@@ -1,8 +1,9 @@
 /**
  * Archivo: ReviewDetailScreen.kt
- * Autor: ZahirMora
- * Fecha de última actualización: 2026-07-22
- * Descripción: Pantalla para revisar el detalle de una pieza de contenido reportada.
+ *
+ * Pantalla para revisar el detalle de una pieza de contenido reportada por infracciones a las directrices comunitarias.
+ *
+ * @since 2026-08-05
  */
 
 package mx.utng.ecoguiawear.ui.screens.admin
@@ -29,6 +30,12 @@ import androidx.compose.ui.unit.sp
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 
+/**
+ * Pantalla composable para examinar las evidencias de un reporte de contenido.
+ *
+ * @param onBack Callback para volver a la pantalla anterior.
+ * @param onActionTaken Callback invocado tras ejecutar la acción sancionatoria o de absolución.
+ */
 @Composable
 fun ReviewDetailScreen(
     onBack: () -> Unit,

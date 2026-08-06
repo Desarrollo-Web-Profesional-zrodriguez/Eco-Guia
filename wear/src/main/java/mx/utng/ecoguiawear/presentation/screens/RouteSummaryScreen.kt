@@ -1,3 +1,13 @@
+/**
+ * Pantalla de resumen del recorrido turístico activo en Wear OS.
+ *
+ * Presenta el progreso de paradas visitadas respecto al total (ej. 3/8) mediante un indicador
+ * circular de estado y acceso para volver al radar en vivo.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 package mx.utng.ecoguiawear.presentation.screens
 
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,6 +29,17 @@ import mx.utng.ecoguiawear.presentation.components.ScreenHeader
 import mx.utng.ecoguiawear.presentation.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.presentation.theme.EcoGuiaWearTheme
 
+/**
+ * Pantalla de resumen estadístico de la ruta turística sincronizada.
+ *
+ * @param state Estado reactivo del radar.
+ * @param onBackToRadar Callback para volver al radar principal.
+ * @param requestFocus Solicita foco de corona rotatoria si está activa la página.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 @Composable
 fun RouteSummaryScreen(
     state: RadarUiState,
@@ -70,6 +91,7 @@ fun RouteSummaryScreen(
     }
 }
 
+/** Previsualización en el editor de Compose. */
 @Preview(device = Devices.WEAR_OS_SMALL_ROUND, showSystemUi = true)
 @Composable
 fun RouteSummaryScreenPreview() {

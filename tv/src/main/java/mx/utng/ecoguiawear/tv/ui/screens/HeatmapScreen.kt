@@ -1,5 +1,18 @@
 @file:OptIn(androidx.tv.material3.ExperimentalTvMaterial3Api::class)
 
+/**
+ * Pantalla de análisis de afluencia, métricas y ranking semanal de GeoDrops para Smart TV.
+ *
+ * Ofrece un panel visual informativo para administradores y visitantes:
+ * - Clasificación y podio de las cápsulas y puntos de interés más destacados y visitados de la semana.
+ * - Carrusel paginado por bloques de 3 elementos con rotación automática cada 8 segundos.
+ * - Resumen de métricas de cápsulas activas asociadas al sitio histórico vinculado.
+ * - Interfaz optimizada con estados visuales Skeleton ante desconexión o falta de sesión y bloqueo de modo kiosco con PIN.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 package mx.utng.ecoguiawear.tv.ui.screens
 
 import androidx.compose.animation.AnimatedContent
@@ -38,6 +51,17 @@ import mx.utng.ecoguiawear.tv.ui.theme.DeepBlue
 import mx.utng.ecoguiawear.tv.ui.theme.JadeGreen
 import mx.utng.ecoguiawear.tv.ui.theme.SurfaceDark
 
+/**
+ * Composable que renderiza el panel de ranking semanal y métricas turísticas en la Smart TV.
+ *
+ * @param isKioskLocked Indica si la pantalla se encuentra bloqueada en modo de exhibición protegida.
+ * @param onToggleKioskLock Callback para alternar el estado de bloqueo kiosco.
+ * @param onBack Callback para regresar a la pantalla de Lobby.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 @Composable
 fun HeatmapScreen(
     isKioskLocked: Boolean,
@@ -212,7 +236,6 @@ fun HeatmapScreen(
                     }
                 }
             }
-
 
             Spacer(modifier = Modifier.height(14.dp))
 

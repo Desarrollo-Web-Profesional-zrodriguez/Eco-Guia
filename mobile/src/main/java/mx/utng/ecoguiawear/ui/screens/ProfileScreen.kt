@@ -1,8 +1,9 @@
 /**
  * Archivo: ProfileScreen.kt
- * Autor: ZahirMora
- * Fecha de última actualización: 2026-07-21
- * Descripción: Pantalla de perfil de usuario. Muestra información pública, logros y estadísticas.
+ *
+ * Pantalla de perfil de usuario. Muestra información pública, logros, estadísticas culturales y nivel de explorador.
+ *
+ * @since 2026-08-05
  */
 
 package mx.utng.ecoguiawear.ui.screens
@@ -35,7 +36,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 
 /**
- * Composable que representa la pantalla de perfil.
+ * Pantalla composable de perfil del usuario.
+ *
+ * @param user Datos remotos del usuario logueado.
+ * @param viewModel ViewModel de autenticación para obtener métricas y progreso.
+ * @param onEditClick Callback para abrir el formulario de edición de perfil.
  */
 @Composable
 fun ProfileScreen(

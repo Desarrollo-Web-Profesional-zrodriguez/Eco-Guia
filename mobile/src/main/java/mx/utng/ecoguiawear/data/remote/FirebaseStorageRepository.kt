@@ -1,8 +1,10 @@
 /**
  * Archivo: FirebaseStorageRepository.kt
- * Autor: ZahirAndres / CesarEnrique
- * Fecha de última actualización: 2026-07-27
- * Descripción: Repositorio para la gestión de la subida y almacenamiento de imágenes en Firebase Storage.
+ *
+ * Repositorio para la gestión de subida, almacenamiento y obtención de URLs públicas de imágenes
+ * capturadas (cápsulas GeoDrop, sitios históricos y fotos de perfil) en Firebase Storage.
+ *
+ * @since 2026-08-05
  */
 
 package mx.utng.ecoguiawear.data.remote
@@ -12,6 +14,9 @@ import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.tasks.await
 import java.util.UUID
 
+/**
+ * Cliente de almacenamiento en la nube respaldado por Firebase Cloud Storage.
+ */
 class FirebaseStorageRepository {
 
     private val storage = FirebaseStorage.getInstance()

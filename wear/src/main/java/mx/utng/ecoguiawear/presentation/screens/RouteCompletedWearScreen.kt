@@ -1,3 +1,13 @@
+/**
+ * Pantalla de felicitación y fin de ruta turística completada en Wear OS.
+ *
+ * Muestra el trofeo de logro turístico, el nombre del recorrido completado y un botón
+ * para descartar el diálogo modal y volver al modo de auto-escaneo libre.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 package mx.utng.ecoguiawear.presentation.screens
 
 import androidx.compose.foundation.layout.*
@@ -19,6 +29,17 @@ import mx.utng.ecoguiawear.presentation.components.EcoWearScaffold
 import mx.utng.ecoguiawear.presentation.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.presentation.theme.EcoGuiaWearTheme
 
+/**
+ * Pantalla de confirmación de ruta turística completada.
+ *
+ * @param state Estado global reactivo del radar.
+ * @param onDismiss Callback para cerrar el diálogo modal de felicitación.
+ * @param requestFocus Solicita foco rotatorio si está en primer plano.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 @Composable
 fun RouteCompletedWearScreen(
     state: RadarUiState,
@@ -83,6 +104,7 @@ fun RouteCompletedWearScreen(
     }
 }
 
+/** Previsualización de la pantalla de ruta completada. */
 @Preview(device = Devices.WEAR_OS_SMALL_ROUND, showSystemUi = true)
 @Composable
 fun RouteCompletedWearScreenPreview() {

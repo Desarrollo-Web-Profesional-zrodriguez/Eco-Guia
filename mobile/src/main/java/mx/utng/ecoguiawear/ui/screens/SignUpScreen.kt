@@ -1,13 +1,10 @@
 /**
  * Archivo: SignUpScreen.kt
- * Autores: ZahirAndres, CesarEnrique
- * Fecha de última actualización: 2026-08-01
- * Descripción: Interfaz de usuario para el registro de nuevos usuarios en EcoGuía.
- * 
- * Funciones importantes:
- * - SignUpScreen: Formulario de registro con validaciones de nombre completo, correo electrónico válido,
- *   contraseña oculta con icono de visibilidad (ojo), restricción de código OTP PIN a 6 dígitos numéricos,
- *   ocultamiento automático del teclado e indicador de alertas en Snackbar verde superior.
+ *
+ * Interfaz de usuario para el registro de nuevos usuarios en la plataforma Eco-Guía,
+ * incluyendo soporte para nombres completos y verificación de correo mediante código OTP.
+ *
+ * @since 2026-08-05
  */
 
 package mx.utng.ecoguiawear.ui.screens
@@ -44,8 +41,11 @@ import mx.utng.ecoguiawear.ui.viewmodel.AuthViewModel
 import androidx.compose.runtime.saveable.rememberSaveable
 
 /**
- * Composable que representa la pantalla de registro con soporte para nombre completo,
- * contraseña oculta con icono de ojo, validaciones de código OTP de 6 dígitos y Snackbar superior.
+ * Pantalla composable de creación de cuenta y verificación OTP.
+ *
+ * @param viewModel ViewModel de autenticación.
+ * @param onSignUpSuccess Callback invocado cuando la cuenta es verificada y registrada.
+ * @param onBackToLogin Callback para regresar a la pantalla de inicio de sesión.
  */
 @Composable
 fun SignUpScreen(

@@ -1,9 +1,10 @@
 /**
  * Archivo: BottomMenu.kt
- * Autor: ZahirMora
- * Fecha de última actualización: 2026-07-21
- * Descripción: Contenido del menú desplegable inferior (Bottom Sheet) reactivo. 
- * Muestra opciones dinámicas que emergen desde abajo hacia arriba según el contexto.
+ *
+ * Contenido del menú desplegable inferior ([ModalBottomSheet]) reactivo de acciones contextuales.
+ * Muestra accesos directos y opciones según la ruta activa y el rol del usuario autenticado.
+ *
+ * @since 2026-08-05
  */
 
 package mx.utng.ecoguiawear.ui.components
@@ -29,7 +30,12 @@ import androidx.compose.ui.unit.sp
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 
 /**
- * Representa una opción dentro del menú inferior.
+ * Modelo de datos que representa una opción seleccionable dentro del menú inferior contextual.
+ *
+ * @property title Título visible de la opción.
+ * @property icon Ícono vectorial representativo.
+ * @property route Identificador o destino de navegación asociado.
+ * @property enabled Indica si el elemento está habilitado para interacción.
  */
 data class ContextMenuItem(
     val title: String,
@@ -39,7 +45,13 @@ data class ContextMenuItem(
 )
 
 /**
- * Composable que renderiza las opciones del menú que sale desde abajo.
+ * Hoja modal inferior que despliega acciones contextuales y de sesión.
+ *
+ * @param currentRoute Ruta activa en el grafo de navegación.
+ * @param isSuperAdmin Indica si el usuario autenticado cuenta con rol de superadministrador.
+ * @param isModerator Indica si el usuario autenticado cuenta con rol de moderador.
+ * @param onDismiss Callback invocado para cerrar la hoja modal.
+ * @param onNavigate Callback invocado para navegar a una ruta seleccionada.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

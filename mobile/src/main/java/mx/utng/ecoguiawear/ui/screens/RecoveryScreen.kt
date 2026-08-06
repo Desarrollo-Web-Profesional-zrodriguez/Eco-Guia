@@ -1,13 +1,9 @@
 /**
  * Archivo: RecoveryScreen.kt
- * Autores: ZahirAndres, CesarEnrique
- * Fecha de última actualización: 2026-08-01
- * Descripción: Interfaz de usuario para la recuperación de acceso mediante código OTP de 6 dígitos enviado por correo.
- * 
- * Funciones importantes:
- * - RecoveryScreen: Proceso multietapa para solicitar código PIN de 6 dígitos a un correo válido,
- *   verificar la clave recibida con restricción numérica de 6 dígitos y definir una nueva contraseña
- *   con visibilidad alternable (icono de ojo) y alertas mediante Snackbar superior.
+ *
+ * Interfaz de usuario para la recuperación de acceso y restablecimiento de contraseña mediante código OTP de 6 dígitos enviado por correo.
+ *
+ * @since 2026-08-05
  */
 
 package mx.utng.ecoguiawear.ui.screens
@@ -44,8 +40,10 @@ import mx.utng.ecoguiawear.ui.viewmodel.AuthViewModel
 import androidx.compose.runtime.saveable.rememberSaveable
 
 /**
- * Composable que representa la pantalla de recuperación de contraseña con código de verificación (PIN 6 dígitos),
- * validaciones completas, icono de ojo para contraseña y Snackbar superior.
+ * Pantalla composable de recuperación de cuenta y restablecimiento de contraseña vía OTP.
+ *
+ * @param viewModel ViewModel de autenticación y gestión de credenciales.
+ * @param onBackToLogin Callback para retornar a la pantalla de login.
  */
 @Composable
 fun RecoveryScreen(

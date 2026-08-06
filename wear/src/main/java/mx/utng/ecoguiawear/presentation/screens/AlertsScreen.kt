@@ -1,3 +1,13 @@
+/**
+ * Pantalla de historial y administración de alertas de proximidad en Wear OS.
+ *
+ * Muestra las notificaciones recientes de sitios turísticos y geodrops mediante un carrusel horizontal
+ * con soporte para descarte individual o purga masiva de registros.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 package mx.utng.ecoguiawear.presentation.screens
 
 import androidx.compose.foundation.background
@@ -45,6 +55,18 @@ import mx.utng.ecoguiawear.domain.model.RadarUiState
 import mx.utng.ecoguiawear.presentation.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.presentation.theme.EcoGuiaWearTheme
 
+/**
+ * Pantalla carrusel de alertas de proximidad.
+ *
+ * @param state Estado global reactivo del radar.
+ * @param onBack Callback para cerrar o retroceder de pantalla.
+ * @param onDeleteAlert Callback para eliminar una alerta específica por su ID.
+ * @param onClearAll Callback para vaciar todo el historial de alertas.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 @Composable
 fun AlertsScreen(
     state: RadarUiState,
@@ -204,6 +226,17 @@ fun AlertsScreen(
     }
 }
 
+/**
+ * Componente auxiliar para listar alertas en formato de renglón compacto.
+ *
+ * @param icon Vector del icono descriptivo.
+ * @param text Mensaje de la alerta.
+ * @param iconBackground Color de fondo circular del icono.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 @Composable
 fun AlertItem(icon: ImageVector, text: String, iconBackground: androidx.compose.ui.graphics.Color) {
     Row(
@@ -236,6 +269,7 @@ fun AlertItem(icon: ImageVector, text: String, iconBackground: androidx.compose.
     }
 }
 
+/** Previsualización en herramientas de diseño Compose. */
 @Preview(device = Devices.WEAR_OS_SMALL_ROUND, showSystemUi = true)
 @Composable
 fun AlertsScreenPreview() {

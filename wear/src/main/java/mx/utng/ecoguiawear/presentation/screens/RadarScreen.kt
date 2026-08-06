@@ -1,3 +1,13 @@
+/**
+ * Pantalla principal del radar y navegación háptica en Wear OS.
+ *
+ * Muestra la aguja de compás en tiempo real, el título del objetivo, la distancia geodésica restante
+ * y la botonera de navegación hacia la brújula ampliada, alertas y ajustes.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 package mx.utng.ecoguiawear.presentation.screens
 
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -32,6 +42,28 @@ import mx.utng.ecoguiawear.presentation.components.ScreenHeader
 import mx.utng.ecoguiawear.presentation.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.presentation.theme.EcoGuiaWearTheme
 
+/**
+ * Pantalla central de visualización de radar geodésico.
+ *
+ * @param state Estado global reactivo del radar.
+ * @param onToggleRadar Callback para pausar o reactivar el radar.
+ * @param onApproachDemo Callback para simular aproximación al objetivo.
+ * @param onOpenCompass Callback para abrir la vista de brújula.
+ * @param onOpenAlert Callback para abrir la pantalla de alertas.
+ * @param onOpenArrival Callback para abrir la pantalla de llegada.
+ * @param onOpenSummary Callback para ver el resumen de ruta turística.
+ * @param onOpenSettings Callback para acceder a ajustes.
+ * @param onSelectNextAutoTarget Callback para ciclar al siguiente sitio descubierto.
+ * @param onSelectPreviousAutoTarget Callback para ciclar al sitio anterior descubierto.
+ * @param onRefresh Callback para recargar sitios desde Neon PostgreSQL.
+ * @param onOpenStealth Callback para alternar al modo discreto.
+ * @param onNavigateBack Callback para retornar a la pantalla previa.
+ * @param requestFocus Indica si debe solicitar el foco para entrada rotatoria.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 @Composable
 fun RadarScreen(
     state: RadarUiState,
@@ -142,60 +174,61 @@ fun RadarScreen(
         item {
             Button(
                 label = { 
-                    Text(
-                        text = "Ver Brújula / Dirección",
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Center
-                    ) 
-                },
-                onClick = {
-                    onOpenCompass()
-                },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = EcoGuiaColors.Jade,
-                    contentColor = EcoGuiaColors.Background
-                ),
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
+                Text(
+                    text = "Ver Brújula / Dirección",
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center
+                ) 
+            },
+            onClick = {
+                onOpenCompass()
+            },
+            colors = ButtonDefaults.buttonColors(
+                containerColor = EcoGuiaColors.Jade,
+                contentColor = EcoGuiaColors.Background
+            ),
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
 
-        item {
-            Button(
-                label = { 
-                    Text(
-                        text = "Ver Alertas",
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Center
-                    ) 
-                },
-                onClick = onOpenAlert,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = EcoGuiaColors.Surface.copy(alpha = 0.5f),
-                    contentColor = EcoGuiaColors.Text
-                ),
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
-        item {
-            Button(
-                label = { 
-                    Text(
-                        text = "Ajustes",
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Center
-                    ) 
-                },
-                onClick = onNavigateBack,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = EcoGuiaColors.Surface.copy(alpha = 0.5f),
-                    contentColor = EcoGuiaColors.Text
-                ),
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
+    item {
+        Button(
+            label = { 
+                Text(
+                    text = "Ver Alertas",
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center
+                ) 
+            },
+            onClick = onOpenAlert,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = EcoGuiaColors.Surface.copy(alpha = 0.5f),
+                contentColor = EcoGuiaColors.Text
+            ),
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
+    item {
+        Button(
+            label = { 
+                Text(
+                    text = "Ajustes",
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center
+                ) 
+            },
+            onClick = onNavigateBack,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = EcoGuiaColors.Surface.copy(alpha = 0.5f),
+                contentColor = EcoGuiaColors.Text
+            ),
+            modifier = Modifier.fillMaxWidth()
+        )
     }
 }
+}
 
+/** Previsualización de la pantalla de radar. */
 @Preview(device = Devices.WEAR_OS_SMALL_ROUND, showSystemUi = true)
 @Composable
 fun RadarScreenPreview() {

@@ -1,8 +1,9 @@
 /**
  * Archivo: SiteContentScreen.kt
- * Autor: Zahir Rodriguez
- * Fecha de última actualización: 2026-07-24
- * Descripción: Gestión del contenido histórico y descriptivo de un sitio (Paso 2).
+ *
+ * Gestión del contenido histórico y descriptivo de un sitio dentro del asistente de alta (Paso 2).
+ *
+ * @since 2026-08-05
  */
 
 package mx.utng.ecoguiawear.ui.screens.admin
@@ -27,10 +28,15 @@ import mx.utng.ecoguiawear.ui.components.EcoTextField
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 import mx.utng.ecoguiawear.ui.viewmodel.SiteRegistrationViewModel
-
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 
+/**
+ * Pantalla composable del paso 2 para capturar descripción breve y reseña histórica.
+ *
+ * @param viewModel ViewModel compartido del asistente de registro de sitios.
+ * @param onNext Callback para continuar al siguiente paso.
+ */
 @Composable
 fun SiteContentScreen(
     viewModel: SiteRegistrationViewModel,

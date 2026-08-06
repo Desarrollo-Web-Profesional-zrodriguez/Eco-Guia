@@ -1,3 +1,13 @@
+/**
+ * Despachador y decodificador de mensajes de la capa Wearable para el reloj inteligente.
+ *
+ * Parsea los payloads transmitidos desde el teléfono (rutas, waypoints, objetivos, estados de simulación
+ * y alertas) y delega las operaciones correspondientes al [RadarRepository].
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 package mx.utng.ecoguiawear.data.wear
 
 import android.content.Context
@@ -9,11 +19,25 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import mx.utng.ecoguiawear.domain.repository.RadarRepository
 
+/**
+ * Escucha y procesador de eventos de mensajería Wearable.
+ *
+ * @param repository Repositorio [RadarRepository] donde se aplicarán los cambios de estado solicitados.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 class WearMessageListener(
     private val repository: RadarRepository
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
+    /**
+     * Procesa un evento de mensaje entrante recibido de la capa Wearable.
+     *
+     * @param event Mensaje recibido con ruta y arreglo de bytes.
+     */
     fun onMessageReceived(event: MessageEvent) {
         val payload = String(event.data)
         android.util.Log.d("WearMessageListener", "Mensaje recibido: ${event.path} -> $payload")

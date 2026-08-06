@@ -1,9 +1,11 @@
 /**
  * Archivo: ChatViewModel.kt
- * Autor: Zahir Rodriguez
- * Fecha de última actualización: 2026-07-24
- * Descripción: Gestiona la comunicación con la API de Groq para simular
- * la personalidad de Miguel Hidalgo y Costilla, con contexto de sitios reales (RAG).
+ *
+ * Gestiona la interacción conversacional con el modelo de lenguaje de Groq (Llama 3),
+ * personificando a Don Miguel Hidalgo y Costilla enriquecido mediante RAG con información
+ * en tiempo real de sitios históricos y artículos de conocimiento curados desde la base de datos Neon.
+ *
+ * @since 2026-08-05
  */
 
 package mx.utng.ecoguiawear.ui.viewmodel
@@ -19,12 +21,24 @@ import mx.utng.ecoguia.shared.data.remote.GroqMessage
 import mx.utng.ecoguia.shared.data.repository.EcoGuiaRepositoryImpl
 import mx.utng.ecoguia.shared.domain.repository.EcoGuiaRepository
 
+/**
+ * Modelo representativo de un mensaje dentro del hilo de chat.
+ *
+ * @property text Contenido textual del mensaje.
+ * @property isUser `true` si el mensaje fue enviado por el usuario; `false` si es del asistente histórico.
+ * @property timestamp Marca de tiempo en milisegundos de la emisión del mensaje.
+ */
 data class ChatMessage(
     val text: String,
     val isUser: Boolean,
     val timestamp: Long = System.currentTimeMillis()
 )
 
+/**
+ * ViewModel que orquesta el asistente interactivo con IA y generación aumentada por recuperación (RAG).
+ *
+ * @param repository Repositorio de datos para obtener sitios históricos y base de conocimiento contextual.
+ */
 class ChatViewModel(
     private val repository: EcoGuiaRepository = EcoGuiaRepositoryImpl()
 ) : ViewModel() {
@@ -109,6 +123,11 @@ class ChatViewModel(
     }
 
 
+    /**
+     * Envía una consulta del usuario al modelo de IA y procesa la respuesta en streaming/asíncrona.
+     *
+     * @param userText Texto de la pregunta o comentario escrito por el usuario.
+     */
     fun sendMessage(userText: String) {
         if (userText.isBlank()) return
 
@@ -130,6 +149,9 @@ class ChatViewModel(
         }
     }
 
+    /**
+     * Libera los recursos del cliente HTTP al destruirse el ViewModel.
+     */
     override fun onCleared() {
         super.onCleared()
         groqClient.close()

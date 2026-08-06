@@ -1,3 +1,13 @@
+/**
+ * Actividad principal y punto de entrada para la aplicación en Wear OS.
+ *
+ * Configura la pantalla de bienvenida (Splash Screen), solicita permisos de ubicación en tiempo de ejecución,
+ * inicializa los sensores de orientación y GPS, y establece el grafo de navegación Wear Compose.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 package mx.utng.ecoguiawear.presentation
 
 import android.Manifest
@@ -21,12 +31,24 @@ import mx.utng.ecoguiawear.data.wear.WearMessageListener
 import mx.utng.ecoguiawear.presentation.navigation.EcoGuiaWearNavGraph
 import mx.utng.ecoguiawear.presentation.theme.EcoGuiaWearTheme
 
+/**
+ * Actividad única de Wear OS que implementa la escucha de mensajes Wearable en primer plano.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 class MainActivity : ComponentActivity(), MessageClient.OnMessageReceivedListener {
 
     private lateinit var messageListener: WearMessageListener
     private lateinit var locationHelper: LocationHelper
     private lateinit var sensorHelper: SensorHelper
 
+    /**
+     * Inicializa componentes del sistema, dependencias de hardware y la interfaz Compose.
+     *
+     * @param savedInstanceState Estado previo guardado en caso de recreación.
+     */
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
@@ -79,12 +101,20 @@ class MainActivity : ComponentActivity(), MessageClient.OnMessageReceivedListene
         }
     }
 
+    /**
+     * Delega el mensaje entrante recibido en primer plano al [WearMessageListener].
+     *
+     * @param event Evento con la información del mensaje recibido.
+     */
     override fun onMessageReceived(event: MessageEvent) {
         if (::messageListener.isInitialized) {
             messageListener.onMessageReceived(event)
         }
     }
 
+    /**
+     * Libera las suscripciones de sensores y listeners de mensajería al destruir la actividad.
+     */
     override fun onDestroy() {
         super.onDestroy()
         locationHelper.stopUpdates()

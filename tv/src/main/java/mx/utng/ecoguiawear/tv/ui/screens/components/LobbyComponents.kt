@@ -1,5 +1,20 @@
 @file:OptIn(androidx.tv.material3.ExperimentalTvMaterial3Api::class)
 
+/**
+ * Componentes de interfaz de usuario y utilidades visuales para la pantalla de Lobby en Smart TV.
+ *
+ * Contiene elementos modulares especializados:
+ * - Generador de matrices gráficas de códigos QR con ZXing ([generateQrBitmap]).
+ * - Tarjeta informativa de estado conectado con detalles de cuenta y sitio ([TvConnectedStateCard]).
+ * - Bloque de presentación del PIN de emparejamiento y QR para vincular dispositivos móviles ([TvPairingCodeBlock]).
+ * - Barra de botones de navegación directa y vista previa ([TvPreviewNavigationButtons]).
+ * - Diálogo de confirmación para cierre de sesión y desvinculación ([TvLogoutConfirmDialog]).
+ * - Vista de transición y restauración de sesión activa ([TvLoadingRestorationState]).
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 package mx.utng.ecoguiawear.tv.ui.screens.components
 
 import androidx.compose.foundation.Image
@@ -35,6 +50,13 @@ import com.google.zxing.qrcode.QRCodeWriter
 import mx.utng.ecoguia.shared.domain.model.RemoteHistoricalSite
 import mx.utng.ecoguia.shared.domain.model.RemoteUser
 
+/**
+ * Genera un mapa de bits [android.graphics.Bitmap] monocromático que contiene un código QR codificado.
+ *
+ * @param content Cadena de texto a codificar dentro del QR (usualmente el PIN de 6 dígitos).
+ * @param size Dimensión cuadrada en píxeles de la imagen resultante.
+ * @return [android.graphics.Bitmap] generado con el patrón QR legible.
+ */
 private fun generateQrBitmap(content: String, size: Int = 350): android.graphics.Bitmap {
     return try {
         val bitMatrix = QRCodeWriter().encode(content, BarcodeFormat.QR_CODE, size, size)
@@ -50,6 +72,14 @@ private fun generateQrBitmap(content: String, size: Int = 350): android.graphics
     }
 }
 
+/**
+ * Pantalla de carga transitoria que se visualiza mientras la Smart TV consulta
+ * las preferencias locales y el estado de sincronización en la base de datos remota.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 @Composable
 fun TvLoadingRestorationState() {
     Column(
@@ -73,6 +103,20 @@ fun TvLoadingRestorationState() {
     }
 }
 
+/**
+ * Tarjeta que se presenta cuando la Smart TV se encuentra correctamente emparejada con un usuario móvil.
+ *
+ * @param loggedUser Datos del usuario autenticado y vinculado con la TV.
+ * @param assignedSite Información del sitio histórico asignado actualmente.
+ * @param pairingCode Código PIN identificador de la pantalla.
+ * @param availableSites Lista de sitios históricos a los que el usuario tiene acceso.
+ * @param isAdmin Indica si el usuario vinculado cuenta con permisos de administrador.
+ * @param onChangeSiteClick Callback para desplegar el selector de cambio de sitio.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 @Composable
 fun TvConnectedStateCard(
     loggedUser: RemoteUser?,
@@ -186,6 +230,16 @@ fun TvConnectedStateCard(
     }
 }
 
+/**
+ * Bloque informativo principal cuando la TV no tiene una sesión activa vinculada.
+ * Despliega el código QR generado dinámicamente y el PIN en texto de alto contraste.
+ *
+ * @param pairingCode Código numérico de 6 dígitos que identifica a esta TV.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 @Composable
 fun TvPairingCodeBlock(pairingCode: String) {
     Column(
@@ -255,6 +309,17 @@ fun TvPairingCodeBlock(pairingCode: String) {
     }
 }
 
+/**
+ * Fila de botones de acceso rápido para explorar las pantallas de demostración antes de recibir comandos remotos.
+ *
+ * @param onNavigateToGallery Callback para abrir la galería de fotos.
+ * @param onNavigateToPortal360 Callback para abrir el mapa 360°.
+ * @param onNavigateToHeatmap Callback para abrir el ranking analítico.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 @Composable
 fun TvPreviewNavigationButtons(
     onNavigateToGallery: () -> Unit,
@@ -328,6 +393,16 @@ fun TvPreviewNavigationButtons(
     }
 }
 
+/**
+ * Diálogo modal de confirmación para desvincular la TV y cerrar la sesión activa.
+ *
+ * @param onConfirmLogout Callback invocado cuando el usuario confirma el cierre de sesión.
+ * @param onDismiss Callback invocado para cancelar o cerrar el diálogo.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 @Composable
 fun TvLogoutConfirmDialog(
     onConfirmLogout: () -> Unit,

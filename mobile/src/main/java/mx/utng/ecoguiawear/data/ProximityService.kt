@@ -1,16 +1,11 @@
 /**
  * Archivo: ProximityService.kt
- * Autor: Zahir Andres
- * Fecha de última actualización: 2026-07-25
- * Descripción: Servicio en primer plano (ForegroundService) de tipo "location" que monitorea
- * la posición GPS del usuario en segundo plano y dispara notificaciones del sistema al acercarse
- * a un sitio histórico registrado en la base de datos Neon, incluso con la app cerrada.
  *
- * Funciones destacadas:
- * - onStartCommand: Inicia las actualizaciones de ubicación y registra el servicio como foreground.
- * - checkProximity: Consulta getNearbySites() con el radio exacto de cada sitio y verifica
- *   si el usuario está dentro del detection_radius_m. Emite notificación si aplica.
- * - onDestroy: Detiene el cliente de ubicación y limpia el estado de sitios notificados.
+ * Servicio en primer plano ([Service]) de tipo "location" que monitorea continuamente la posición GPS
+ * del usuario en segundo plano y dispara notificaciones del sistema al aproximarse a un sitio histórico
+ * registrado en la base de datos Neon, incluso con la aplicación cerrada.
+ *
+ * @since 2026-08-05
  */
 
 package mx.utng.ecoguiawear.data
@@ -25,6 +20,10 @@ import com.google.android.gms.location.*
 import kotlinx.coroutines.*
 import mx.utng.ecoguia.shared.data.repository.EcoGuiaRepositoryImpl
 
+/**
+ * Foreground Service para geofencing y monitoreo continuo de proximidad a sitios de interés cultural.
+ * Requiere el permiso `FOREGROUND_SERVICE_LOCATION` y `ACCESS_FINE_LOCATION`.
+ */
 class ProximityService : Service() {
 
     companion object {
@@ -42,8 +41,8 @@ class ProximityService : Service() {
     private lateinit var locationCallback: LocationCallback
 
     /**
-     * Conjunto de siteIds para los que ya se emitió notificación en esta sesión.
-     * Evita spam de alertas si el usuario permanece en el área.
+     * Conjunto de identificadores de sitios para los que ya se emitió notificación en la sesión activa.
+     * Evita la duplicación o saturación de alertas si el usuario permanece en el área.
      */
     private val notifiedSites = mutableSetOf<String>()
 
@@ -51,12 +50,23 @@ class ProximityService : Service() {
     // Ciclo de vida del Service
     // ─────────────────────────────────────────────────────────────────────────
 
+    /**
+     * Inicializa los canales de notificación y el cliente de ubicación fused de Google Play Services.
+     */
     override fun onCreate() {
         super.onCreate()
         ProximityNotificationHelper.createChannels(this)
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
     }
 
+    /**
+     * Inicia la suscripción a cambios de ubicación en segundo plano y promueve el servicio a primer plano.
+     *
+     * @param intent Intención de inicio del servicio.
+     * @param flags Indicadores adicionales de lanzamiento.
+     * @param startId Identificador único de solicitud.
+     * @return [START_STICKY] para solicitar recreación automática por el sistema si el proceso es eliminado.
+     */
     @SuppressLint("MissingPermission")
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         // Promover a ForegroundService con notificación persistente
@@ -95,6 +105,11 @@ class ProximityService : Service() {
 
     override fun onBind(intent: Intent?): IBinder? = null
 
+    /**
+     * Garantiza el auto-reinicio del servicio mediante [AlarmManager] si el usuario remueve la aplicación de la vista de tareas recientes.
+     *
+     * @param rootIntent Intención raíz de la tarea removida.
+     */
     override fun onTaskRemoved(rootIntent: Intent?) {
         Log.d(TAG, "App removida de recientes. Programando auto-reinicio del ProximityService...")
         try {
@@ -117,6 +132,9 @@ class ProximityService : Service() {
         super.onTaskRemoved(rootIntent)
     }
 
+    /**
+     * Libera los recursos de geolocalización, cancela el alcance de corrutinas y limpia el registro de alertas.
+     */
     override fun onDestroy() {
         super.onDestroy()
         fusedLocationClient.removeLocationUpdates(locationCallback)

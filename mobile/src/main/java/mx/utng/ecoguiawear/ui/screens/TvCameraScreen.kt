@@ -1,3 +1,11 @@
+/**
+ * Archivo: TvCameraScreen.kt
+ *
+ * Pantalla de captura y transmisión de fotografías directamente hacia la aplicación en Smart TV mediante HTTP local.
+ *
+ * @since 2026-08-05
+ */
+
 package mx.utng.ecoguiawear.ui.screens
 
 import android.Manifest
@@ -46,6 +54,13 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 
+/**
+ * Pantalla composable para capturar fotografías y transmitirlas por red de área local a la Smart TV.
+ *
+ * @param ip Dirección IP asignada al dispositivo Smart TV.
+ * @param port Puerto de escucha del servidor HTTP en la TV.
+ * @param onBack Callback para regresar tras finalizar el envío.
+ */
 @Composable
 fun TvCameraScreen(ip: String, port: String, onBack: () -> Unit) {
     val context = LocalContext.current

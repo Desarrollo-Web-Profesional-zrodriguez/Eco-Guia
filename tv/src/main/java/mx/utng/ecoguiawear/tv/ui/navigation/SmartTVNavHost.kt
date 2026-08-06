@@ -1,3 +1,14 @@
+/**
+ * Host de navegación de la aplicación Smart TV de Eco-Guía.
+ *
+ * Define el grafo de navegación completo para Android TV, administrando el destino inicial
+ * (Lobby), las transiciones entre pantallas, el estado persistente del modo kiosco y la
+ * escucha global de desvinculación remota mediante MQTT y sincronización con Neon DB.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 package mx.utng.ecoguiawear.tv.ui.navigation
 
 import androidx.compose.runtime.*
@@ -9,13 +20,40 @@ import mx.utng.ecoguiawear.tv.ui.screens.HeatmapScreen
 import mx.utng.ecoguiawear.tv.ui.screens.LobbyScreen
 import mx.utng.ecoguiawear.tv.ui.screens.Portal360Screen
 
+/**
+ * Rutas de navegación disponibles en la aplicación Smart TV.
+ *
+ * @param route Identificador único de la ruta para el [NavHost].
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 sealed class TVRoutes(val route: String) {
+    /** Ruta de la pantalla principal / lobby de bienvenida y emparejamiento. */
     object Lobby : TVRoutes("lobby")
+
+    /** Ruta del mapa de calor de afluencia turística e interacciones. */
     object Heatmap : TVRoutes("heatmap")
+
+    /** Ruta de la galería y slideshow de cápsulas culturales GeoDrops. */
     object Gallery : TVRoutes("gallery")
+
+    /** Ruta del visor cartográfico 360° con rotación automática y perspectivas históricas. */
     object Portal360 : TVRoutes("portal360")
 }
 
+/**
+ * Grafo principal de navegación para la Smart TV.
+ *
+ * Configura la pantalla de inicio en [TVRoutes.Lobby] y gestiona la navegación adaptada a control
+ * remoto (D-Pad). Además, orquesta el ciclo de vida del modo de bloqueo kiosco y la recepción
+ * de señales de cierre de sesión remoto transmitidas por el dispositivo móvil.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 @Composable
 fun SmartTVNavHost() {
     val navController = rememberNavController()
@@ -126,5 +164,3 @@ fun SmartTVNavHost() {
         }
     }
 }
-
-

@@ -1,8 +1,9 @@
 /**
  * Archivo: DeviceStatusScreen.kt
- * Autor: ZahirMora
- * Fecha de Ãºltima actualizaciÃ³n: 2026-07-22
- * DescripciÃ³n: Pantalla de diagnÃ³stico inmersiva que muestra el estado de conexiÃ³n de los servicios crÃ­ticos.
+ *
+ * Pantalla de diagnóstico inmersiva que muestra el estado de conexión de los servicios críticos del ecosistema.
+ *
+ * @since 2026-08-05
  */
 
 package mx.utng.ecoguiawear.ui.screens
@@ -29,6 +30,11 @@ import androidx.compose.ui.unit.sp
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 
+/**
+ * Pantalla composable para visualizar la telemetría y estado de enlace de servicios.
+ *
+ * @param onBack Callback para cerrar la vista de estado.
+ */
 @Composable
 fun DeviceStatusScreen(
     onBack: () -> Unit

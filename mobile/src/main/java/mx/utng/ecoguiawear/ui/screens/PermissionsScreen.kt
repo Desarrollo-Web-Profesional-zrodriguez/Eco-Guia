@@ -1,17 +1,11 @@
 /**
  * Archivo: PermissionsScreen.kt
- * Autor: Zahir Andres
- * Fecha de última actualización: 2026-07-25
- * Descripción: Pantalla de gestión de permisos necesarios para la experiencia completa.
- * Muestra el estado real de cada permiso del sistema y permite activar o desactivar
- * el servicio de Alertas de Proximidad (ProximityService) desde la UI.
  *
- * Funciones destacadas:
- * - PermissionsScreen: Composable principal. Lanza solicitudes de permisos reales
- *   (ACCESS_BACKGROUND_LOCATION, POST_NOTIFICATIONS) y conecta el toggle al LocationViewModel.
- * - PermissionToggleItem: Fila reutilizable que muestra ícono, título, descripción y switch.
- * - ProximityAlertToggleItem: Variante especializada con flujo de permiso en dos pasos:
- *   primero POST_NOTIFICATIONS (API 33+), luego ACCESS_BACKGROUND_LOCATION.
+ * Pantalla de gestión de permisos necesarios para la experiencia completa de Eco-Guía.
+ * Muestra el estado real de cada permiso del sistema y permite activar o desactivar
+ * el servicio de Alertas de Proximidad en segundo plano (ProximityService).
+ *
+ * @since 2026-08-05
  */
 
 package mx.utng.ecoguiawear.ui.screens
@@ -47,8 +41,9 @@ import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 import mx.utng.ecoguiawear.ui.viewmodel.LocationViewModel
 
 /**
- * Pantalla principal de gestión de permisos.
- * Integra solicitudes de permisos reales del sistema y controla el [ProximityService].
+ * Pantalla composable para visualizar y autorizar los permisos del sistema (cámara, ubicación, notificaciones).
+ *
+ * @param locationViewModel ViewModel para sincronizar el estado y controlar el servicio de geocercas.
  */
 @Composable
 fun PermissionsScreen(

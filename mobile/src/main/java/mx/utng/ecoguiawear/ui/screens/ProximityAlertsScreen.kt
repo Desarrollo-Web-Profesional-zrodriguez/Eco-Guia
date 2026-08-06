@@ -1,8 +1,9 @@
-﻿/**
+/**
  * Archivo: ProximityAlertsScreen.kt
- * Autor: ZahirMora
- * Fecha de Ãºltima actualizaciÃ³n: 2026-07-21
- * DescripciÃ³n: Pantalla de alertas de proximidad que notifica al usuario sobre Geo-Drops cercanos.
+ *
+ * Pantalla de alertas de proximidad que notifica al usuario sobre puntos de interés y Geo-Drops cercanos.
+ *
+ * @since 2026-08-05
  */
 
 package mx.utng.ecoguiawear.ui.screens
@@ -29,6 +30,9 @@ import androidx.compose.ui.unit.sp
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 
+/**
+ * Pantalla composable para consultar el historial de alertas y notificaciones de proximidad recibidas.
+ */
 @Composable
 fun ProximityAlertsScreen() {
     Column(

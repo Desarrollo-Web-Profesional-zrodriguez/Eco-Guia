@@ -1,8 +1,9 @@
 /**
  * Archivo: ModerateCommunityScreen.kt
- * Autor: ZahirMora
- * Fecha de última actualización: 2026-07-22
- * Descripción: Pantalla para moderar contenido generado por la comunidad.
+ *
+ * Pantalla principal del panel de moderación para revisar publicaciones, reportes y aportaciones de la comunidad.
+ *
+ * @since 2026-08-05
  */
 
 package mx.utng.ecoguiawear.ui.screens.admin
@@ -27,6 +28,11 @@ import mx.utng.ecoguiawear.ui.components.AdminBottomBar
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 
+/**
+ * Pantalla composable de moderación de contenido comunitario y gestión de denuncias.
+ *
+ * @param onNavigate Callback para navegar entre pantallas del módulo de administración.
+ */
 @Composable
 fun ModerateCommunityScreen(
     onNavigate: (String) -> Unit

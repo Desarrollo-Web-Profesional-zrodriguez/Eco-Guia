@@ -1,8 +1,9 @@
-﻿/**
+/**
  * Archivo: ManualGeoDropScreen.kt
- * Autor: ZahirMora
- * Fecha de Ãºltima actualizaciÃ³n: 2026-07-22
- * DescripciÃ³n: Pantalla para el anclaje manual de cÃ¡psulas (Geo-Drops) por parte de un administrador.
+ *
+ * Pantalla para el anclaje manual de cápsulas y marcadores culturales (Geo-Drops) por parte de un administrador.
+ *
+ * @since 2026-08-05
  */
 
 package mx.utng.ecoguiawear.ui.screens.admin
@@ -29,6 +30,11 @@ import mx.utng.ecoguiawear.ui.components.EcoButton
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 
+/**
+ * Pantalla composable para anclar y registrar manualmente un Geo-Drop con coordenadas y metadatos.
+ *
+ * @param onAnchorClick Callback invocado al confirmar el anclaje del Geo-Drop.
+ */
 @Composable
 fun ManualGeoDropScreen(
     onAnchorClick: () -> Unit

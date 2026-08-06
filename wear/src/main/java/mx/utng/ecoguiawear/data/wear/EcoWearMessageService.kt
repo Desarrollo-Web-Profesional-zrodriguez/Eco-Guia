@@ -1,3 +1,13 @@
+/**
+ * Servicio en segundo plano para la recepción de mensajes del teléfono en Wear OS.
+ *
+ * Escucha eventos del [com.google.android.gms.wearable.WearableListenerService], procesa comandos
+ * de rutas turísticas, paradas y sitios históricos, y genera notificaciones del sistema en el reloj.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 package mx.utng.ecoguiawear.data.wear
 
 import android.app.NotificationChannel
@@ -12,9 +22,18 @@ import mx.utng.ecoguiawear.data.repository.RadarRepositoryImpl
 /**
  * Servicio del sistema Wear OS que escucha los mensajes enviados desde la app del teléfono móvil
  * incluso si la aplicación del reloj no está en primer plano.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
  */
 class EcoWearMessageService : WearableListenerService() {
 
+    /**
+     * Callback invocado automáticamente al recibir un mensaje del teléfono conectado.
+     *
+     * @param messageEvent Evento que encapsula la ruta y los datos binarios transmitidos.
+     */
     override fun onMessageReceived(messageEvent: MessageEvent) {
         super.onMessageReceived(messageEvent)
         val path = messageEvent.path
@@ -30,6 +49,12 @@ class EcoWearMessageService : WearableListenerService() {
         }
     }
 
+    /**
+     * Muestra una notificación visual y sonora en el sistema operativo del reloj inteligente.
+     *
+     * @param path Ruta del comando recibido.
+     * @param payload Contenido del mensaje en formato de texto plano.
+     */
     private fun showSystemNotification(path: String, payload: String) {
         try {
             val channelId = "wear_eco_alerts"

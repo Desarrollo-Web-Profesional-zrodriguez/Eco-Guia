@@ -1,3 +1,13 @@
+/**
+ * Pantalla de brújula digital interactiva para Wear OS.
+ *
+ * Presenta la aguja de navegación orientada dinámicamente según la diferencia angular entre
+ * el azimut del reloj y el rumbo hacia el sitio turístico objetivo.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 package mx.utng.ecoguiawear.presentation.screens
 
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,6 +28,18 @@ import mx.utng.ecoguiawear.presentation.components.ScreenHeader
 import mx.utng.ecoguiawear.presentation.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.presentation.theme.EcoGuiaWearTheme
 
+/**
+ * Pantalla de brújula y orientación visual.
+ *
+ * @param state Estado global reactivo del radar.
+ * @param onNext Callback para avanzar de página.
+ * @param onBack Callback para retroceder de página.
+ * @param requestFocus Solicita foco rotatorio para el bisel físico si está en primer plano.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 @Composable
 fun CompassScreen(
     state: RadarUiState,
@@ -54,6 +76,7 @@ fun CompassScreen(
     }
 }
 
+/** Previsualización en el diseñador de layouts Wear OS. */
 @Preview(device = Devices.WEAR_OS_SMALL_ROUND, showSystemUi = true)
 @Composable
 fun CompassScreenPreview() {

@@ -1,9 +1,10 @@
 /**
  * Archivo: ModerationViewModel.kt
- * Autores: ZahirAndres, CesarEnrique
- * Fecha de última actualización: 2026-07-26
- * Descripción: ViewModel que gestiona la carga y la toma de decisiones sobre las cápsulas Geo-Drop
+ *
+ * ViewModel que gestiona la carga y la toma de decisiones sobre las cápsulas Geo-Drop
  * y reportes pendientes de moderación enviando las resoluciones (approved/rejected) a Neon PostgreSQL.
+ *
+ * @since 2026-08-05
  */
 
 package mx.utng.ecoguiawear.ui.viewmodel
@@ -17,6 +18,11 @@ import mx.utng.ecoguia.shared.data.repository.EcoGuiaRepositoryImpl
 import mx.utng.ecoguia.shared.domain.model.RemoteGeoDrop
 import mx.utng.ecoguia.shared.domain.repository.EcoGuiaRepository
 
+/**
+ * ViewModel que proporciona la lista de elementos en cola de moderación y actualiza su estado.
+ *
+ * @param repository Repositorio de datos para operaciones de moderación.
+ */
 class ModerationViewModel(
     private val repository: EcoGuiaRepository = EcoGuiaRepositoryImpl()
 ) : ViewModel() {
@@ -51,14 +57,21 @@ class ModerationViewModel(
     }
 
     /**
-     * Establece la cápsula seleccionada para revisar su detalle.
+     * Establece la cápsula seleccionada para revisar su detalle en el modal de moderación.
+     *
+     * @param drop Cápsula seleccionada o `null` para deseleccionar.
      */
     fun selectDrop(drop: RemoteGeoDrop?) {
         _selectedDrop.value = drop
     }
 
     /**
-     * Resuelve un reporte cambiando el estado a approved o rejected en la base de datos.
+     * Resuelve un reporte cambiando el estado a aprobado ("approved") o rechazado ("rejected") en la base de datos.
+     *
+     * @param dropId Identificador de la cápsula.
+     * @param newStatus Nuevo estado a asignar.
+     * @param onSuccess Callback ejecutado al actualizar exitosamente.
+     * @param onError Callback invocado si ocurre un error.
      */
     fun resolveDrop(
         dropId: String,

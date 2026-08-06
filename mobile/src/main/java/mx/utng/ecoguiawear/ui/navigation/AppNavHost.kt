@@ -1,16 +1,11 @@
 /**
  * Archivo: AppNavHost.kt
- * Autores: ZahirAndres, CesarEnrique
- * Fecha de última actualización: 2026-07-26
- * Descripción: Definición centralizada del grafo de navegación de la aplicación mediante
- * Jetpack Compose Navigation. Agrupa todas las rutas en módulos lógicos comentados:
- * Auth, Principal, Perfil, Rutas, Admin y Dispositivos.
  *
- * Separado de MainActivity.kt para reducir su tamaño y facilitar la adición de
- * nuevas rutas sin tocar la actividad principal.
+ * Definición centralizada del grafo de navegación de la aplicación mediante Jetpack Compose Navigation.
+ * Agrupa todas las rutas de pantallas en módulos lógicos: Autenticación, Exploración, Perfil,
+ * Rutas Turísticas, Panel de Administración, Moderación y Gestión de Dispositivos.
  *
- * Funciones destacadas:
- * - AppNavHost: NavHost completo con todas las rutas de la aplicación.
+ * @since 2026-07-26
  */
 
 package mx.utng.ecoguiawear.ui.navigation

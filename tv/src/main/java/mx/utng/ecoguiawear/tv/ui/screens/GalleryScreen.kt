@@ -1,5 +1,18 @@
 @file:OptIn(androidx.tv.material3.ExperimentalTvMaterial3Api::class)
 
+/**
+ * Pantalla de galería y presentación continua (Slideshow) de cápsulas GeoDrops para Smart TV.
+ *
+ * Diseñada para exhibiciones públicas en pantallas de gran formato:
+ * - Carga y filtra las cápsulas comunitarias aprobadas pertenecientes al sitio histórico vinculado.
+ * - Ejecuta una transición cíclica automática cada 5 segundos entre las fotografías y descripciones registradas.
+ * - Integra estados de carga tipo Skeleton cuando no hay sesión activa o mientras se descargan datos desde Neon DB.
+ * - Soporta protección de modo kiosco con PIN y manejo del botón Back del control remoto.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 package mx.utng.ecoguiawear.tv.ui.screens
 
 import androidx.activity.compose.BackHandler
@@ -36,6 +49,17 @@ import mx.utng.ecoguiawear.tv.ui.theme.DeepBlue
 import mx.utng.ecoguiawear.tv.ui.theme.JadeGreen
 import mx.utng.ecoguiawear.tv.ui.theme.SurfaceDark
 
+/**
+ * Composable que renderiza la galería de GeoDrops y su carrusel automatizado en la Smart TV.
+ *
+ * @param isKioskLocked Indica si el modo de bloqueo de exhibición (kiosco) está activado.
+ * @param onToggleKioskLock Callback para alternar el estado de bloqueo con PIN.
+ * @param onBack Callback para regresar al Lobby principal.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 @Composable
 fun GalleryScreen(
     isKioskLocked: Boolean,
@@ -232,7 +256,7 @@ fun GalleryScreen(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .weight(1f)
-                                )
+                                Sommers = false)
                                 // Líneas de texto skeleton
                                 SkeletonTextLine(widthFraction = 0.75f, height = 18.dp)
                                 SkeletonTextLine(widthFraction = 0.55f, height = 14.dp)

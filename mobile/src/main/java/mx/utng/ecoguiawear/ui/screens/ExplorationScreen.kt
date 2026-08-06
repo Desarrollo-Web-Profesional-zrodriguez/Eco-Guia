@@ -1,17 +1,10 @@
 /**
  * Archivo: ExplorationScreen.kt
- * Autores: ZahirAndres, CesarEnrique
- * Fecha de última actualización: 2026-07-26
- * Descripción: Pantalla principal de exploración cultural. Actúa como orquestador ligero
- * que coordina el estado compartido entre el mapa, la lista de sitios y el BottomSheet de detalle.
- * Los componentes visuales se han separado en archivos dedicados dentro de
- * ui/feature/exploration/ para mantener la legibilidad y el principio de responsabilidad única.
  *
- * Archivos relacionados en ui/feature/exploration/:
- * - ExplorationMapContent.kt  → GoogleMap con marcadores y controles de zoom
- * - ExplorationSiteList.kt    → Lista de sitios con skeleton, swipe y paginación
- * - SiteDetailSheet.kt        → BottomSheet animado de detalle del sitio
- * - MapMarkerUtils.kt         → Funciones puras para íconos de marcadores
+ * Pantalla principal de exploración cultural y turística interactiva. Orquesta el estado compartido
+ * entre el mapa dinámico de Google Maps, la lista filtrable de sitios y el modal flotante de detalles.
+ *
+ * @since 2026-08-05
  */
 
 package mx.utng.ecoguiawear.ui.screens
@@ -45,20 +38,14 @@ import mx.utng.ecoguiawear.ui.viewmodel.CollectionViewModel
 import mx.utng.ecoguiawear.ui.viewmodel.LocationViewModel
 
 /**
- * Pantalla principal de exploración cultural.
+ * Pantalla principal de exploración cultural interactiva.
  *
- * Orquesta el estado compartido entre:
- * - El mapa interactivo ([ExplorationMapContent]).
- * - La lista de sitios recomendados ([ExplorationSiteList]).
- * - El detalle flotante de un sitio seleccionado ([SiteDetailSheet]).
- *
- * Soporta modo portrait (mapa sobre lista) y landscape (mapa + lista en columnas).
- *
- * @param onAdminClick Callback para navegar al panel de opciones (botón +).
- * @param onOpenRoutes Callback para navegar a la pantalla de rutas.
- * @param userId ID del usuario autenticado. Usar "guest" para modo sin sesión.
- * @param locationViewModel ViewModel que provee ubicación y sitios cercanos.
- * @param collectionViewModel ViewModel que gestiona el estado de favoritos.
+ * @param onAdminClick Callback para navegar al panel de administración/más opciones.
+ * @param onOpenRoutes Callback para navegar a la pantalla de catálogo de rutas.
+ * @param onOpenGeoDropWithSite Callback para abrir la cámara de Geo-Drops preasociando un sitio.
+ * @param userId Identificador del usuario autenticado actual.
+ * @param locationViewModel ViewModel con el flujo de geolocalización y sitios cercanos.
+ * @param collectionViewModel ViewModel para consultar y guardar favoritos de la colección.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

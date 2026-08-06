@@ -1,17 +1,10 @@
 /**
  * Archivo: CollectionViewModel.kt
- * Autor: Zahir Andres
- * Fecha de última actualización: 2026-07-25
- * Descripción: Gestiona la colección personal del usuario. Soporta carga, guardado,
- * eliminación y verificación de sitios históricos en user_saved_items (Neon).
  *
- * Funciones destacadas:
- * - loadCollection: Carga los elementos guardados desde Neon y sincroniza savedSiteIds.
- * - saveSite: Guarda un sitio con optimistic update inmediato en la UI.
- * - removeSite: Elimina un sitio con optimistic update y recarga la colección.
- * - toggleSave: Alterna el estado guardado/no guardado de un sitio.
- * - checkIfSaved: Verifica y actualiza el estado de un sitio concreto en savedSiteIds.
- * - savedSiteIds: Mapa reactivo siteId → Boolean para estado inmediato en la UI.
+ * Gestiona la colección personal del usuario (sitios guardados y favoritos), permitiendo sincronización
+ * en la nube con la base de datos Neon mediante actualizaciones optimistas en la interfaz.
+ *
+ * @since 2026-08-05
  */
 
 package mx.utng.ecoguiawear.ui.viewmodel
@@ -26,6 +19,11 @@ import mx.utng.ecoguia.shared.data.repository.EcoGuiaRepositoryImpl
 import mx.utng.ecoguia.shared.domain.model.RemoteCollectionItem
 import mx.utng.ecoguia.shared.domain.repository.EcoGuiaRepository
 
+/**
+ * ViewModel que expone la lista de sitios guardados en la colección personal y maneja su persistencia remota.
+ *
+ * @param repository Repositorio de datos para operaciones de favoritos y colecciones.
+ */
 class CollectionViewModel(
     private val repository: EcoGuiaRepository = EcoGuiaRepositoryImpl()
 ) : ViewModel() {
@@ -49,7 +47,9 @@ class CollectionViewModel(
     val savedSiteIds = mutableStateMapOf<String, Boolean>()
 
     /**
-     * Carga todos los elementos de la colección del usuario desde Neon.
+     * Carga todos los elementos guardados de la colección del usuario desde la base de datos remota.
+     *
+     * @param userId Identificador único del usuario autenticado.
      */
     fun loadCollection(userId: String) {
         viewModelScope.launch {
@@ -78,8 +78,10 @@ class CollectionViewModel(
     }
 
     /**
-     * Verifica si un sitio específico ya está guardado y actualiza el mapa local.
-     * Útil al abrir el detalle de un sitio desde ExplorationScreen.
+     * Verifica si un sitio específico ya se encuentra guardado en favoritos y actualiza el mapa reactivo local.
+     *
+     * @param userId Identificador del usuario.
+     * @param siteId Identificador del sitio histórico.
      */
     fun checkIfSaved(userId: String, siteId: String) {
         viewModelScope.launch {
@@ -93,8 +95,11 @@ class CollectionViewModel(
     }
 
     /**
-     * Guarda un sitio histórico en la colección del usuario.
-     * Actualiza el mapa local inmediatamente (optimistic update) y recarga la lista.
+     * Guarda un sitio histórico en la colección del usuario aplicando una actualización optimista inmediata.
+     *
+     * @param userId Identificador del usuario.
+     * @param siteId Identificador del sitio a almacenar.
+     * @param onSuccess Callback ejecutado al persistir exitosamente en Neon DB.
      */
     fun saveSite(userId: String, siteId: String, onSuccess: () -> Unit = {}) {
         viewModelScope.launch {
@@ -117,9 +122,13 @@ class CollectionViewModel(
     }
 
     /**
-     * Elimina un elemento de la colección del usuario.
+     * Elimina un elemento de la colección del usuario con actualización reactiva.
      * Si el usuario es el autor del GeoDrop, realiza un borrado definitivo en cascada de la base de datos.
      * De lo contrario, solo elimina el elemento de la colección del usuario.
+     *
+     * @param userId Identificador del usuario.
+     * @param item Elemento de colección a remover.
+     * @param onSuccess Callback ejecutado al completar la eliminación.
      */
     fun removeItem(userId: String, item: RemoteCollectionItem, onSuccess: () -> Unit = {}) {
         val itemId = item.id
@@ -198,8 +207,10 @@ class CollectionViewModel(
     }
 
     /**
-     * Alterna el estado guardado/no guardado de un sitio (toggle).
-     * Conveniente para llamar desde el botón de la UI sin lógica condicional.
+     * Alterna el estado guardado/no guardado de un sitio en la colección personal.
+     *
+     * @param userId Identificador del usuario.
+     * @param siteId Identificador del sitio.
      */
     fun toggleSave(userId: String, siteId: String) {
         val currentlySaved = savedSiteIds[siteId] == true
@@ -212,7 +223,9 @@ class CollectionViewModel(
         }
     }
 
-    /** Limpia el error de guardado después de mostrarlo en la UI. */
+    /**
+     * Limpia el mensaje de error de persistencia activo.
+     */
     fun clearSaveError() {
         _saveError.value = null
     }

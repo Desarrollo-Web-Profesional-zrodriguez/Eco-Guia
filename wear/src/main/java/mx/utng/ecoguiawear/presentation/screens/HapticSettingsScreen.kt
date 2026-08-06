@@ -1,3 +1,13 @@
+/**
+ * Pantalla de configuración del motor de retroalimentación háptica en Wear OS.
+ *
+ * Permite alternar el estado general de las vibraciones táctiles y seleccionar entre tres niveles
+ * de intensidad predefinidos ([HapticStrength.LOW], [HapticStrength.MEDIUM], [HapticStrength.HIGH]).
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 package mx.utng.ecoguiawear.presentation.screens
 
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,6 +23,18 @@ import mx.utng.ecoguiawear.presentation.components.EcoWearScaffold
 import mx.utng.ecoguiawear.presentation.components.ScreenHeader
 import mx.utng.ecoguiawear.presentation.theme.EcoGuiaColors
 
+/**
+ * Pantalla de ajustes hápticos en el smartwatch.
+ *
+ * @param state Estado reactivo del radar.
+ * @param onToggleHaptics Callback para activar o desactivar la respuesta sensorial.
+ * @param onSelectStrength Callback para establecer la intensidad deseada.
+ * @param onBackToRadar Callback para retornar a la vista de radar.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 @Composable
 fun HapticSettingsScreen(
     state: RadarUiState,

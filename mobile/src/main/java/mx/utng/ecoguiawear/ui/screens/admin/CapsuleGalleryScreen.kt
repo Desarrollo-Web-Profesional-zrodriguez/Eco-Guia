@@ -1,8 +1,9 @@
 /**
  * Archivo: CapsuleGalleryScreen.kt
- * Autor: ZahirMora
- * Fecha de última actualización: 2026-07-22
- * Descripción: Pantalla para gestionar la galería de cápsulas informativas.
+ *
+ * Pantalla para gestionar la galería y catálogo de cápsulas informativas y fotográficas.
+ *
+ * @since 2026-08-05
  */
 
 package mx.utng.ecoguiawear.ui.screens.admin
@@ -29,6 +30,11 @@ import mx.utng.ecoguiawear.ui.components.AdminBottomBar
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 
+/**
+ * Pantalla composable para administrar la galería de cápsulas multimedia.
+ *
+ * @param onNavigate Callback para navegar entre secciones de administración.
+ */
 @Composable
 fun CapsuleGalleryScreen(
     onNavigate: (String) -> Unit

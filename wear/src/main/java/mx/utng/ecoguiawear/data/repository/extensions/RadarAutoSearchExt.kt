@@ -1,8 +1,13 @@
 /**
- * Archivo: RadarAutoSearchExt.kt
- * Descripción: Extensión para búsqueda automática de sitios históricos cercanos (Top 3 a 50km) en Neon.
+ * Extensiones del repositorio para el auto-descubrimiento de sitios turísticos y monumentos en Neon DB.
+ *
+ * Realiza búsquedas georreferenciadas en un radio de hasta 50 km alrededor de las coordenadas GPS actuales,
+ * seleccionando el top 3 de sitios más cercanos y administrando la alternancia rápida de objetivos.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
  */
-
 package mx.utng.ecoguiawear.data.repository.extensions
 
 import kotlinx.coroutines.flow.update
@@ -11,6 +16,9 @@ import mx.utng.ecoguiawear.data.repository.RadarRepositoryImpl
 import mx.utng.ecoguiawear.domain.model.RadarTarget
 import mx.utng.ecoguiawear.domain.model.TargetType
 
+/**
+ * Fuerza la actualización asíncrona de sitios históricos cercanos consumiendo el backend Neon PostgreSQL.
+ */
 internal fun RadarRepositoryImpl.refreshNearbyTargetsExt() {
     scope.launch {
         try {
@@ -60,6 +68,12 @@ internal fun RadarRepositoryImpl.refreshNearbyTargetsExt() {
     }
 }
 
+/**
+ * Ejecuta la búsqueda automática periódica de puntos de interés y gestiona la emisión háptica de proximidad.
+ *
+ * @param lat Latitud actual del usuario.
+ * @param lng Longitud actual del usuario.
+ */
 internal fun RadarRepositoryImpl.performAutoSearchExt(lat: Double, lng: Double) {
     scope.launch {
         try {
@@ -125,6 +139,9 @@ internal fun RadarRepositoryImpl.performAutoSearchExt(lat: Double, lng: Double) 
     }
 }
 
+/**
+ * Selecciona el siguiente elemento disponible en la lista de auto-descubrimiento y recalcula el radar.
+ */
 internal fun RadarRepositoryImpl.selectNextAutoTargetExt() {
     _radarState.update { state ->
         val list = state.nearbyAutoTargets
@@ -140,6 +157,9 @@ internal fun RadarRepositoryImpl.selectNextAutoTargetExt() {
     recalculateRadarExt()
 }
 
+/**
+ * Selecciona el elemento anterior en la lista de auto-descubrimiento y recalcula el radar.
+ */
 internal fun RadarRepositoryImpl.selectPreviousAutoTargetExt() {
     _radarState.update { state ->
         val list = state.nearbyAutoTargets

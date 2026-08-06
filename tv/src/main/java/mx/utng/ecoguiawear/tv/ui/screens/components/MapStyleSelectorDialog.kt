@@ -1,5 +1,15 @@
 @file:OptIn(androidx.tv.material3.ExperimentalTvMaterial3Api::class)
 
+/**
+ * Diálogo modal para la selección de estilos visuales del mapa cartográfico en Smart TV.
+ *
+ * Ofrece una interfaz accesible mediante el control remoto D-Pad para alternar entre
+ * la maqueta minimalista en blanco con edificios 3D, el modo nocturno neón y la vista satelital híbrida.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 package mx.utng.ecoguiawear.tv.ui.screens.components
 
 import androidx.compose.foundation.background
@@ -21,6 +31,17 @@ import androidx.tv.material3.Text
 import mx.utng.ecoguiawear.tv.ui.screens.MapViewType
 import mx.utng.ecoguiawear.tv.ui.theme.SurfaceDark
 
+/**
+ * Composable que renderiza el diálogo de opciones de estilo de mapa en la Smart TV.
+ *
+ * @param selectedMapType Estilo de mapa actualmente seleccionado y activo.
+ * @param onSelectMapType Callback invocado al seleccionar un nuevo estilo [MapViewType].
+ * @param onDismiss Callback invocado para cerrar el cuadro de diálogo.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 @Composable
 fun MapStyleSelectorDialog(
     selectedMapType: MapViewType,

@@ -1,13 +1,10 @@
 /**
  * Archivo: ActiveRouteScreen.kt
- * Autor: Zahir Andres
- * Fecha de última actualización: 2026-07-25
- * Descripción: Muestra el avance en tiempo real de la ruta turística seleccionada por el usuario,
+ *
+ * Muestra el avance en tiempo real de la ruta turística seleccionada por el usuario,
  * calculando la distancia GPS a cada parada y marcando el progreso automáticamente al acercarse.
  *
- * Funciones destacadas:
- * - ActiveRouteScreen: Composable principal. Muestra la barra de progreso general y lista de paradas.
- * - RouteStopItem: Fila de cada parada que muestra orden, nombre, distancia GPS real e ícono de completado.
+ * @since 2026-08-05
  */
 
 package mx.utng.ecoguiawear.ui.screens
@@ -46,7 +43,11 @@ import mx.utng.ecoguiawear.ui.viewmodel.LocationViewModel
 import mx.utng.ecoguiawear.ui.viewmodel.RouteViewModel
 
 /**
- * Pantalla que visualiza y sigue el recorrido de una ruta activa.
+ * Pantalla que visualiza y sigue el recorrido de una ruta activa paso a paso.
+ *
+ * @param onFinishRoute Callback invocado al terminar o cancelar la ruta activa.
+ * @param routeViewModel ViewModel que mantiene el estado de la ruta activa y sus paradas.
+ * @param locationViewModel ViewModel que provee las coordenadas GPS actuales del usuario.
  */
 @Composable
 fun ActiveRouteScreen(

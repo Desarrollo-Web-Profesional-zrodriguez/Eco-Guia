@@ -1,8 +1,9 @@
 /**
  * Archivo: VisitorAnalyticsScreen.kt
- * Autor: ZahirMora
- * Fecha de Ãºltima actualizaciÃ³n: 2026-07-22
- * DescripciÃ³n: Dashboard de analÃ­tica que muestra el mapa de calor y mÃ©tricas de visitantes.
+ *
+ * Dashboard de analítica que muestra el mapa de calor, métricas y afluencia de visitantes.
+ *
+ * @since 2026-08-05
  */
 
 package mx.utng.ecoguiawear.ui.screens.admin
@@ -31,6 +32,9 @@ import androidx.compose.ui.unit.sp
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 
+/**
+ * Pantalla composable para visualización de métricas de tráfico y estadísticas turísticas.
+ */
 @Composable
 fun VisitorAnalyticsScreen(
     userId: String = "",

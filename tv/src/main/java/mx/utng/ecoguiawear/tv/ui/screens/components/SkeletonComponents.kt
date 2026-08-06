@@ -1,3 +1,14 @@
+/**
+ * Componentes de interfaz de usuario con animaciones de resplandor (Shimmer) y estructuras Skeleton.
+ *
+ * Utilizados en la aplicación de Smart TV para proporcionar retroalimentación visual fluida
+ * y profesional durante la descarga asíncrona de datos desde la base de datos PostgreSQL en Neon
+ * o mientras la pantalla no se encuentra vinculada a una cuenta de usuario.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 package mx.utng.ecoguiawear.tv.ui.screens.components
 
 import androidx.compose.animation.core.*
@@ -19,8 +30,14 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 /**
- * Caja de esqueleto animada con shimmer (brillo deslizante).
- * Úsala para representar cualquier bloque de contenido que aún no ha cargado.
+ * Contenedor rectangular con animación infinita de degradado tipo Shimmer para simular carga de contenido.
+ *
+ * @param modifier Modificador de diseño aplicado al contenedor.
+ * @param cornerRadius Radio de curvatura en esquinas [Dp].
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
  */
 @Composable
 fun SkeletonBox(
@@ -60,7 +77,16 @@ fun SkeletonBox(
 }
 
 /**
- * Línea de texto esqueleto — simula una línea de texto en carga.
+ * Línea esqueleto que simula un bloque de texto o título mientras se descarga la información real.
+ *
+ * @param modifier Modificador de diseño.
+ * @param height Altura de la barra simulada de texto.
+ * @param widthFraction Fracción de ancho que ocupa respecto al contenedor padre (0.0 a 1.0).
+ * @param cornerRadius Radio de curvatura en los extremos de la línea.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
  */
 @Composable
 fun SkeletonTextLine(
@@ -78,8 +104,13 @@ fun SkeletonTextLine(
 }
 
 /**
- * Número/métrica esqueleto: muestra "--" con estilo apagado para indicar
- * que el dato real aún no está disponible.
+ * Componente que representa métricas o contadores vacíos mediante guiones estilizados.
+ *
+ * @param modifier Modificador de diseño.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
  */
 @Composable
 fun SkeletonStat(
@@ -108,7 +139,14 @@ fun SkeletonStat(
 }
 
 /**
- * Tarjeta imagen skeleton — simula la imagen gris de un GeoDrop sin cargar.
+ * Tarjeta gráfica esqueleto que simula el espacio de una fotografía de GeoDrop o sitio histórico en carga.
+ *
+ * @param modifier Modificador de diseño.
+ * @param cornerRadius Radio de curvatura de la tarjeta.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
  */
 @Composable
 fun SkeletonImageCard(
@@ -133,7 +171,14 @@ fun SkeletonImageCard(
 }
 
 /**
- * Indicador de "Sin sesión" - overlay semitransparente con mensaje.
+ * Superposición o banner informativo semi-transparente que notifica al usuario
+ * sobre la ausencia de una sesión activa vinculada con la Smart TV.
+ *
+ * @param message Mensaje explicativo o instrucción a presentar en el banner.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
  */
 @Composable
 fun NoSessionOverlay(message: String = "Vincula tu cuenta para ver el contenido") {
