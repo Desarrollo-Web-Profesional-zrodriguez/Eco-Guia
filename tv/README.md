@@ -1,259 +1,679 @@
-<div align="center">
-  <h1>📺 Módulo <code>tv</code> — Eco-Guía Smart TV</h1>
-  <p><strong>Guía de Desarrollo — Archivos e Indicaciones por Paso</strong></p>
-  <div>
-    <img src="https://img.shields.io/badge/Kotlin-2.1.0-blue?style=for-the-badge&logo=kotlin">
-    <img src="https://img.shields.io/badge/Compose_for_TV-1.x-4285F4?style=for-the-badge&logo=androidtv">
-    <img src="https://img.shields.io/badge/MQTT-HiveMQ-red?style=for-the-badge">
-    <img src="https://img.shields.io/badge/minSdk-21-green?style=for-the-badge&logo=android">
-    <img src="https://img.shields.io/badge/compileSdk-35-green?style=for-the-badge&logo=android">
-    <img src="https://img.shields.io/badge/Android_Studio-Meerkat_2025.1.1-3DDC84?style=for-the-badge&logo=androidstudio">
-  </div>
-</div>
+# Guía Paso a Paso: Construyendo el Módulo Smart TV de Eco-Guía
 
-<br>
-
-> ⚠️ **Dependencia de `shared`:** El módulo `tv` consume `HiveMQManager` y `EcoGuiaRepository` de `:shared` para recibir eventos MQTT del teléfono y cargar los sitios históricos. `:shared` debe compilarse antes de trabajar en `:tv`. Consulta el [README raíz](../README.md) para la configuración del entorno global.
-
-> ⚠️ **Dependencia de HiveMQ:** Para que la comunicación en tiempo real funcione, el broker MQTT de HiveMQ debe estar activo y accesible. Solicitar las credenciales del broker al líder del proyecto.
-
-<br>
+Esta guía documenta y desglosa paso a paso la arquitectura, configuración y construcción completa del módulo **Smart TV (Android TV / Google TV)** de **Eco-Guía Dolores Hidalgo**, explicando las decisiones de diseño para interfaces de 10 pies (*10-foot UI*), el manejo de foco con D-Pad, la conectividad P2P e IoT (MQTT/Ktor Server), y la visualización inmersiva en mapas 3D.
 
 ---
 
-## 📋 Versiones y Configuración del Módulo
+## Objetivo de Esta Guía
 
-| Parámetro | Valor |
-|-----------|-------|
-| `namespace` | `mx.utng.ecoguiawear.tv` |
-| `applicationId` | `mx.utng.ecoguiawear.tv` |
-| `compileSdk` | 35 |
-| `minSdk` | 21 (Android TV 5.0+) |
-| `targetSdk` | 35 |
-| `versionName` | 1.0.0 |
-| `JVM Target` | 17 |
-| `buildFeatures` | `compose = true` |
+Al estudiar y seguir esta guía, comprenderás:
 
-<br>
+1. Cómo estructurar una aplicación moderna para **Android TV** utilizando **Kotlin 2.1**, **Jetpack Compose for TV (`androidx.tv.material3`)** y navegación optimizada para control remoto.
+2. Cómo implementar un sistema de **Modo Kiosco de Exhibición Pública** con bloqueo de navegación y liberación mediante PIN maestro.
+3. Cómo configurar un servidor HTTP embebido con **Ktor/Netty (`TvLocalServer`)** en el puerto 8080 para comunicación de respaldo en red local (LAN P2P) y sincronización en la nube mediante **HiveMQ MQTT**.
+4. Cómo integrar **Google Maps 3D** con perspectiva inclinada (*tilt 45°*), rotación orbital continua y estilos visuales personalizados (Maqueta Minimalista, Neón Futurista y Satelital).
+5. Cómo implementar carruseles automatizados (*Slideshows*), rankings analíticos paginados y animaciones *Shimmer* / *Skeleton* para transiciones fluidas de red.
 
 ---
 
-## 🗂️ Estructura Completa del Módulo
+## FASE 1: Configuración Inicial del Entorno y Build System
 
-```
-tv/
-└── src/main/java/mx/utng/ecoguiawear/tv/
-    ├── MainActivity.kt
-    ├── network/
-    │   └── TvLocalServer.kt
-    └── ui/
-        ├── navigation/
-        │   └── SmartTVNavHost.kt
-        ├── screens/
-        │   ├── GalleryScreen.kt
-        │   ├── HeatmapScreen.kt
-        │   ├── LobbyScreen.kt
-        │   ├── Portal360Screen.kt
-        │   └── components/
-        │       ├── KioskUnlockDialog.kt
-        │       ├── LobbyComponents.kt
-        │       ├── MapStyleSelectorDialog.kt
-        │       ├── SiteSelectorDialog.kt
-        │       └── SkeletonComponents.kt
-        └── theme/
+### Paso 1.1: Configurar el Catálogo de Versiones (`gradle/libs.versions.toml`)
+
+Android TV requiere dependencias específicas de Leanback y Compose for TV, además de motores ligeros para el servidor local.
+
+```toml
+[versions]
+agp = "8.8.0"
+kotlin = "2.1.0"
+composeBom = "2025.01.00"
+tvFoundation = "1.0.0-alpha12"
+tvMaterial = "1.0.0"
+playServicesMaps = "19.0.0"
+mapsCompose = "6.4.0"
+zxing = "3.5.3"
+coil = "2.7.0"
+ktor = "3.0.3"
+
+[libraries]
+androidx-tv-foundation = { group = "androidx.tv", name = "tv-foundation", version.ref = "tvFoundation" }
+androidx-tv-material = { group = "androidx.tv", name = "tv-material", version.ref = "tvMaterial" }
+play-services-maps = { group = "com.google.android.gms", name = "play-services-maps", version.ref = "playServicesMaps" }
+maps-compose = { group = "com.google.maps.android", name = "maps-compose", version.ref = "mapsCompose" }
+zxing-core = { group = "com.google.zxing", name = "core", version.ref = "zxing" }
+coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }
+ktor-server-core = { group = "io.ktor", name = "ktor-server-core-jvm", version.ref = "ktor" }
+ktor-server-netty = { group = "io.ktor", name = "ktor-server-netty-jvm", version.ref = "ktor" }
+ktor-server-cors = { group = "io.ktor", name = "ktor-server-cors-jvm", version.ref = "ktor" }
 ```
 
-<br>
+> **CONCEPTO CLAVE:** Compose for TV (`androidx.tv.material3`) proporciona componentes nativos como `Card`, `Button` e `Icon` con estados de foco (`focusedContainerColor`, `focusedContentColor`) diseñados para responder naturalmente al D-Pad del control remoto.
 
 ---
 
-## 📄 Descripción Línea a Línea por Archivo
+### Paso 1.2: Configurar `tv/build.gradle.kts`
+
+El módulo `:tv` consume `:shared` para acceder al repositorio PostgreSQL de Neon y al cliente MQTT, e integra exclusiones de empaquetado para Netty.
+
+```kotlin
+plugins {
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.compose)
+}
+
+android {
+    namespace = "mx.utng.ecoguiawear.tv"
+    compileSdk = 35
+
+    defaultConfig {
+        applicationId = "mx.utng.ecoguiawear.tv"
+        minSdk = 24
+        targetSdk = 35
+        versionCode = 1
+        versionName = "1.0.0"
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+            freeCompilerArgs.add("-opt-in=androidx.tv.material3.ExperimentalTvMaterial3Api")
+        }
+    }
+
+    packaging {
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes += "META-INF/INDEX.LIST"
+            excludes += "META-INF/io.netty.versions.properties"
+        }
+    }
+}
+
+dependencies {
+    implementation(project(":shared"))
+    implementation(platform(libs.compose.bom))
+    implementation(libs.activity.compose)
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.tv.foundation)
+    implementation(libs.androidx.tv.material)
+
+    // Cartografía y Mapas
+    implementation(libs.play.services.maps)
+    implementation(libs.maps.compose)
+
+    // Renderizado QR e Imágenes
+    implementation(libs.zxing.core)
+    implementation(libs.coil.compose)
+
+    // Servidor Local Embebido (P2P LAN)
+    implementation(libs.ktor.server.core)
+    implementation(libs.ktor.server.netty)
+    implementation(libs.ktor.server.cors)
+
+    implementation(libs.navigation.compose)
+}
+```
 
 ---
 
-### `tv/build.gradle.kts`
+### Paso 1.3: Configurar `tv/src/main/AndroidManifest.xml`
 
-- **Bloque de plugins:** Aplicar `android.application` y `kotlin.compose`; no requiere `google.services` a menos que se integre Firebase en el futuro.
-- **Bloque `android`:** Declarar `namespace = "mx.utng.ecoguiawear.tv"`, `compileSdk = 35`; en `defaultConfig` usar `applicationId = "mx.utng.ecoguiawear.tv"`, `minSdk = 21`, `targetSdk = 35`.
-- **`compileOptions` y `kotlin.compilerOptions`:** Configurar JVM 17 en ambos.
-- **`buildFeatures`:** Activar solo `compose = true`.
-- **Bloque `dependencies`:** Primera línea: `implementation(project(":shared"))`; luego agregar `androidx.tv.foundation`, `androidx.tv.material3` (Compose for TV), `play.services.maps` (Google Maps), `maps.compose`, `play.services.location`, y el cliente MQTT de HiveMQ (org.eclipse.paho o HiveMQ SDK).
+En Android TV es mandatorio declarar la ausencia de pantalla táctil y el banner del launcher Leanback.
 
----
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-### `tv/src/main/AndroidManifest.xml`
+    <!-- Declaración de compatibilidad con Android TV -->
+    <uses-feature
+        android:name="android.software.leanback"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.touchscreen"
+        android:required="false" />
 
-- **`uses-feature`:** Declarar `android.software.leanback` con `required = true` para identificar la app como app de TV; declarar `android.hardware.touchscreen` con `required = false` (las TVs no tienen touchscreen).
-- **`<application>`:** Agregar `android:banner` con el recurso del banner de la app (imagen de 320x180dp requerida por Google TV/Leanback); agregar el tema `Theme.Leanback` o el tema TV personalizado.
-- **Permisos requeridos:** `INTERNET`, `ACCESS_NETWORK_STATE`.
-- **`MainActivity`:** Declarar como launcher de TV con intent-filter: acción `MAIN` y categoría `android.intent.category.LEANBACK_LAUNCHER`.
-- **`TvLocalServer`:** No requiere declaración en manifiesto; es una clase de utilidad instanciada en `LobbyScreen`.
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
 
----
+    <application
+        android:allowBackup="true"
+        android:hardwareAccelerated="true"
+        android:largeHeap="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:banner="@drawable/ic_banner"
+        android:usesCleartextTraffic="true"
+        android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
 
-### `tv/MainActivity.kt`
+        <!-- Clave API de Google Maps -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyDexgWI7fqzfP8s4k_nkEvMFfYQz1qyWng" />
 
-- **Bloque 1 — KDoc:** Descripción: actividad principal del módulo Smart TV; punto de entrada; configura el tema y el host de navegación; autores y fecha.
-- **Bloque 2 — `MainActivity : ComponentActivity`:** Hereda de `ComponentActivity`; en `onCreate` llama a `setContent` con `EcoGuiaTVTheme`; dentro del tema, declara un `Box` con `fillMaxSize` y fondo del tema; coloca `SmartTVNavHost()` como contenido principal.
-- **Bloque 3 — Anotación `@OptIn`:** El archivo debe tener `@file:OptIn(androidx.tv.material3.ExperimentalTvMaterial3Api::class)` al inicio porque las APIs de Compose for TV son experimentales; esta anotación suprime las advertencias en todo el archivo.
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>
+```
 
----
-
-### `network/TvLocalServer.kt`
-
-- **Bloque 1 — KDoc:** Descripción: servidor HTTP local que expone un endpoint para que el teléfono pueda enviar comandos a la TV cuando MQTT no está disponible; autores y fecha.
-- **Bloque 2 — Configuración del servidor:** Usa `NanoHTTPD` o `Ktor Server` en modo embebido; escucha en el puerto `8080`; el endpoint principal es `GET /command?action=X&siteId=Y`.
-- **Bloque 3 — `start()`:** Inicia el servidor HTTP; llama desde `LobbyScreen` al montar la pantalla.
-- **Bloque 4 — `stop()`:** Detiene el servidor; llamar al abandonar `LobbyScreen`.
-- **Bloque 5 — `onCommandReceived(action, params)`:** Callback que se ejecuta cuando el servidor recibe un comando del teléfono; los comandos posibles son: `navigate_site`, `change_map_style`, `lock_kiosk`, `unlock_kiosk`; notifica a la UI a través de un `SharedFlow` o `StateFlow`.
-
----
-
-### `ui/theme/`
-
-- **`EcoGuiaTVTheme`:** Composable que aplica `MaterialTheme` de `androidx.tv.material3`; define el color scheme adecuado para pantalla grande (colores vibrantes, buen contraste a distancia); tipografía con tamaños más grandes que la app mobile (mínimo 18sp para texto de cuerpo); el tema envuelve toda la app en `MainActivity`.
-
----
-
-### `ui/navigation/SmartTVNavHost.kt`
-
-- **Bloque 1 — KDoc:** Descripción: host de navegación de la Smart TV; define todas las rutas y la pantalla inicial; autores y fecha.
-- **Bloque 2 — `TvRoutes` object:** Define las rutas como constantes: `LOBBY`, `PORTAL_360`, `GALLERY`, `HEATMAP`.
-- **Bloque 3 — `SmartTVNavHost` composable:** Usa `NavHost` de Navigation Compose (compatible con TV); el `startDestination` es `LOBBY`; declara un `composable` por cada ruta.
-- **Bloque 4 — Manejo de teclas del control remoto:** La navegación en TV se maneja con el D-Pad y el botón Back del control remoto; `NavHost` gestiona automáticamente el botón Back para volver a la pantalla anterior; asegurarse de que cada pantalla tenga un elemento enfocable al cargar.
-- **Bloque 5 — `LOBBY`:** Ruta inicial sin argumentos; instancia `LobbyScreen`.
-- **Bloque 6 — `PORTAL_360`:** Ruta con argumento opcional `siteId: Int?`; instancia `Portal360Screen` pasando el sitio a centrar en el mapa.
-- **Bloque 7 — `GALLERY`:** Sin argumentos; instancia `GalleryScreen`.
-- **Bloque 8 — `HEATMAP`:** Sin argumentos; instancia `HeatmapScreen`.
+> **CONCEPTO CLAVE:** `android.intent.category.LEANBACK_LAUNCHER` registra la app en el carrusel principal de Google TV / Android TV. La propiedad `android:banner` (320x180 dp) sirve como portada gráfica en el menú del televisor.
 
 ---
 
-### `ui/screens/LobbyScreen.kt`
+## FASE 2: Sistema de Diseño Visual y Paleta Cromática (10-Foot UI)
 
-- **Bloque 1 — KDoc:** Descripción: pantalla de bienvenida y hub principal de la Smart TV; punto desde donde se accede a todas las funcionalidades; autores y fecha.
-- **Bloque 2 — `LobbyScreen` composable:** Pantalla de pantalla completa con fondo oscuro; recibe `navController`.
-- **Bloque 3 — Sección superior:** Logo de Eco-Guía centrado y título "Portal de Exhibición Dolores Hidalgo"; subtítulo con la fecha y hora actuales actualizándose con `LaunchedEffect`.
-- **Bloque 4 — Grilla de opciones:** Usa `TvLazyVerticalGrid` de Compose for TV con 2 columnas; cada ítem es un `LobbyCard` (definido en `LobbyComponents.kt`) con ícono y etiqueta; opciones: "Portal 360°", "Galería de Cápsulas", "Mapa de Calor", "Estado en Vivo".
-- **Bloque 5 — Conexión MQTT:** Al montar la pantalla (`LaunchedEffect(Unit)`), inicializa la conexión con HiveMQ vía `HiveMQManager` de `shared`; suscribirse al topic `/eco-tv-command`; al recibir un comando, navegar automáticamente a la pantalla correspondiente.
-- **Bloque 6 — Servidor local:** Inicia `TvLocalServer` al montar; detenerlo en `DisposableEffect` al desmontar.
-- **Bloque 7 — Indicador de conexión:** En la esquina superior derecha, muestra un badge de estado MQTT (Verde = conectado, Rojo = sin conexión).
-- **Bloque 8 — Bloqueo de kiosco:** Botón flotante en la esquina inferior derecha "Bloquear Kiosco"; al pulsarlo abre `KioskUnlockDialog` para activar el modo kiosco; en modo kiosco este botón cambia a "Desbloquear" y requiere el PIN.
+### Paso 2.1: Paleta de Colores de Alto Contraste (`ui/theme/Color.kt`)
 
----
+Las pantallas de Smart TV exigen contrastes intensos para garantizar legibilidad a una distancia de 3 a 5 metros.
 
-### `ui/screens/Portal360Screen.kt`
+```kotlin
+package mx.utng.ecoguiawear.tv.ui.theme
 
-- **Bloque 1 — KDoc:** Descripción: pantalla de exhibición 360° del mapa de Dolores Hidalgo con rotación automática y cámara inclinada; pantalla principal de exhibición pública; autores y fecha.
-- **Bloque 2 — `Portal360Screen` composable:** Recibe `navController` y `siteId: Int?` (sitio a centrar; si es null centra en el Jardín Principal de Dolores Hidalgo).
-- **Bloque 3 — Mapa en pantalla completa:** Usa `GoogleMap` de Maps Compose a pantalla completa; configura la cámara con `tilt = 45f` (vista inclinada 3D) y `zoom = 17f` (nivel de detalle de calle); deshabilita todos los controles nativos del mapa (botones de zoom, My Location, etc.) ya que se controla con el D-Pad.
-- **Bloque 4 — Rotación automática:** `LaunchedEffect(Unit)` lanza una corrutina que incrementa el `bearing` (ángulo de rotación horizontal) en 0.5° cada 100ms; usa `cameraPositionState.animate(CameraUpdateFactory.newCameraPosition(...))` para la rotación fluida; completa 360° en aproximadamente 2 minutos.
-- **Bloque 5 — Overlay de información:** Panel semitransparente en la esquina inferior izquierda con el nombre del sitio siendo exhibido, la categoría y un ícono; se actualiza según el sitio recibido por MQTT o por el argumento `siteId`.
-- **Bloque 6 — Controles con D-Pad:** Captura los eventos del control remoto usando `Modifier.onKeyEvent`; D-Pad arriba/abajo cambia el zoom; D-Pad izquierda/derecha cambia el ángulo de rotación manualmente; botón OK abre `SiteSelectorDialog`.
-- **Bloque 7 — Selector de estilo:** Botón flotante en la esquina superior derecha "Estilo"; al presionar OK sobre él abre `MapStyleSelectorDialog` con los tres estilos disponibles.
-- **Bloque 8 — Recepción MQTT:** Observa los comandos MQTT del `HiveMQManager`; si recibe `navigate_site`, centra el mapa en las coordenadas del nuevo sitio con animación suave.
+import androidx.compose.ui.graphics.Color
+
+val DeepBlue = Color(0xFF0F2C59)
+val BrushedGold = Color(0xFFDAC0A3)
+val JadeGreen = Color(0xFF0F5A3E)
+
+val BackgroundDark = Color(0xFF081226)
+val SurfaceDark = Color(0xFF142C52)
+val TextPrimary = Color(0xFFF8F9FA)
+val TextSecondary = Color(0xFFB0BEC5)
+```
 
 ---
 
-### `ui/screens/GalleryScreen.kt`
+### Paso 2.2: Tema Global Material 3 para TV (`ui/theme/Theme.kt`)
 
-- **Bloque 1 — KDoc:** Descripción: galería de GeoDrops aprobados en pantalla grande; pensada para exhibición pública en modo slideshow o selección manual; autores y fecha.
-- **Bloque 2 — `GalleryScreen` composable:** Pantalla de fondo oscuro; recibe `navController`.
-- **Bloque 3 — Carga de datos:** Al montar, llama a `EcoGuiaRepository.getApprovedGeoDrop()` de `shared` para obtener los GeoDrops aprobados; muestra `SkeletonComponents.GalleryItemSkeleton` mientras carga.
-- **Bloque 4 — Grilla de GeoDrops:** `TvLazyVerticalGrid` con 3 columnas; cada ítem muestra la foto del GeoDrop (cargada con Coil), el título y la distancia al sitio relacionado; el ítem enfocado se escala al 110% con animación.
-- **Bloque 5 — Vista de detalle:** Al seleccionar un ítem con OK en el D-Pad, expande el GeoDrop a pantalla completa: foto a tamaño completo, título, descripción, autor, fecha y coordenadas GPS.
-- **Bloque 6 — Modo slideshow:** Botón "Reproducir Slideshow"; al activarlo, itera los GeoDrops automáticamente cada 5 segundos con transición fade; botón OK pausa/reanuda el slideshow.
+```kotlin
+@file:OptIn(androidx.tv.material3.ExperimentalTvMaterial3Api::class)
 
----
+package mx.utng.ecoguiawear.tv.ui.theme
 
-### `ui/screens/HeatmapScreen.kt`
+import androidx.compose.runtime.Composable
+import androidx.tv.material3.MaterialTheme
+import androidx.tv.material3.darkColorScheme
 
-- **Bloque 1 — KDoc:** Descripción: pantalla del mapa de calor de visitas y GeoDrops en Dolores Hidalgo; visualiza las zonas de mayor actividad turística; autores y fecha.
-- **Bloque 2 — `HeatmapScreen` composable:** Mapa de pantalla completa; recibe `navController`.
-- **Bloque 3 — Mapa base:** `GoogleMap` centrado en Dolores Hidalgo con `zoom = 14f` para ver toda la ciudad; modo satélite por defecto para mejor contraste del heatmap.
-- **Bloque 4 — Capa de heatmap:** Usa la API de `HeatmapTileProvider` de Google Maps; carga las coordenadas de GeoDrops aprobados y visitas registradas desde `EcoGuiaRepository`; aplica el heatmap como capa overlay sobre el mapa.
-- **Bloque 5 — Panel de leyenda:** Columna derecha con la leyenda del mapa de calor: gradiente de color (azul frío → rojo caliente) con etiquetas "Pocas visitas" y "Muchas visitas".
-- **Bloque 6 — Filtros de datos:** Barra superior con chips para filtrar entre: "Todos", "GeoDrops", "Visitas a sitios", "Rutas completadas"; al cambiar el filtro, recalcula el heatmap.
-- **Bloque 7 — Estadísticas en tiempo real:** Panel inferior con: total de GeoDrops en pantalla, total de visitas registradas, sitio más visitado del día; se actualiza cada 30 segundos.
+val SmartTVColorScheme = darkColorScheme(
+    primary = DeepBlue,
+    onPrimary = TextPrimary,
+    secondary = BrushedGold,
+    onSecondary = BackgroundDark,
+    tertiary = JadeGreen,
+    onTertiary = TextPrimary,
+    background = BackgroundDark,
+    onBackground = TextPrimary,
+    surface = SurfaceDark,
+    onSurface = TextPrimary
+)
 
----
-
-### `ui/screens/components/LobbyComponents.kt`
-
-- **Bloque 1 — KDoc:** Descripción: componentes visuales del lobby de la Smart TV; autores y fecha.
-- **Bloque 2 — `LobbyCard` composable:** Tarjeta navegable con D-Pad; recibe `icon`, `title`, `subtitle`, `onClick`; muestra el ícono grande centrado y el título debajo; cuando está enfocada (D-Pad), aplica efecto de escala y borde iluminado; al presionar OK ejecuta `onClick`.
-- **Bloque 3 — `ConnectionStatusBadge` composable:** Badge de estado de conexión MQTT; muestra un círculo de color con el texto "En Línea" o "Sin Conexión".
-- **Bloque 4 — `LiveEventBanner` composable:** Banner animado que aparece en la parte superior cuando el teléfono del moderador envía un evento en tiempo real (nuevo GeoDrop aprobado, nuevo sitio registrado); se muestra 5 segundos y desaparece con animación slide.
-- **Bloque 5 — `ClockWidget` composable:** Reloj digital grande para el lobby; muestra hora (HH:MM:SS) y fecha completa; usa `LaunchedEffect` con un `ticker` de 1 segundo para actualizar.
-
----
-
-### `ui/screens/components/MapStyleSelectorDialog.kt`
-
-- **Bloque 1 — KDoc:** Descripción: diálogo modal para seleccionar el estilo visual del mapa en `Portal360Screen`; autores y fecha.
-- **Bloque 2 — `MapStyleSelectorDialog` composable:** `AlertDialog` adaptado a TV con soporte de D-Pad; recibe `onStyleSelected: (MapStyle) → Unit` y `onDismiss: () → Unit`.
-- **Bloque 3 — `MapStyle` enum:** Define los estilos disponibles: `WHITE_MOCKUP` (maqueta blanca, estilo minimalista), `DARK_NEON` (modo oscuro con colores neón), `SATELLITE` (vista satelital real).
-- **Bloque 4 — Lista de estilos:** `LazyColumn` de 3 ítems, cada uno con nombre del estilo, descripción corta y vista previa en miniatura; el ítem enfocado se resalta; al presionar OK selecciona el estilo y cierra el diálogo.
+@Composable
+fun EcoGuiaTVTheme(content: @Composable () -> Unit) {
+    MaterialTheme(
+        colorScheme = SmartTVColorScheme,
+        content = content
+    )
+}
+```
 
 ---
 
-### `ui/screens/components/SiteSelectorDialog.kt`
+## FASE 3: Servidor Local P2P y Generación de Códigos QR
 
-- **Bloque 1 — KDoc:** Descripción: diálogo modal para seleccionar manualmente el sitio a exhibir en `Portal360Screen`; autores y fecha.
-- **Bloque 2 — `SiteSelectorDialog` composable:** `AlertDialog` de TV; recibe `sites: List<HistoricalSite>`, `onSiteSelected: (HistoricalSite) → Unit` y `onDismiss: () → Unit`.
-- **Bloque 3 — Lista de sitios:** `LazyColumn` con cada sitio histórico disponible; muestra nombre, categoría y distancia al Jardín Principal; el ítem enfocado se resalta; al presionar OK selecciona el sitio, cierra el diálogo y actualiza el mapa de `Portal360Screen`.
-- **Bloque 4 — Campo de búsqueda:** `TextField` en la parte superior del diálogo para filtrar sitios por nombre; compatible con teclado virtual de TV.
+### Paso 3.1: Servidor HTTP Embebido Netty (`network/TvLocalServer.kt`)
+
+Cuando la TV y el móvil comparten la misma red WiFi pero no hay acceso a internet para el broker MQTT, la TV levanta un servidor HTTP local en el puerto 8080.
+
+```kotlin
+package mx.utng.ecoguiawear.tv.network
+
+import android.util.Log
+import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpMethod
+import io.ktor.http.HttpStatusCode
+import io.ktor.server.application.install
+import io.ktor.server.engine.embeddedServer
+import io.ktor.server.netty.Netty
+import io.ktor.server.netty.NettyApplicationEngine
+import io.ktor.server.plugins.cors.routing.CORS
+import io.ktor.server.request.receive
+import io.ktor.server.response.respond
+import io.ktor.server.response.respondText
+import io.ktor.server.routing.get
+import io.ktor.server.routing.post
+import io.ktor.server.routing.routing
+import java.net.NetworkInterface
+import java.util.Collections
+
+class TvLocalServer(
+    private val onPhotoReceived: (ByteArray) -> Unit = {}
+) {
+    private var server: NettyApplicationEngine? = null
+
+    fun startServer(port: Int = 8080) {
+        if (server != null) return
+        try {
+            server = embeddedServer(Netty, port = port) {
+                install(CORS) {
+                    anyHost()
+                    allowHeader(HttpHeaders.ContentType)
+                    allowMethod(HttpMethod.Post)
+                    allowMethod(HttpMethod.Get)
+                }
+                routing {
+                    get("/status") {
+                        call.respondText("OK: Smart TV Eco-Guia en línea")
+                    }
+                    post("/upload-photo") {
+                        val bytes = call.receive<ByteArray>()
+                        onPhotoReceived(bytes)
+                        call.respond(HttpStatusCode.OK, mapOf("status" to "success"))
+                    }
+                }
+            }.start(wait = false)
+        } catch (e: Exception) {
+            Log.e("TvLocalServer", "Error al iniciar servidor: ${e.message}")
+        }
+    }
+
+    fun stopServer() {
+        server?.stop(1000, 2000)
+        server = null
+    }
+
+    fun getLocalIpAddress(): String? {
+        val interfaces = Collections.list(NetworkInterface.getNetworkInterfaces())
+        for (intf in interfaces) {
+            val addrs = Collections.list(intf.inetAddresses)
+            for (addr in addrs) {
+                if (!addr.isLoopbackAddress && addr is java.net.Inet4Address) {
+                    return addr.hostAddress
+                }
+            }
+        }
+        return null
+    }
+}
+```
+
+> **CONCEPTO CLAVE:** El servidor embebido Netty permite recibir transmisiones de fotos y comandos de pantalla sin requerir configuraciones de router o puertos abiertos hacia el exterior.
 
 ---
 
-### `ui/screens/components/KioskUnlockDialog.kt`
+### Paso 3.2: Generador de Matriz QR con ZXing (`ui/screens/components/LobbyComponents.kt`)
 
-- **Bloque 1 — KDoc:** Descripción: diálogo de bloqueo/desbloqueo del modo kiosco; evita que usuarios no autorizados interrumpan la exhibición pública; autores y fecha.
-- **Bloque 2 — `KioskUnlockDialog` composable:** Diálogo modal a pantalla completa oscura; recibe `onUnlock: () → Unit` y `onDismiss: () → Unit`.
-- **Bloque 3 — Panel de PIN:** Cuadrícula 3x4 de dígitos navegables con D-Pad (como un teclado PIN); el PIN correcto está hardcodeado como constante o leído desde `EcoGuiaConfig` de `shared`; muestra `●` por cada dígito ingresado para ocultar el PIN.
-- **Bloque 4 — Lógica de validación:** Acumula los dígitos presionados en una cadena interna; al completar 4 dígitos verifica contra el PIN almacenado; si coincide, llama `onUnlock()`; si no coincide, muestra un mensaje de error ("PIN incorrecto") y limpia los dígitos ingresados.
-- **Bloque 5 — Modo kiosco activo:** Cuando el kiosco está bloqueado, se deshabilita el botón Back del control remoto usando `BackHandler`; solo el diálogo de PIN puede desbloquear la app.
+Genera en tiempo de ejecución un `Bitmap` con el PIN de vinculación para escaneo directo desde la cámara móvil.
 
----
-
-### `ui/screens/components/SkeletonComponents.kt`
-
-- **Bloque 1 — KDoc:** Descripción: componentes skeleton (pantallas de carga esqueleto) para las pantallas de la TV; autores y fecha.
-- **Bloque 2 — `GalleryItemSkeleton` composable:** Placeholder animado de una tarjeta de galería; usa `shimmer` effect (animación de brillo deslizante de izquierda a derecha) con `animateFloat` y un `LinearGradient`; muestra la forma de la tarjeta con colores gris oscuro.
-- **Bloque 3 — `HeatmapSkeleton` composable:** Placeholder del mapa de calor mientras carga; muestra un rectángulo gris oscuro del tamaño del mapa con el texto "Cargando mapa..." centrado.
-- **Bloque 4 — `SiteCardSkeleton` composable:** Placeholder de una tarjeta de sitio en la lista del selector; muestra barras grises representando el ícono, título y subtítulo.
-
-<br>
-
----
-
-## 🔗 Integración con el Módulo `shared`
-
-| Componente `tv` | Componente relacionado | Propósito |
-|-----------------|----------------------|-----------|
-| `LobbyScreen` | `HiveMQManager` (shared) | Recibir comandos MQTT del teléfono en tiempo real |
-| `Portal360Screen` | `EcoGuiaRepository` (shared) | Cargar sitios históricos para el selector de sitios |
-| `GalleryScreen` | `EcoGuiaRepository` (shared) | Cargar GeoDrops aprobados para la galería |
-| `HeatmapScreen` | `EcoGuiaRepository` (shared) | Cargar coordenadas de visitas y GeoDrops para el heatmap |
-| `TvLocalServer` | `EcoGuiaConfig` (shared) | Leer el PIN del kiosco y la configuración del servidor |
-
-**Topics MQTT suscritos por la TV:**
-
-| Topic | Contenido | Acción en la TV |
-|-------|-----------|----------------|
-| `/eco-tv-command/navigate` | `siteId` del sitio a mostrar | Navegar a `Portal360Screen` centrando en ese sitio |
-| `/eco-tv-command/style` | Nombre del estilo de mapa | Cambiar el estilo del mapa en `Portal360Screen` |
-| `/eco-tv-command/gallery` | Signal de nuevo GeoDrop aprobado | Recargar la galería y mostrar el `LiveEventBanner` |
-| `/eco-tv-command/lock` | PIN o signal de bloqueo | Activar el modo kiosco |
-
-<br>
+```kotlin
+private fun generateQrBitmap(content: String, size: Int = 350): android.graphics.Bitmap {
+    return try {
+        val bitMatrix = QRCodeWriter().encode(content, BarcodeFormat.QR_CODE, size, size)
+        val bitmap = android.graphics.Bitmap.createBitmap(size, size, android.graphics.Bitmap.Config.RGB_565)
+        for (x in 0 until size) {
+            for (y in 0 until size) {
+                bitmap.setPixel(x, y, if (bitMatrix.get(x, y)) android.graphics.Color.BLACK else android.graphics.Color.WHITE)
+            }
+        }
+        bitmap
+    } catch (e: Exception) {
+        android.graphics.Bitmap.createBitmap(size, size, android.graphics.Bitmap.Config.RGB_565)
+    }
+}
+```
 
 ---
 
-## 🧑‍💻 Desarrolladores
+## FASE 4: Arquitectura de Navegación y Orquestación Kiosco
+
+### Paso 4.1: Grafo de Navegación Smart TV (`ui/navigation/SmartTVNavHost.kt`)
+
+El `SmartTVNavHost` mantiene el estado global del bloqueo kiosco y escucha los eventos de desvinculación remota enviados desde la app móvil vía MQTT.
+
+```kotlin
+package mx.utng.ecoguiawear.tv.ui.navigation
+
+import androidx.compose.runtime.*
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import mx.utng.ecoguiawear.tv.ui.screens.GalleryScreen
+import mx.utng.ecoguiawear.tv.ui.screens.HeatmapScreen
+import mx.utng.ecoguiawear.tv.ui.screens.LobbyScreen
+import mx.utng.ecoguiawear.tv.ui.screens.Portal360Screen
+
+sealed class TVRoutes(val route: String) {
+    object Lobby : TVRoutes("lobby")
+    object Heatmap : TVRoutes("heatmap")
+    object Portal360 : TVRoutes("portal_360")
+    object Gallery : TVRoutes("gallery")
+}
+
+@Composable
+fun SmartTVNavHost() {
+    val navController = rememberNavController()
+    var isKioskLocked by remember { mutableStateOf(false) }
+
+    NavHost(
+        navController = navController,
+        startDestination = TVRoutes.Lobby.route
+    ) {
+        composable(TVRoutes.Lobby.route) {
+            LobbyScreen(
+                onNavigateToHeatmap = { navController.navigate(TVRoutes.Heatmap.route) },
+                onNavigateToPortal360 = { navController.navigate(TVRoutes.Portal360.route) },
+                onNavigateToGallery = { navController.navigate(TVRoutes.Gallery.route) }
+            )
+        }
+        composable(TVRoutes.Portal360.route) {
+            Portal360Screen(
+                isKioskLocked = isKioskLocked,
+                onToggleKioskLock = { isKioskLocked = it },
+                onBack = { navController.popBackStack() }
+            )
+        }
+        composable(TVRoutes.Gallery.route) {
+            GalleryScreen(
+                isKioskLocked = isKioskLocked,
+                onToggleKioskLock = { isKioskLocked = it },
+                onBack = { navController.popBackStack() }
+            )
+        }
+        composable(TVRoutes.Heatmap.route) {
+            HeatmapScreen(
+                isKioskLocked = isKioskLocked,
+                onToggleKioskLock = { isKioskLocked = it },
+                onBack = { navController.popBackStack() }
+            )
+        }
+    }
+}
+```
+
+---
+
+### Paso 4.2: Diálogo de Desbloqueo de Modo Kiosco (`ui/screens/components/KioskUnlockDialog.kt`)
+
+Evita que usuarios no autorizados salgan de la presentación interactiva mediante la intercepción de eventos `Back` / `Escape` y validación de PIN maestro.
+
+```kotlin
+@Composable
+fun KioskUnlockDialog(
+    onUnlockConfirmed: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    var pinInput by remember { mutableStateOf("") }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    val inputFocusRequester = remember { FocusRequester() }
+
+    LaunchedEffect(Unit) {
+        kotlinx.coroutines.delay(150)
+        inputFocusRequester.requestFocus()
+    }
+
+    Popup(onDismissRequest = onDismiss) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.90f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Card(
+                onClick = {},
+                modifier = Modifier.width(460.dp).padding(24.dp),
+                colors = CardDefaults.colors(containerColor = SurfaceDark)
+            ) {
+                Column(
+                    modifier = Modifier.padding(28.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text("Modo de Transmisión Bloqueado", color = Color.White, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(16.dp))
+                    BasicTextField(
+                        value = pinInput,
+                        onValueChange = { pinInput = it },
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(onDone = {
+                            if (pinInput in listOf("1234", "12345678", "admin")) {
+                                onUnlockConfirmed()
+                            } else {
+                                errorMessage = "PIN incorrecto"
+                            }
+                        }),
+                        modifier = Modifier.focusRequester(inputFocusRequester)
+                    )
+                }
+            }
+        }
+    }
+}
+```
+
+---
+
+## FASE 5: Pantallas Principales de Exhibición
+
+### Paso 5.1: `LobbyScreen.kt` — Hub de Emparejamiento y Sesión
+
+Administra la persistencia de sesión local (`tv_session_prefs`), la sincronización en segundo plano con Neon DB y la escucha MQTT de comandos remotos como `/stream-start`.
+
+```kotlin
+@Composable
+fun LobbyScreen(
+    onNavigateToHeatmap: () -> Unit,
+    onNavigateToPortal360: () -> Unit,
+    onNavigateToGallery: () -> Unit
+) {
+    // 1. Obtener o generar PIN de 6 dígitos persistente
+    val pairingCode = remember { getOrCreatePairingCode(prefs) }
+
+    // 2. Escucha reactiva MQTT para comandos de transmisión del teléfono
+    LaunchedEffect(pairingCode) {
+        HiveMQManager.subscribe("/eco-guia/tv/$pairingCode/command") { payload ->
+            when (payload) {
+                "PORTAL_360" -> onNavigateToPortal360()
+                "GALLERY" -> onNavigateToGallery()
+                "HEATMAP" -> onNavigateToHeatmap()
+            }
+        }
+    }
+}
+```
+
+---
+
+### Paso 5.2: `Portal360Screen.kt` — Mapa 3D Orbital
+
+Renderiza el mapa de Dolores Hidalgo con perspectiva inclinada de 45°, ejecutando una rotación angular continua de 360° mediante corrutinas.
+
+```kotlin
+@Composable
+fun Portal360Screen(
+    isKioskLocked: Boolean,
+    onToggleKioskLock: (Boolean) -> Unit,
+    onBack: () -> Unit
+) {
+    val cameraPositionState = rememberCameraPositionState {
+        position = CameraPosition.Builder()
+            .target(LatLng(21.1561, -100.9325)) // Jardín Principal de Dolores Hidalgo
+            .zoom(17f)
+            .tilt(45f) // Perspectiva 3D
+            .bearing(0f)
+            .build()
+    }
+
+    // Rotación automática continua de 360 grados
+    LaunchedEffect(Unit) {
+        while (true) {
+            val currentBearing = cameraPositionState.position.bearing
+            val newBearing = (currentBearing + 0.5f) % 360f
+            cameraPositionState.animate(
+                CameraUpdateFactory.newCameraPosition(
+                    CameraPosition.Builder(cameraPositionState.position)
+                        .bearing(newBearing)
+                        .build()
+                ),
+                durationMs = 100
+            )
+            delay(100)
+        }
+    }
+
+    GoogleMap(
+        modifier = Modifier.fillMaxSize(),
+        cameraPositionState = cameraPositionState,
+        uiSettings = MapUiSettings(
+            zoomControlsEnabled = false,
+            compassEnabled = false,
+            rotationGesturesEnabled = false
+        )
+    )
+}
+```
+
+---
+
+### Paso 5.3: `GalleryScreen.kt` — Carrusel Automático de GeoDrops
+
+Presenta fotografías de cápsulas culturales en alta resolución con transición cíclica automática cada 5 segundos.
+
+```kotlin
+@Composable
+fun GalleryScreen(
+    isKioskLocked: Boolean,
+    onToggleKioskLock: (Boolean) -> Unit,
+    onBack: () -> Unit
+) {
+    var currentIndex by remember { mutableStateOf(0) }
+    var geoDrops by remember { mutableStateOf<List<RemoteGeoDrop>>(emptyList()) }
+
+    // Transición automática cada 5 segundos
+    LaunchedEffect(geoDrops) {
+        if (geoDrops.isNotEmpty()) {
+            while (true) {
+                delay(5000)
+                currentIndex = (currentIndex + 1) % geoDrops.size
+            }
+        }
+    }
+}
+```
+
+---
+
+### Paso 5.4: `HeatmapScreen.kt` — Ranking Analítico Semanal
+
+Divide las cápsulas más populares en bloques de 3 elementos con rotación temporizada cada 8 segundos y controles manuales por D-Pad.
+
+```kotlin
+@Composable
+fun HeatmapScreen(
+    isKioskLocked: Boolean,
+    onToggleKioskLock: (Boolean) -> Unit,
+    onBack: () -> Unit
+) {
+    val pageSize = 3
+    var currentPageIndex by remember { mutableStateOf(0) }
+    val totalPages = (rankingGeoDrops.size + pageSize - 1) / pageSize
+
+    LaunchedEffect(totalPages) {
+        if (totalPages > 1) {
+            while (true) {
+                delay(8000)
+                currentPageIndex = (currentPageIndex + 1) % totalPages
+            }
+        }
+    }
+}
+```
+
+---
+
+## FASE 6: Componentes Skeleton y Efecto Shimmer
+
+### Paso 6.1: `SkeletonComponents.kt`
+
+Proporciona retroalimentación visual inmediata con degradados lineales animados mientras se descargan datos desde Neon PostgreSQL o cuando la TV está en espera de vinculación.
+
+```kotlin
+@Composable
+fun SkeletonBox(
+    modifier: Modifier = Modifier,
+    cornerRadius: Dp = 10.dp
+) {
+    val shimmerColors = listOf(
+        Color(0xFF1E293B),
+        Color(0xFF334155),
+        Color(0xFF475569),
+        Color(0xFF334155),
+        Color(0xFF1E293B)
+    )
+
+    val transition = rememberInfiniteTransition(label = "skeleton")
+    val translateAnim by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1000f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1400, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "shimmer_translate"
+    )
+
+    val brush = Brush.linearGradient(
+        colors = shimmerColors,
+        start = Offset(translateAnim - 400f, 0f),
+        end = Offset(translateAnim, 0f)
+    )
+
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(cornerRadius))
+            .background(brush)
+    )
+}
+```
+
+---
+
+## FASE 7: Verificación, Pruebas y Despliegue
+
+### 1. Configurar un Emulador Android TV
+1. En Android Studio, abre **Device Manager** > **Create Virtual Device**.
+2. Selecciona la categoría **TV** > **Android TV (1080p)**.
+3. Elige la imagen del sistema **Android 14 (API 34)** o superior con Google APIs.
+
+### 2. Atajos de Navegación D-Pad en Emulador
+- **Flechas de dirección:** Desplazamiento de foco (D-Pad Up/Down/Left/Right).
+- **Enter / Return:** Selección / Clic (D-Pad Center).
+- **Escape / Backspace:** Retroceso (`BackHandler`).
+
+### 3. Prueba de Emparejamiento Móvil
+1. Inicia la app TV: visualiza el código QR y el PIN de 6 dígitos.
+2. Abre la app móvil `:mobile`, ve a **Mis Dispositivos > Vincular Pantalla Smart TV**.
+3. Ingresa el PIN o escanea el QR.
+4. Pulsa **Transmitir Mapa 3D** en el teléfono: la TV cambiará automáticamente a `Portal360Screen`.
+
+---
+
+## Desarrolladores
 
 | Nombre | Rol |
-|--------|-----|
-| Zahir Andrés Rodríguez Mora | Desarrollador Principal |
-| Cesar Enrique Garay García | Desarrollador |
+| :--- | :--- |
+| **Zahir Andrés Rodríguez Mora** | Desarrollador Principal |
+| **Cesar Enrique Garay García** | Desarrollador |
 
-**Institución:** Universidad Tecnológica del Norte de Guanajuato (UTNG) — Grupo GIDS6092
+**Institución:** Universidad Tecnológica del Norte de Guanajuato (UTNG)

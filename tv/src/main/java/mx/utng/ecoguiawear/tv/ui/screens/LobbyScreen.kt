@@ -1,5 +1,19 @@
 @file:OptIn(androidx.tv.material3.ExperimentalTvMaterial3Api::class)
 
+/**
+ * Pantalla de bienvenida y panel principal (Lobby) de la Smart TV.
+ *
+ * Sirve como centro neurálgico de la aplicación en pantalla grande, gestionando:
+ * 1. Generación y visualización del código PIN de emparejamiento con el dispositivo móvil.
+ * 2. Restauración automática de sesiones guardadas localmente en SharedPreferences.
+ * 3. Suscripción en tiempo real a comandos MQTT vía HiveMQ para control remoto en < 100ms.
+ * 4. Sondeo de validación de credenciales y desvinculación remota contra Neon PostgreSQL.
+ * 5. Acceso directo a las experiencias de visualización: Portal 360°, Galería GeoDrops y Mapa de Calor.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 package mx.utng.ecoguiawear.tv.ui.screens
 
 import androidx.compose.foundation.background
@@ -23,6 +37,17 @@ import mx.utng.ecoguia.shared.domain.model.RemoteHistoricalSite
 import mx.utng.ecoguia.shared.domain.model.RemoteUser
 import mx.utng.ecoguiawear.tv.ui.screens.components.*
 
+/**
+ * Composable que renderiza la pantalla de Lobby / Emparejamiento de la Smart TV.
+ *
+ * @param onNavigateToHeatmap Callback invocado para navegar hacia el mapa de calor.
+ * @param onNavigateToGallery Callback invocado para navegar hacia la galería de cápsulas.
+ * @param onNavigateToPortal360 Callback invocado para navegar hacia el visor cartográfico 360°.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 @Composable
 fun LobbyScreen(
     onNavigateToHeatmap: () -> Unit,
@@ -168,7 +193,9 @@ fun LobbyScreen(
         }
     }
 
-    // ── Función de Cierre de Sesión ──────────────────────────────────────────
+    /**
+     * Cierra la sesión activa en la Smart TV, desvinculando el código en el repositorio y limpiando preferencias.
+     */
     fun performLogout() {
         coroutineScope.launch {
             repository.unlinkTvSession(pairingCode)

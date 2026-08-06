@@ -1,3 +1,14 @@
+/**
+ * Servidor HTTP local para recibir transmisiones directas y comandos del teléfono móvil en la Smart TV.
+ *
+ * Utiliza Ktor Server con motor Netty en el puerto local 8080 (por defecto) con el endpoint `/upload`
+ * para permitir la recepción instantánea de capturas fotográficas y datos en tiempo real dentro
+ * de la misma red de área local (LAN), funcionando como alternativa o complemento a la conectividad MQTT.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 package mx.utng.ecoguiawear.tv.network
 
 import android.content.Context
@@ -20,12 +31,34 @@ import kotlinx.coroutines.flow.asStateFlow
 import java.net.Inet4Address
 import java.net.NetworkInterface
 
+/**
+ * Servidor HTTP embebido en la Smart TV para comunicación local directa.
+ *
+ * Expone un flujo de estado reactivo con las imágenes recibidas y provee utilidades
+ * para el descubrimiento de la dirección IP local de la TV.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 object TvLocalServer {
     private val _receivedImage = MutableStateFlow<Bitmap?>(null)
+
+    /**
+     * Flujo de estado observable con el último [Bitmap] recibido a través del servidor local.
+     */
     val receivedImage: StateFlow<Bitmap?> = _receivedImage.asStateFlow()
 
     private var server: io.ktor.server.engine.ApplicationEngine? = null
 
+    /**
+     * Inicia el servidor HTTP embebido en el puerto especificado.
+     *
+     * Configura el plugin de CORS para permitir solicitudes entrantes y define la ruta `/upload`
+     * para decodificar los bytes de imagen entrantes y emitirlos en [receivedImage].
+     *
+     * @param port Puerto TCP en el que escuchará el servidor (por defecto 8080).
+     */
     fun startServer(port: Int = 8080) {
         if (server != null) return
         server = embeddedServer(Netty, port = port) {
@@ -52,12 +85,23 @@ object TvLocalServer {
         }.start(wait = false)
     }
 
+    /**
+     * Detiene el servidor HTTP y libera los sockets y recursos asociados.
+     *
+     * También reinicia el estado de [receivedImage] a `null`.
+     */
     fun stopServer() {
         server?.stop(1000, 2000)
         server = null
         _receivedImage.value = null // Limpiar estado al detener
     }
 
+    /**
+     * Obtiene la dirección IPv4 local asignada a la Smart TV en la red Wi-Fi o Ethernet.
+     *
+     * @param context Contexto de la aplicación utilizado para consultar el [WifiManager].
+     * @return Cadena con la dirección IP local (ej. "192.168.1.50") o `null` si no fue posible determinarla.
+     */
     fun getLocalIpAddress(context: Context): String? {
         try {
             val wifiManager = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager

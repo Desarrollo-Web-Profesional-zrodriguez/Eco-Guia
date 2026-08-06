@@ -1,5 +1,16 @@
 @file:OptIn(androidx.tv.material3.ExperimentalTvMaterial3Api::class)
 
+/**
+ * Diálogo modal de seguridad para desbloquear el modo de exhibición protegida (Modo Kiosco) en Smart TV.
+ *
+ * Previene la manipulación o navegación no autorizada fuera de la pantalla de transmisión en
+ * recintos públicos, salas de museo y tótems turísticos, requiriendo el ingreso de un PIN o
+ * credencial de administrador para regresar al Lobby.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 package mx.utng.ecoguiawear.tv.ui.screens.components
 
 import androidx.compose.foundation.background
@@ -40,6 +51,16 @@ import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import androidx.compose.ui.focus.focusProperties
 
+/**
+ * Composable que renderiza el cuadro de diálogo para ingresar el PIN de desbloqueo de modo kiosco.
+ *
+ * @param onUnlockConfirmed Callback ejecutado cuando el PIN o credencial ingresada es válida.
+ * @param onDismiss Callback ejecutado para cancelar el intento y mantener el bloqueo.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 @OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
 fun KioskUnlockDialog(

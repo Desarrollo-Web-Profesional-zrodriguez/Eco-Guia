@@ -1,5 +1,19 @@
 @file:OptIn(androidx.tv.material3.ExperimentalTvMaterial3Api::class)
 
+/**
+ * Pantalla de exhibición 360° y visualización cartográfica 3D para Smart TV.
+ *
+ * Presenta una experiencia inmersiva para salas de museo y módulos turísticos:
+ * - Rotación orbital automática y continua en torno al sitio histórico seleccionado (tilt 45°).
+ * - Renderizado perimetral de áreas de detección (círculo del sitio activo y zonas de 30m de sitios vecinos).
+ * - Marcadores geolocalizados de cápsulas culturales GeoDrops.
+ * - Ficha de información histórica detallada y lista de cápsulas en panel lateral.
+ * - Soporte para selección de estilos de mapa (Minimalista 3D, Modo Oscuro, Satélite) y bloqueo de modo kiosco con PIN.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 package mx.utng.ecoguiawear.tv.ui.screens
 
 import androidx.activity.compose.BackHandler
@@ -45,12 +59,35 @@ import mx.utng.ecoguiawear.tv.ui.theme.JadeGreen
 import mx.utng.ecoguiawear.tv.ui.theme.MapStyles
 import mx.utng.ecoguiawear.tv.ui.theme.SurfaceDark
 
+/**
+ * Tipos de vista y temas cartográficos disponibles en el Portal 360°.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 enum class MapViewType {
+    /** Estilo minimalista claro con edificios y relieves en 3D. */
     MINIMAL_WHITE,
+
+    /** Estilo nocturno de alto contraste con acentos dorados y jade. */
     DARK_MODE,
+
+    /** Imagen satelital fotorrealista con nombres de calles y puntos de referencia. */
     SATELLITE_CITY
 }
 
+/**
+ * Composable que renderiza la pantalla del Portal 360° en la Smart TV.
+ *
+ * @param isKioskLocked Indica si el modo de exhibición protegida (kiosco) está activado.
+ * @param onToggleKioskLock Callback para alternar el estado de bloqueo kiosco.
+ * @param onBack Callback para regresar al Lobby principal.
+ *
+ * @author Zahir Andrés Rodríguez Mora
+ * @author Cesar Enrique Garay García
+ * @since 2026-08-05
+ */
 @Composable
 fun Portal360Screen(
     isKioskLocked: Boolean,
@@ -296,7 +333,6 @@ fun Portal360Screen(
                 }
 
             }
-
 
             Spacer(modifier = Modifier.height(14.dp))
 
