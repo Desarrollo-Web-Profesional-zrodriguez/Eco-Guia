@@ -256,7 +256,7 @@ fun GalleryScreen(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .weight(1f)
-                                Sommers = false)
+                                )
                                 // Líneas de texto skeleton
                                 SkeletonTextLine(widthFraction = 0.75f, height = 18.dp)
                                 SkeletonTextLine(widthFraction = 0.55f, height = 14.dp)
