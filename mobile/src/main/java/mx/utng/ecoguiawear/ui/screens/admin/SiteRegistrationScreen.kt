@@ -56,11 +56,12 @@ fun SiteRegistrationScreen(
     
     var expanded by remember { mutableStateOf(false) }
 
-    // Reintentar carga si está vacío al entrar
+    // Recargar catálogos y usuarios con rol museum_hotel cada vez que la pantalla entra en composición
     LaunchedEffect(Unit) {
         if (categories.isEmpty()) {
             viewModel.loadCategories()
         }
+        viewModel.loadMuseumUsers()
     }
 
     Column(
