@@ -50,21 +50,24 @@ java {
 }
 
 dependencies {
+    // Persistencia local offline con Room (SQLite) y soporte de corrutinas Flow/suspend
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
+
+    // Despachadores de corrutinas para subprocesos en segundo plano
     implementation(libs.kotlinx.coroutines.android)
 
-    // Ktor for Neon HTTP API
+    // Ktor Client HTTP & Kotlinx Serialization: comunicación remota REST con base de datos PostgreSQL Neon
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.client.okhttp)
     implementation(libs.ktor.client.content.negotiation)
     implementation(libs.ktor.serialization.kotlinx.json)
     implementation(libs.kotlinx.serialization.json)
 
-    // MQTT Client for Real-time TV Transmission
+    // Cliente MQTT Paho: transmisión en tiempo real de telemetría y geodrops hacia la app Smart TV
     implementation("org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.5")
 
+    // Pruebas unitarias para repositorios y entidades compartidas
     testImplementation(libs.junit)
-
 }

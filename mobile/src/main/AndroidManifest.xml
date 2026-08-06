@@ -1,26 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Permisos de Red -->
+    <!-- Permisos de red: comunicación HTTP/REST con Neon PostgreSQL y API de Groq IA -->
     <uses-permission android:name="android.permission.INTERNET" />
 
-    <!-- Permisos de Ubicación -->
+    <!-- Permisos de ubicación precisa y aproximada para el radar geodésico y mapa interactivo -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <!-- Requerido para rastreo en segundo plano (minSdk=30 → Android 11+) -->
+    
+    <!-- Permiso de rastreo en segundo plano para detectar sitios cercanos cuando la app está minimizada (Android 11+) -->
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
 
-    <!-- Permisos de Servicio en Primer Plano con tipo "location" -->
+    <!-- Permisos de servicio en primer plano (Foreground Service) de tipo ubicación para la notificación persistente -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
 
-    <!-- Notificaciones en tiempo de ejecución (API 33 / Android 13+) -->
+    <!-- Permiso de notificaciones emergentes en tiempo de ejecución (Android 13+) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
-    <!-- Reinicio tras boot para servicio de proximidad -->
+    <!-- Permiso para reactivar el servicio de proximidad automáticamente al reiniciar el smartphone -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
-    <!-- Cámara (opcional, para Geo-Drops en AR) -->
+    <!-- Cámara opcional para captura de Geo-Drops y experiencia de Realidad Aumentada (AR) -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
 
@@ -33,12 +34,12 @@
         android:usesCleartextTraffic="true"
         android:theme="@style/Theme.AppCompat.NoActionBar">
 
-        <!-- Clave API de Google Maps -->
+        <!-- Clave API de Google Maps para el renderizado del mapa turístico de Dolores Hidalgo -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyDexgWI7fqzfP8s4k_nkEvMFfYQz1qyWng" />
 
-
+        <!-- Actividad principal del smartphone que alberga la interfaz gráfica Jetpack Compose -->
         <activity
             android:name=".MainActivity"
             android:exported="true">
@@ -46,7 +47,8 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <!-- Deep Link para escanear QR desde la TV -->
+            
+            <!-- Deep Link para abrir la app móvil escaneando el código QR generado en la Smart TV -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -55,16 +57,13 @@
             </intent-filter>
         </activity>
 
-        <!--
-            ProximityService: ForegroundService de tipo "location".
-            Detecta sitios históricos cercanos aunque la app esté cerrada
-            y dispara notificaciones de alerta al usuario.
-        -->
+        <!-- ProximityService: ForegroundService de geolocalización continua en segundo plano -->
         <service
             android:name=".data.ProximityService"
             android:foregroundServiceType="location"
             android:exported="false" />
 
+        <!-- Servicio de escucha Wearable Data Layer: recibe mensajes RPC del Smartwatch Wear OS -->
         <service
             android:name=".data.wear.MobileWearListenerService"
             android:exported="true">
@@ -75,6 +74,7 @@
             </intent-filter>
         </service>
 
+        <!-- Receptor de inicio de sistema (BootReceiver): inicia ProximityService tras reiniciar el teléfono -->
         <receiver
             android:name=".data.BootReceiver"
             android:enabled="true"
@@ -88,3 +88,4 @@
     </application>
 
 </manifest>
+

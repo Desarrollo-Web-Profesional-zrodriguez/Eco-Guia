@@ -1,15 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- Declaración obligatoria para indicar que esta APK está diseñada para dispositivos Smartwatch -->
     <uses-feature
         android:name="android.hardware.type.watch"
         android:required="true" />
 
+    <!-- Permisos de hardware: actuador vibratorio háptico y estado de encendido/mantenimiento en segundo plano -->
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+    <!-- Permiso de red para consultas directas a la base de datos Neon PostgreSQL si aplica -->
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Permisos de geolocalización de alta precisión para el radar geodésico -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
+    <!-- Permiso para notificaciones emergentes de alerta de proximidad en Wear OS 13+ -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
@@ -20,6 +28,7 @@
         android:supportsRtl="true"
         android:theme="@android:style/Theme.DeviceDefault">
 
+        <!-- Librerías del sistema Wear OS opcionales para retrocompatibilidad con relojes antiguos -->
         <uses-library
             android:name="com.google.android.wearable"
             android:required="false" />
@@ -27,6 +36,7 @@
             android:name="wear-sdk"
             android:required="false" />
 
+        <!-- Configuración de aplicación emparejada (standalone=false exige vinculación con el smartphone) -->
         <meta-data
             android:name="com.google.android.wearable.standalone"
             android:value="false" />
@@ -34,6 +44,7 @@
             android:name="com.google.android.gms.wearable.capabilities"
             android:resource="@array/android_wear_capabilities" />
 
+        <!-- Actividad principal del reloj que aloja la interfaz gráfica en Compose -->
         <activity
             android:name=".presentation.MainActivity"
             android:exported="true"
@@ -45,6 +56,7 @@
             </intent-filter>
         </activity>
 
+        <!-- Servicio de escucha en segundo plano para procesar mensajes RPC del teléfono (Wearable Data Layer) -->
         <service
             android:name=".data.wear.EcoWearMessageService"
             android:exported="true">
@@ -54,3 +66,4 @@
         </service>
     </application>
 </manifest>
+

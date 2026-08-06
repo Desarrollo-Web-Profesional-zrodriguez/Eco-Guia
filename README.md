@@ -66,19 +66,16 @@ La plataforma permite:
 
 > **[INSTRUCCIÓN]** — Colocar aquí el texto completo de la carta emitida por el beneficiario del proyecto (institución, museo, dependencia municipal o cultural de Dolores Hidalgo) que avala el desarrollo de Eco-Guía. La carta debe incluir: nombre del beneficiario, cargo, institución, fecha de emisión y firma digitalizada.
 
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                     CARTA DEL BENEFICIARIO                              │
-│                                                                         │
-│  Nombre:    _________________________________________________            │
-│  Cargo:     _________________________________________________            │
-│  Institución: _______________________________________________            │
-│  Fecha:     _________________________________________________            │
-│                                                                         │
-│  [Cuerpo de la carta]                                                   │
-│                                                                         │
-│  Firma: _____________________                                           │
-└─────────────────────────────────────────────────────────────────────────┘
+```markdown
+# Carta del Beneficiario
+Nombre:      _________________________________________________
+Cargo:       _________________________________________________
+Institución: _________________________________________________
+Fecha:       _________________________________________________
+
+[Cuerpo de la carta]
+
+Firma: _____________________
 ```
 
 <br>
@@ -89,7 +86,7 @@ La plataforma permite:
 
 > **[INSTRUCCIÓN]** — Insertar aquí el enlace al video donde el beneficiario presenta o avala el proyecto Eco-Guía. Puede ser un enlace de YouTube, Google Drive o cualquier plataforma de video pública.
 
-```
+```markdown
 📹 Video del beneficiario:
    URL: [PENDIENTE — insertar enlace al video]
    Duración aproximada: ____ minutos
@@ -105,47 +102,36 @@ La plataforma permite:
 
 El proyecto sigue una arquitectura **modular multi-target** basada en **Clean Architecture** con separación de responsabilidades por capa. El módulo `shared` es el núcleo transversal que provee modelos, repositorio y clientes remotos a todos los demás módulos.
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                        EcoGuiaWear — Proyecto Raíz                          │
-│                         (settings.gradle.kts)                               │
-└───────────┬─────────────┬───────────────┬───────────────────────────────────┘
-            │             │               │
-   ┌────────▼───────┐  ┌──▼──────────┐  ┌▼──────────────┐
-   │   :mobile      │  │   :wear     │  │     :tv        │
-   │ Android Phone  │  │  Wear OS    │  │  Android TV    │
-   │                │  │             │  │                │
-   │ • Jetpack      │  │ • Horologist│  │ • Compose TV   │
-   │   Compose      │  │ • Wear      │  │ • Google Maps  │
-   │ • Google Maps  │  │   Compose   │  │   3D/Tilt      │
-   │ • CameraX      │  │ • Hardware  │  │ • Key Trapping │
-   │ • MQTT         │  │   Sensors   │  │ • MQTT         │
-   │ • Firebase     │  │ • Data      │  │ • Local Server │
-   │   Storage      │  │   Layer API │  │                │
-   │ • Brevo Email  │  │             │  │                │
-   └────────┬───────┘  └──┬──────────┘  └┬──────────────┘
-            │              │              │
-            └──────────────┼──────────────┘
-                           │
-               ┌───────────▼──────────────┐
-               │         :shared           │
-               │   Módulo Compartido       │
-               │                          │
-               │ • Room Database (local)   │
-               │ • NeonClient (PostgreSQL) │
-               │ • GroqClient (IA)         │
-               │ • HiveMQManager (MQTT)    │
-               │ • EcoGuiaRepository       │
-               │ • Domain Models           │
-               └───────────┬──────────────┘
-                           │
-        ┌──────────────────┼──────────────────┐
-        │                  │                  │
-┌───────▼──────┐  ┌────────▼──────┐  ┌───────▼──────┐
-│  Neon DB     │  │  Groq Cloud   │  │  HiveMQ      │
-│  PostgreSQL  │  │  Llama 3.3    │  │  MQTT Broker │
-│  + PostGIS   │  │  70B          │  │  (Real-time) │
-└──────────────┘  └───────────────┘  └──────────────┘
+```mermaid
+graph TD
+    %% Nodo Principal
+    Root["EcoGuiaWear — Proyecto Raíz<br/><i>(settings.gradle.kts)</i>"]
+
+    %% Módulos Secundarios
+    Mobile[":mobile<br/><b>Android Phone</b><br/>• Jetpack Compose<br/>• Google Maps<br/>• CameraX<br/>• MQTT / Firebase"]
+    Wear[":wear<br/><b>Wear OS</b><br/>• Horologist<br/>• Wear Compose<br/>• Hardware Sensors<br/>• Data Layer API"]
+    TV[":tv<br/><b>Android TV</b><br/>• Compose for TV<br/>• Google Maps 3D/Tilt<br/>• Key Trapping<br/>• Ktor Local Server"]
+
+    %% Módulo Compartido
+    Shared[":shared<br/><b>Módulo Compartido</b><br/>• Room Database (local)<br/>• NeonClient (PostgreSQL)<br/>• GroqClient (IA)<br/>• HiveMQManager (MQTT)<br/>• EcoGuiaRepository"]
+
+    %% Servicios Remotos
+    Neon[("Neon DB<br/>PostgreSQL + PostGIS")]
+    Groq["Groq Cloud<br/>Llama 3.3 70B"]
+    HiveMQ["HiveMQ<br/>MQTT Broker (Real-time)"]
+
+    %% Relaciones
+    Root --> Mobile
+    Root --> Wear
+    Root --> TV
+
+    Mobile --> Shared
+    Wear --> Shared
+    TV --> Shared
+
+    Shared --> Neon
+    Shared --> Groq
+    Shared --> HiveMQ
 ```
 
 ### Capas por módulo
@@ -317,16 +303,39 @@ EcoGuiaWear/
 
 ### Orden recomendado de construcción
 
-```
-1. :shared   → Se compila primero (dependencia de todos)
-2. :mobile   → Depende de :shared
-3. :wear     → Depende de :shared
-4. :tv       → Depende de :shared
+```mermaid
+graph LR
+    Shared[":shared (Compila primero)"] --> Mobile[":mobile (Android Phone)"]
+    Shared --> Wear[":wear (Wear OS)"]
+    Shared --> TV[":tv (Android TV)"]
 ```
 
-> Para instrucciones detalladas de instalación de los APKs en dispositivos físicos, consulta la  
-> 📄 **[Guía de Instalación — Ver PDF generado del proyecto]**  
-> (Solicitar al equipo de desarrollo el documento PDF oficial de instalación)
+> Para instrucciones detalladas de instalación de los APKs en dispositivos físicos, consulta el  
+> 📄 **[Manual de Instalación PDF del Proyecto](file:///c:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/resources/documents/Eco-Guia-Manual-Instalacion.pdf)**  
+
+<br>
+
+---
+
+## 🛠️ Manual de Desarrollo y Secuencia de Trabajo
+
+Para comprender, compilar y replicar de manera exitosa la arquitectura de **Eco-Guía**, se debe seguir el siguiente orden secuencial de estudio e implementación entre los distintos módulos:
+
+```mermaid
+flowchart TD
+    Step1["1. README Principal (Raíz)<br/><i>Entendimiento global, Neon DB y setup</i>"] --> Step2["2. Módulo :shared<br/><i>Modelos Room/Neon, Ktor y MQTT</i>"]
+    Step2 --> Step3["3. Módulo :mobile<br/><i>App nativa Compose, MVVM, mapas y GPS</i>"]
+    Step3 --> Step4["4. Módulo :wear<br/><i>App Wear OS, brújula háptica y Data Layer</i>"]
+    Step4 --> Step5["5. Módulo :tv<br/><i>App Android TV, Portal 360° y servidor local</i>"]
+```
+
+### 📋 Pasos a Seguir para Comenzar a Trabajar:
+
+1. **Paso 1:** Comenzar leyendo este documento raíz (`README.md`) para entender el esquema de base de datos PostgreSQL en Neon, la estructura Gradle y los requisitos previos de Android Studio.
+2. **Paso 2:** Estudiar el módulo compartible `:shared` y compilarlo ejecutando `./gradlew :shared:assembleDebug`.
+3. **Paso 3:** Seguir el tutorial paso a paso del módulo móvil en **[mobile/README.md](file:///c:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/mobile/README.md)** para construir la app base de Android Phone.
+4. **Paso 4:** Continuar con el tutorial del módulo wearable en **[wear/README.md](file:///c:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/wear/README.md)** para vincular el reloj inteligente.
+5. **Paso 5:** Finalizar con la guía del módulo de televisión en **[tv/README.md](file:///c:/Users/Lenovo/AndroidStudioProjects/EcoGuiaWear/tv/README.md)** para la experiencia en pantalla grande.
 
 <br>
 
@@ -429,3 +438,4 @@ Para el desarrollo detallado de cada módulo, consulta su README específico:
   <p><b>Eco-Guía</b> — <i>Impulsando el Turismo Cultural con Tecnología de Vanguardia.</i></p>
   <p><i>Zahir Andrés Rodríguez Mora &amp; Cesar Enrique Garay García — UTNG GIDS6092</i></p>
 </div>
+

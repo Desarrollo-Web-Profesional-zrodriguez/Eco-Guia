@@ -52,33 +52,40 @@ java {
 }
 
 dependencies {
+    // Módulo compartido de la arquitectura: datos de Room, repositorios de Neon Postgres y MQTT
     implementation(project(":shared"))
     
+    // Jetpack Compose BOM, integración con Activity y extensiones de Core KTX
     implementation(platform(libs.compose.bom))
     implementation(libs.activity.compose)
     implementation(libs.androidx.core.ktx)
+
+    // Componentes de interfaz de usuario especializados para Compose for TV (Material 3 TV & TV Foundation)
     implementation(libs.androidx.tv.foundation)
     implementation(libs.androidx.tv.material)
 
-    // Maps
+    // Google Maps para Compose: renderizado del mapa turístico e interactivo en pantalla gigante
     implementation(libs.play.services.maps)
     implementation(libs.maps.compose)
 
-    // QR & Images
+    // Generación de códigos QR con ZXing y renderizado/caché de imágenes remotas con Coil
     implementation(libs.zxing.core)
     implementation(libs.coil.compose)
 
-    // Ktor Server (Local P2P)
+    // Servidor local Ktor (Engine Netty con CORS): recepción de fotos y conexiones directas P2P sin servidor externo
     implementation(libs.ktor.server.core)
     implementation(libs.ktor.server.netty)
     implementation(libs.ktor.server.cors)
 
+    // Soporte para ViewModel, StateFlow, ciclos de vida y navegación Compose en Android TV
     implementation(libs.lifecycle.runtime.ktx)
     implementation(libs.compose.material.icons.extended)
     implementation(libs.navigation.compose)
     implementation(libs.ui)
     implementation(libs.ui.graphics)
     implementation(libs.ui.tooling.preview)
+
+    // Pruebas instrumentadas y depuración UI
     androidTestImplementation(platform(libs.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.ui.test.manifest)

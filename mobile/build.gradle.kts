@@ -61,7 +61,10 @@ java {
 }
 
 dependencies {
+    // Módulo compartido de la arquitectura: base de datos Room, repositorios y modelos de datos comunes
     implementation(project(":shared"))
+
+    // Compose Foundation, UI y Material Design 3
     implementation(libs.activity.compose)
     implementation(platform(libs.compose.bom))
     implementation(libs.ui)
@@ -70,46 +73,51 @@ dependencies {
     implementation(libs.ui.tooling.preview)
     implementation(libs.material3)
     implementation(libs.compose.material.icons.extended)
+
+    // APIs de Google Play Services: Data Layer para sincronización con Smartwatch Wear OS
     implementation(libs.play.services.wearable)
+
+    // Google Maps & Fused Location: mapas interactivos, rutas y geolocalización de alta precisión
     implementation(libs.play.services.maps)
     implementation(libs.play.services.location)
     implementation(libs.maps.compose)
     implementation(libs.google.places)
+
+    // Corrutinas Kotlin y extensión para integración con tareas asíncronas de Play Services
     implementation(libs.kotlinx.coroutines.play.services)
+
+    // Componentes de arquitectura Android: Lifecycle, ViewModel Compose y Room offline
     implementation(libs.lifecycle.runtime.ktx)
     implementation(libs.lifecycle.viewmodel.compose)
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     implementation(libs.navigation.compose)
+
+    // WorkManager para programación de tareas y sincronizaciones en segundo plano
     implementation("androidx.work:work-runtime-ktx:2.9.0")
 
-    // CameraX
+    // CameraX: captura de fotografías para la recolección de Geo-Drops y portales AR
     implementation(libs.androidx.camera.core)
     implementation(libs.androidx.camera.camera2)
     implementation(libs.androidx.camera.lifecycle)
     implementation(libs.androidx.camera.view)
     
-    // IA Integration (Groq via Ktor)
-    implementation(libs.ktor.client.core)
-    implementation(libs.ktor.client.okhttp)
-    implementation(libs.ktor.client.content.negotiation)
-    implementation(libs.ktor.serialization.kotlinx.json)
-
-    // Ktor Client
+    // Integración de Inteligencia Artificial (Groq/Ktor Client HTTP)
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.client.okhttp)
     implementation(libs.ktor.client.content.negotiation)
     implementation(libs.ktor.serialization.kotlinx.json)
     
-    // Test
-    testImplementation(libs.junit)
-    
-    // Firebase Storage & Coil para imágenes
+    // Almacenamiento multimedia en Firebase Storage y carga asíncrona de imágenes con Coil
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.storage)
     implementation(libs.coil.compose)
     
-    debugImplementation(libs.ui.tooling)
+    // Escáner de código QR nativo de Google Play Services
     implementation("com.google.android.gms:play-services-code-scanner:16.1.0")
+
+    // Herramientas de pruebas y depuración UI
+    testImplementation(libs.junit)
+    debugImplementation(libs.ui.tooling)
 }
 
