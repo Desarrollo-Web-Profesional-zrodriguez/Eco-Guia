@@ -1,8 +1,9 @@
 /**
  * Archivo: ManageDevicesScreen.kt
- * Autor: ZahirMora
- * Fecha de Ãºltima actualizaciÃ³n: 2026-07-22
- * DescripciÃ³n: Pantalla para gestionar y desvincular dispositivos del ecosistema.
+ *
+ * Pantalla para gestionar y desvincular dispositivos del ecosistema activo.
+ *
+ * @since 2026-08-05
  */
 
 package mx.utng.ecoguiawear.ui.screens
@@ -33,6 +34,11 @@ import mx.utng.ecoguiawear.ui.components.EcoButton
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 
+/**
+ * Pantalla composable para administrar y remover dispositivos vinculados.
+ *
+ * @param onConfirmChanges Callback al guardar y confirmar las desvinculaciones.
+ */
 @Composable
 fun ManageDevicesScreen(
     userId: String = "",

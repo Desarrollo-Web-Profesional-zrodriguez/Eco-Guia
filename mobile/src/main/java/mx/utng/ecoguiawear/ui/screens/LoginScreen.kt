@@ -1,13 +1,10 @@
 /**
  * Archivo: LoginScreen.kt
- * Autores: ZahirAndres, CesarEnrique
- * Fecha de última actualización: 2026-08-01
- * Descripción: Pantalla de inicio de sesión de EcoGuía Dolores.
- * 
- * Funciones importantes:
- * - LoginScreen: Pantalla principal de autenticación con validación de correo regex,
- *   enmascarado de contraseña con icono de visibilidad (ojo), alertas emergentes mediante Snackbar
- *   ubicado en la parte superior y soporte de scroll responsivo para modo horizontal (Landscape).
+ *
+ * Interfaz de usuario para el inicio de sesión. Permite al usuario ingresar sus credenciales,
+ * autenticarse en la base de datos Neon y navegar hacia registro o recuperación de contraseña.
+ *
+ * @since 2026-08-05
  */
 
 package mx.utng.ecoguiawear.ui.screens
@@ -43,9 +40,13 @@ import mx.utng.ecoguiawear.ui.viewmodel.AuthViewModel
 import androidx.compose.runtime.saveable.rememberSaveable
 
 /**
- * Composable que representa la pantalla de inicio de sesión.
- * Incluye validaciones de correo, contraseña oculta con icono de ojo, alerta de errores
- * y soporte completo para modo horizontal (Landscape).
+ * Pantalla composable de autenticación e inicio de sesión.
+ * Incluye validaciones de correo, contraseña oculta con icono de visibilidad, alertas y diseño responsivo.
+ *
+ * @param viewModel ViewModel de autenticación del usuario.
+ * @param onLoginSuccess Callback invocado tras la autenticación exitosa.
+ * @param onSignUpClick Callback para navegar a la pantalla de creación de cuenta.
+ * @param onRecoverClick Callback para navegar a la pantalla de recuperación de contraseña.
  */
 @Composable
 fun LoginScreen(

@@ -1,16 +1,10 @@
 /**
  * Archivo: RouteViewModel.kt
- * Autor: Zahir Andres
- * Fecha de última actualización: 2026-07-25
- * Descripción: Gestiona el ciclo de vida de las rutas turísticas: carga de catálogo, selección
- * y seguimiento en tiempo real de paradas de la ruta activa, sincronización con Wear OS
- * y creación de rutas turísticas para administradores.
  *
- * Funciones destacadas:
- * - loadRoutes: Carga la lista de rutas activas desde la base de datos Neon PostgreSQL.
- * - startRoute: Activa una ruta, consulta sus paradas ordenadas y sincroniza con el reloj Wear OS.
- * - updateProgressWithLocation: Comprueba si la ubicación GPS del usuario está a <50m de alguna parada para marcarla como completada.
- * - createRoute: Publica una nueva ruta turística con paradas seleccionadas en la base de datos Neon.
+ * Gestiona el ciclo de vida de las rutas turísticas: carga de catálogo, selección y seguimiento en tiempo real
+ * de paradas de la ruta activa, sincronización con Wear OS y creación de nuevas rutas turísticas.
+ *
+ * @since 2026-08-05
  */
 
 package mx.utng.ecoguiawear.ui.viewmodel
@@ -30,6 +24,11 @@ import mx.utng.ecoguia.shared.domain.model.RemoteRouteStop
 import mx.utng.ecoguia.shared.domain.repository.EcoGuiaRepository
 import mx.utng.ecoguiawear.data.wear.WearMessageClient
 
+/**
+ * ViewModel que expone el catálogo de rutas turísticas, el estado de navegación de la ruta activa y su comunicación con Wear OS.
+ *
+ * @param repository Repositorio de datos para operaciones de rutas y paradas.
+ */
 class RouteViewModel(
     private val repository: EcoGuiaRepository = EcoGuiaRepositoryImpl()
 ) : ViewModel() {
@@ -184,7 +183,11 @@ class RouteViewModel(
     }
 
     /**
-     * Carga las rutas turísticas cercanas a la ubicación actual del usuario (radio 50km).
+     * Carga las rutas turísticas cercanas a la ubicación actual del usuario (por defecto radio 50km).
+     *
+     * @param lat Latitud GPS de referencia.
+     * @param lng Longitud GPS de referencia.
+     * @param radiusM Radio de búsqueda en metros.
      */
     fun loadNearbyRoutes(lat: Double, lng: Double, radiusM: Int = 50000) {
         viewModelScope.launch {
@@ -200,7 +203,10 @@ class RouteViewModel(
     }
 
     /**
-     * Inicia una ruta turística, consulta sus paradas y las sincroniza con Wear OS.
+     * Inicia la navegación de una ruta turística, consulta sus paradas y las sincroniza con el reloj Wear OS.
+     *
+     * @param context Contexto de la aplicación.
+     * @param route Ruta seleccionada por el usuario.
      */
     fun startRoute(context: Context, route: RemoteRoute) {
         if (wearMessageClient == null) {
@@ -264,6 +270,8 @@ class RouteViewModel(
     /**
      * Actualiza el progreso de la ruta según la posición GPS en vivo del usuario.
      * Respeta el orden secuencial estricto: solo permite completar la primera parada no visitada.
+     *
+     * @param location Ubicación GPS actual del usuario.
      */
     fun updateProgressWithLocation(location: Location) {
         val stops = _activeStops.value
@@ -288,6 +296,8 @@ class RouteViewModel(
      * Marca manualmente una parada como completada o no completada (toggle).
      * En caso de marcar completada, exige que todas las paradas anteriores estén completadas.
      * En caso de desmarcar, desmarca también todas las paradas posteriores para mantener orden estricto.
+     *
+     * @param stopId Identificador de la parada.
      */
     fun toggleStopCompleted(stopId: String) {
         val stops = _activeStops.value
@@ -397,7 +407,12 @@ class RouteViewModel(
     }
 
     /**
-     * Publica una nueva ruta turística en Neon PostgreSQL.
+     * Publica una nueva ruta turística con paradas seleccionadas en Neon PostgreSQL.
+     *
+     * @param title Título descriptivo de la ruta.
+     * @param description Resumen del recorrido temático.
+     * @param estimatedMinutes Duración estimada en minutos.
+     * @param selectedSiteIds Lista ordenada de identificadores de sitios turísticos.
      */
     fun createRoute(
         title: String,
@@ -422,7 +437,9 @@ class RouteViewModel(
         }
     }
 
-    /** Resetea el estado de éxito de creación. */
+    /**
+     * Resetea el indicador de éxito de creación de ruta.
+     */
     fun resetCreateState() {
         _createSuccess.value = null
     }

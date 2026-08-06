@@ -1,9 +1,10 @@
 /**
  * Archivo: ModerationListScreen.kt
- * Autores: ZahirAndres, CesarEnrique
- * Fecha de última actualización: 2026-07-26
- * Descripción: Pantalla que lista dinámicamente los reportes y contenidos Geo-Drop pendientes
+ *
+ * Pantalla que lista dinámicamente los reportes y contenidos Geo-Drop pendientes
  * de revisión desde la base de datos remota para el Administrador o Moderador.
+ *
+ * @since 2026-08-05
  */
 
 package mx.utng.ecoguiawear.ui.screens.admin
@@ -32,6 +33,12 @@ import mx.utng.ecoguia.shared.domain.model.RemoteGeoDrop
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.ui.viewmodel.ModerationViewModel
 
+/**
+ * Pantalla composable para listar y filtrar el contenido comunitario en espera de aprobación.
+ *
+ * @param onResolveClick Callback invocado al seleccionar un Geo-Drop para evaluar su resolución.
+ * @param moderationViewModel ViewModel que gestiona la cola de moderación.
+ */
 @Composable
 fun ModerationListScreen(
     onResolveClick: (RemoteGeoDrop) -> Unit,

@@ -1,8 +1,11 @@
 /**
  * Archivo: AuthViewModel.kt
- * Autores: ZahirAndres, CesarEnrique
- * Fecha de última actualización: 2026-07-30
- * Descripción: Gestiona el estado de la autenticación del usuario, flujo OTP de verificación por correo y recuperación de cuenta.
+ *
+ * Gestiona el estado de autenticación de usuarios, persistencia de sesión local, verificación
+ * en dos pasos con códigos OTP por correo, cálculo de roles (SuperAdmin, Moderador, Museo),
+ * recuperación de cuenta y obtención de estadísticas del perfil.
+ *
+ * @since 2026-08-05
  */
 
 package mx.utng.ecoguiawear.ui.viewmodel
@@ -18,20 +21,35 @@ import mx.utng.ecoguia.shared.domain.model.RemoteUser
 import mx.utng.ecoguiawear.data.remote.EmailService
 
 /**
- * Representa los diferentes estados de un proceso de autenticación.
+ * Representa los estados del flujo de autenticación y registro de usuarios.
  */
 sealed class AuthState {
+    /** Estado inicial sin operaciones activas. */
     object Idle : AuthState()
+    /** Operación asíncrona de autenticación o verificación en progreso. */
     object Loading : AuthState()
+    /** Autenticación satisfactoria con datos del usuario remoto. */
     data class Success(val user: RemoteUser) : AuthState()
+    /** Ocurrió un error en la autenticación o conexión. */
     data class Error(val message: String) : AuthState()
+    /** Esperando la confirmación del código de 6 dígitos enviado por correo electrónico. */
     data class AwaitingVerification(val name: String, val email: String, val passwordHash: String, val expectedOtp: String) : AuthState()
+    /** Esperando confirmación del OTP para reseteo de clave. */
     data class AwaitingPasswordReset(val email: String, val expectedOtp: String) : AuthState()
+    /** Esperando el ingreso de la nueva contraseña. */
     data class AwaitingNewPassword(val email: String) : AuthState()
+    /** Registro de cuenta completado exitosamente. */
     object Registered : AuthState()
+    /** Contraseña restablecida exitosamente. */
     object PasswordResetSuccess : AuthState()
 }
 
+/**
+ * ViewModel que controla la autenticación, inicio de sesión, registro con verificación OTP y estadísticas de perfil.
+ *
+ * @param repository Repositorio de datos para operaciones remotas de usuarios.
+ * @param emailService Servicio de correos transaccionales para envío de OTP y recuperación.
+ */
 class AuthViewModel(
     private val repository: EcoGuiaRepository = EcoGuiaRepositoryImpl(),
     private val emailService: EmailService = EmailService()
@@ -53,7 +71,9 @@ class AuthViewModel(
     private var sharedPreferences: android.content.SharedPreferences? = null
 
     /**
-     * Inicializa el almacenamiento de sesión persistente con SharedPreferences.
+     * Inicializa el almacenamiento de sesión persistente con SharedPreferences y restaura la sesión previa si existe.
+     *
+     * @param context Contexto de la aplicación Android.
      */
     fun initSessionPersistence(context: android.content.Context) {
         sharedPreferences = context.getSharedPreferences("user_session_prefs", android.content.Context.MODE_PRIVATE)
@@ -94,13 +114,15 @@ class AuthViewModel(
 
     /**
      * Configura el ViewModel de notificaciones para ser usado por este AuthViewModel.
+     *
+     * @param nv Instancia de [NotificationViewModel].
      */
     fun initNotifications(nv: NotificationViewModel) {
         notificationViewModel = nv
     }
 
     /**
-     * Obtiene el usuario actualmente autenticado si el estado es Success.
+     * Obtiene el usuario actualmente autenticado si el estado es [AuthState.Success].
      */
     val currentUser: RemoteUser?
         get() = (authState.value as? AuthState.Success)?.user
@@ -136,7 +158,10 @@ class AuthViewModel(
         get() = currentUser != null
 
     /**
-     * Intenta iniciar sesión con el correo y contraseña proporcionados.
+     * Intenta autenticar al usuario con sus credenciales.
+     *
+     * @param email Correo electrónico registrado.
+     * @param password_hash Hash SHA-256 o contraseña ingresada.
      */
     fun login(email: String, passwordRaw: String) {
         viewModelScope.launch {
@@ -155,7 +180,11 @@ class AuthViewModel(
     }
 
     /**
-     * Inicia el proceso de registro enviando un OTP por correo.
+     * Inicia el proceso de registro generando un código OTP de 6 dígitos y enviándolo por correo electrónico.
+     *
+     * @param name Nombre o alias del usuario.
+     * @param email Correo electrónico a registrar.
+     * @param password_hash Contraseña cifrada del usuario.
      */
     fun register(name: String, email: String, passwordRaw: String) {
         viewModelScope.launch {
@@ -177,7 +206,9 @@ class AuthViewModel(
     }
 
     /**
-     * Verifica el código OTP y, si es correcto, crea la cuenta.
+     * Valida el código OTP ingresado por el usuario y finaliza la creación de la cuenta en caso afirmativo.
+     *
+     * @param enteredOtp Código de 6 dígitos introducido en la interfaz.
      */
     fun verifyOtp(enteredOtp: String) {
         val currentState = authState.value
@@ -204,6 +235,9 @@ class AuthViewModel(
 
     /**
      * Actualiza el nombre y la biografía del perfil del usuario actual.
+     *
+     * @param newName Nuevo nombre a persistir.
+     * @param newBio Nueva biografía opcional.
      */
     fun updateProfile(newName: String, newBio: String? = null) {
         val user = currentUser ?: return
@@ -222,6 +256,10 @@ class AuthViewModel(
 
     /**
      * Envía un correo de recuperación con código OTP de 6 dígitos al usuario usando Brevo.
+     *
+     * @param email Correo electrónico destinatario.
+     * @param onSuccess Callback ejecutado si el envío fue exitoso.
+     * @param onError Callback ejecutado si ocurrió un fallo al enviar.
      */
     fun sendRecoveryEmail(email: String, onSuccess: () -> Unit, onError: () -> Unit) {
         viewModelScope.launch {

@@ -1,16 +1,10 @@
 /**
  * Archivo: MyCollectionScreen.kt
- * Autores: ZahirAndres, CesarEnrique
- * Fecha de última actualización: 2026-07-26
- * Descripción: Pantalla de colección personal del usuario. Actúa como orquestador ligero
- * que gestiona el estado de filtros, búsqueda y paginación. La lógica visual de las tarjetas
- * se ha separado a ui/feature/collection/ para mantener archivos pequeños y enfocados.
  *
- * Archivos relacionados en ui/feature/collection/:
- * - CollectionItemCard.kt → Tarjeta swipeable individual con confirmación de eliminación.
+ * Pantalla de colección cultural personal del usuario. Gestiona el filtrado por categorías,
+ * búsqueda por palabras clave y visualización de sitios y cápsulas guardadas.
  *
- * Funciones destacadas:
- * - MyCollectionScreen: Orquestador con EcoTopBar, búsqueda, tabs, lista y grid landscape.
+ * @since 2026-08-05
  */
 
 package mx.utng.ecoguiawear.ui.screens
@@ -46,15 +40,10 @@ import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 import mx.utng.ecoguiawear.ui.viewmodel.CollectionViewModel
 
 /**
- * Pantalla de colección personal del usuario.
+ * Pantalla composable de colección cultural del usuario.
  *
- * Muestra los elementos guardados desde la tabla [user_saved_items] en Neon.
- * Soporta filtros por tipo (Todos, Sitios, Fotos, Rutas), búsqueda de texto y
- * eliminación individual con swipe-to-dismiss y confirmación modal.
- * En modo landscape renderiza una grilla de 2 columnas.
- *
- * @param userId ID del usuario autenticado para cargar y eliminar sus elementos.
- * @param viewModel ViewModel que gestiona la lista de elementos y el estado de carga.
+ * @param userId Identificador único del usuario autenticado.
+ * @param viewModel ViewModel encargado de la carga y eliminación de elementos guardados.
  */
 @Composable
 fun MyCollectionScreen(

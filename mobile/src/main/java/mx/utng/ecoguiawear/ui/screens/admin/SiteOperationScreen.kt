@@ -1,8 +1,9 @@
 /**
  * Archivo: SiteOperationScreen.kt
- * Autor: Zahir Rodriguez
- * Fecha de última actualización: 2026-07-24
- * Descripción: Configuración de horarios, costos y accesibilidad para el sitio (Paso 4).
+ *
+ * Configuración de horarios, costos de acceso y amenidades de accesibilidad para el sitio histórico (Paso 4).
+ *
+ * @since 2026-08-05
  */
 
 package mx.utng.ecoguiawear.ui.screens.admin
@@ -33,6 +34,12 @@ import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 import mx.utng.ecoguiawear.ui.viewmodel.SiteRegistrationViewModel
 
+/**
+ * Pantalla composable del paso 4 final para registrar costos, horarios y accesibilidad.
+ *
+ * @param viewModel ViewModel del asistente de alta de sitios.
+ * @param onFinish Callback invocado al completar y registrar el sitio.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SiteOperationScreen(

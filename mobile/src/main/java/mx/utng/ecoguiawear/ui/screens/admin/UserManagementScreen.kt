@@ -1,10 +1,11 @@
 /**
  * Archivo: UserManagementScreen.kt
- * Autores: ZahirAndres, CesarEnrique
- * Fecha de última actualización: 2026-07-26
- * Descripción: Pantalla de administración de roles de usuario. Permite al Administrador
+ *
+ * Pantalla de administración de roles de usuario. Permite al Administrador
  * consultar usuarios registrados y cambiar su rol entre Usuario Turista y Moderador Cultural.
  * Excluye explícitamente cualquier cuenta con rol Super Admin de la vista pública.
+ *
+ * @since 2026-08-05
  */
 
 package mx.utng.ecoguiawear.ui.screens.admin
@@ -33,6 +34,12 @@ import mx.utng.ecoguia.shared.domain.model.RemoteUser
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.ui.viewmodel.UserManagementViewModel
 
+/**
+ * Pantalla composable para gestionar cuentas de usuario, asignación y revocación de permisos de moderador.
+ *
+ * @param onBack Callback para regresar al panel anterior.
+ * @param userManagementViewModel ViewModel de administración de usuarios.
+ */
 @Composable
 fun UserManagementScreen(
     onBack: () -> Unit,

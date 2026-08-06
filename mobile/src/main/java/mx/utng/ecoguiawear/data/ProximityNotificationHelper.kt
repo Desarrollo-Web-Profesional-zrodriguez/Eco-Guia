@@ -1,15 +1,10 @@
 /**
  * Archivo: ProximityNotificationHelper.kt
- * Autor: Zahir Andres
- * Fecha de última actualización: 2026-07-25
- * Descripción: Centraliza la creación de canales de notificación y la construcción de
- * notificaciones del sistema para las alertas de proximidad y el servicio en primer plano.
  *
- * Funciones destacadas:
- * - createChannels: Registra los canales PROXIMITY_CHANNEL y SERVICE_CHANNEL en el sistema.
- * - buildSiteAlertNotification: Construye una notificación de alta importancia con el nombre
- *   del sitio histórico detectado y un DeepLink a ExplorationScreen.
- * - buildServiceNotification: Construye la notificación persistente y silenciosa del servicio.
+ * Helper utilitario que centraliza la creación de canales de notificación y la construcción de
+ * notificaciones del sistema para las alertas de proximidad a sitios históricos y el servicio en primer plano.
+ *
+ * @since 2026-08-05
  */
 
 package mx.utng.ecoguiawear.data
@@ -23,18 +18,27 @@ import android.content.Intent
 import androidx.core.app.NotificationCompat
 import mx.utng.ecoguiawear.MainActivity
 
+/**
+ * Proveedor de notificaciones para el sistema de alertas de proximidad y el Foreground Service.
+ */
 object ProximityNotificationHelper {
 
+    /** Identificador del canal de notificaciones prioritarias de proximidad. */
     const val PROXIMITY_CHANNEL_ID = "eco_proximity"
+    /** Identificador del canal de alertas de rutas turísticas. */
     const val ROUTES_CHANNEL_ID    = "eco_routes"
+    /** Identificador del canal de notificación persistente para el servicio en segundo plano. */
     const val SERVICE_CHANNEL_ID   = "eco_service_bg"
+    /** Identificador único de la notificación persistente del Foreground Service. */
     const val SERVICE_NOTIF_ID     = 1001
 
     /**
-     * Registra los canales de notificación necesarios:
-     * - eco_proximity: alertas de sitio (alta importancia, vibra y suena).
-     * - eco_routes: alertas de inicio y avance de ruta.
-     * - eco_service_bg: notificación silenciosa del ForegroundService.
+     * Registra los canales de notificación necesarios en el sistema:
+     * - `eco_proximity`: Alertas sonoras y con vibración para sitios cercanos.
+     * - `eco_routes`: Alertas de inicio y avance de ruta.
+     * - `eco_service_bg`: Notificación persistente y silenciosa requerida por el Foreground Service.
+     *
+     * @param context Contexto de la aplicación Android.
      */
     fun createChannels(context: Context) {
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -79,8 +83,13 @@ object ProximityNotificationHelper {
     }
 
     /**
-     * Construye la notificación de alerta cuando el usuario entra en el radio de un sitio.
-     * Al tocar la notificación, abre la app directamente en la pantalla de exploración.
+     * Construye la notificación de alerta cuando el usuario entra en el radio de detección de un sitio.
+     * Al tocar la notificación, abre la aplicación directamente en la pantalla de exploración.
+     *
+     * @param context Contexto de la aplicación Android.
+     * @param siteName Nombre del sitio histórico detectado.
+     * @param distance Distancia aproximada en metros hacia el sitio.
+     * @return [Notification] configurada con canal prioritario y acción DeepLink.
      */
     fun buildSiteAlertNotification(
         context: Context,
@@ -187,8 +196,11 @@ object ProximityNotificationHelper {
     }
 
     /**
-     * Construye la notificación persistente silenciosa que mantiene al ProximityService
-     * en primer plano.
+     * Construye la notificación persistente silenciosa que mantiene al [ProximityService]
+     * en primer plano (requerida por Android para ForegroundService de tipo location).
+     *
+     * @param context Contexto de la aplicación Android.
+     * @return [Notification] persistente de baja prioridad.
      */
     fun buildServiceNotification(context: Context): Notification {
         val tapIntent = Intent(context, MainActivity::class.java).apply {

@@ -1,8 +1,9 @@
 /**
  * Archivo: LinkedDevicesScreen.kt
- * Autor: ZahirMora
- * Fecha de última actualización: 2026-07-22
- * Descripción: Pantalla principal de gestión de dispositivos vinculados (Ecosistema activo).
+ *
+ * Pantalla principal de gestión de dispositivos vinculados al ecosistema activo (Wear OS, Smart TV, Web).
+ *
+ * @since 2026-08-05
  */
 
 package mx.utng.ecoguiawear.ui.screens
@@ -37,10 +38,19 @@ import androidx.compose.ui.unit.sp
 import mx.utng.ecoguiawear.ui.components.EcoTopBar
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
-
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 
+/**
+ * Pantalla composable de visualización y enlace de dispositivos periféricos del ecosistema.
+ *
+ * @param userId Identificador del usuario autenticado.
+ * @param currentUserEmail Correo electrónico del usuario actual.
+ * @param currentUserName Nombre del usuario actual.
+ * @param onTVCampaignClick Callback para navegar a la difusión de campañas hacia TV.
+ * @param onManageClick Callback para administrar dispositivos sincronizados.
+ * @param onStatusClick Callback para revisar el estado del enlace y telemetría.
+ */
 @Composable
 fun LinkedDevicesScreen(
     userId: String = "",

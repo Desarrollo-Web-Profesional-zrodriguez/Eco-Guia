@@ -1,9 +1,10 @@
 /**
  * Archivo: Theme.kt
- * Autor: ZahirMora
- * Fecha de última actualización: 2026-07-22
- * Descripción: Configura el tema de Material Design 3 con la identidad visual de Eco-Guía.
- *              Soporta modo oscuro y modo claro dinámicamente según la configuración del sistema.
+ *
+ * Configuración del tema [MaterialTheme] de Material Design 3 para la aplicación móvil Eco-Guía.
+ * Gestiona esquemas de color dinámicos (claro/oscuro) y la jerarquía tipográfica estándar.
+ *
+ * @since 2026-08-05
  */
 
 package mx.utng.ecoguiawear.ui.theme
@@ -102,8 +103,11 @@ private val EcoTypography = Typography(
 )
 
 /**
- * Tema principal de la aplicación móvil.
- * Responde automáticamente al modo oscuro/claro del sistema operativo.
+ * Envoltorio de tema principal de la aplicación móvil Eco-Guía.
+ * Aplica automáticamente la tipografía, esquemas de color y estilos de superficie.
+ *
+ * @param darkTheme Indica si se debe forzar el modo oscuro. Por defecto consulta la preferencia del sistema.
+ * @param content Contenido composable de la interfaz de usuario.
  */
 @Composable
 fun EcoGuiaMobileTheme(

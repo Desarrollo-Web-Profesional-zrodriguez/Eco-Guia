@@ -1,9 +1,10 @@
 /**
  * Archivo: ReportDetailScreen.kt
- * Autores: ZahirAndres, CesarEnrique
- * Fecha de última actualización: 2026-07-26
- * Descripción: Pantalla para la resolución detallada de una cápsula o reporte de moderación.
+ *
+ * Pantalla para la resolución detallada de una cápsula o reporte de moderación.
  * Permite al Administrador/Moderador aprobar o rechazar un contenido impactando la BD en tiempo real.
+ *
+ * @since 2026-08-05
  */
 
 package mx.utng.ecoguiawear.ui.screens.admin
@@ -31,11 +32,16 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import mx.utng.ecoguiawear.ui.components.EcoButton
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
-import mx.utng.ecoguiawear.ui.viewmodel.ModerationViewModel
-
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 
+/**
+ * Pantalla composable para evaluar en detalle la fotografía y texto de una cápsula reportada o pendiente.
+ *
+ * @param onResolve Callback invocado cuando la moderación se guarda exitosamente.
+ * @param onBack Callback para cancelar y volver a la lista.
+ * @param moderationViewModel ViewModel que gestiona la acción de aprobación/rechazo.
+ */
 @Composable
 fun ReportDetailScreen(
     onResolve: () -> Unit,

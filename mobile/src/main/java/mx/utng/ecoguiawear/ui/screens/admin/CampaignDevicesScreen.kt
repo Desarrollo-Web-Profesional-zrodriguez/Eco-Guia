@@ -1,8 +1,9 @@
 /**
  * Archivo: CampaignDevicesScreen.kt
- * Autor: ZahirMora
- * Fecha de Ãºltima actualizaciÃ³n: 2026-07-22
- * DescripciÃ³n: Pantalla de selecciÃ³n de dispositivos para una campaÃ±a visual.
+ *
+ * Pantalla de selección de dispositivos Smart TV para la difusión y programación de campañas visuales de contenido cultural.
+ *
+ * @since 2026-08-05
  */
 
 package mx.utng.ecoguiawear.ui.screens.admin
@@ -32,6 +33,14 @@ import mx.utng.ecoguiawear.ui.screens.DeviceItem
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 
+/**
+ * Pantalla composable para seleccionar dispositivos receptores de transmisiones de campaña.
+ *
+ * @param userId Identificador del usuario emisor.
+ * @param currentUserEmail Correo electrónico del usuario activo.
+ * @param programType Tipo de programa o contenido a proyectar ("gallery", "video", etc.).
+ * @param onManageContentClick Callback para continuar hacia la gestión de contenido multimedia.
+ */
 @Composable
 fun CampaignDevicesScreen(
     userId: String = "",

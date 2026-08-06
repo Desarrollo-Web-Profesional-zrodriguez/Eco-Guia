@@ -1,8 +1,9 @@
 /**
  * Archivo: MuseumPortal360Screen.kt
- * Autor: ZahirMora
- * Fecha de Ãºltima actualizaciÃ³n: 2026-07-22
- * DescripciÃ³n: Pantalla de portal inmersivo que muestra la vista 360 del museo y puntos de interÃ©s.
+ *
+ * Pantalla de portal inmersivo que muestra la vista panorámica 360 del museo y puntos de interés virtual.
+ *
+ * @since 2026-08-05
  */
 
 package mx.utng.ecoguiawear.ui.screens.admin
@@ -28,6 +29,9 @@ import androidx.compose.ui.unit.sp
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 
+/**
+ * Pantalla composable para visualización de recorridos inmersivos 360° en recintos históricos.
+ */
 @Composable
 fun MuseumPortal360Screen() {
     Column(

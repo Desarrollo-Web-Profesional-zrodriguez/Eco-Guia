@@ -1,8 +1,9 @@
 /**
  * Archivo: TVCampaignScreen.kt
- * Autor: ZahirMora
- * Fecha de Ãºltima actualizaciÃ³n: 2026-07-22
- * DescripciÃ³n: GestiÃ³n de campaÃ±as visuales para Smart TVs en hoteles y museos (SalÃ³n de la Fama).
+ *
+ * Gestión de campañas visuales y modos de difusión para Smart TVs en hoteles y museos (Galería, Salón de la Fama, Trivia).
+ *
+ * @since 2026-08-05
  */
 
 package mx.utng.ecoguiawear.ui.screens.admin
@@ -30,6 +31,12 @@ import androidx.compose.ui.unit.sp
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 
+/**
+ * Pantalla composable para configurar y desplegar modos de campaña visual en dispositivos Smart TV.
+ *
+ * @param onAnalyticsClick Callback para navegar a las analíticas de espectadores.
+ * @param onManageDevicesClick Callback invocado con el tipo de programa seleccionado para vincular dispositivos.
+ */
 @Composable
 fun TVCampaignScreen(
     userId: String = "",

@@ -1,14 +1,10 @@
 /**
  * Archivo: CreateRouteScreen.kt
- * Autor: Zahir Andres
- * Fecha de última actualización: 2026-07-25
- * Descripción: Pantalla de administración para la creación y publicación de nuevas rutas turísticas.
- * Utiliza el diseño unificado del sistema: cabecera en DeepBlue con la card flotante en Surface,
- * campos EcoTextField y botones de acción en la paleta oficial (EcoGuiaColors).
  *
- * Funciones destacadas:
- * - CreateRouteScreen: Formulario unificado con validaciones y selector de sitios.
- * - SiteSelectionRow: Componente de selección estilo tarjeta unificada con checkbox en Jade.
+ * Pantalla de administración para la creación y publicación de nuevas rutas turísticas temáticas,
+ * permitiendo seleccionar y ordenar paradas a partir del catálogo de sitios históricos registrados.
+ *
+ * @since 2026-08-05
  */
 
 package mx.utng.ecoguiawear.ui.screens
@@ -49,7 +45,13 @@ import mx.utng.ecoguiawear.ui.viewmodel.LocationViewModel
 import mx.utng.ecoguiawear.ui.viewmodel.RouteViewModel
 
 /**
- * Pantalla de creación de rutas estilizada acorde al formulario de alta de sitios.
+ * Pantalla composable de creación de rutas turísticas para administradores.
+ *
+ * @param onRouteCreated Callback invocado tras la creación exitosa de la ruta.
+ * @param onBack Callback para retornar a la pantalla anterior.
+ * @param routeViewModel ViewModel para la persistencia y carga de rutas.
+ * @param locationViewModel ViewModel para consultar el listado de sitios disponibles.
+ * @param notificationViewModel ViewModel para emitir alertas de nuevas rutas creadas.
  */
 @Composable
 fun CreateRouteScreen(

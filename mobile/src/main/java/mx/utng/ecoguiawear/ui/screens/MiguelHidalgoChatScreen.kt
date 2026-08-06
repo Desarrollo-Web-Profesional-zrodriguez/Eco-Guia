@@ -1,9 +1,10 @@
 /**
  * Archivo: MiguelHidalgoChatScreen.kt
- * Autor: ZahirMora
- * Fecha de última actualización: 2026-07-24
- * Descripción: Pantalla de chat interactivo con el avatar de Miguel Hidalgo IA. 
- * Implementa una interfaz de conversación guiada con burbujas de mensaje estilizadas.
+ *
+ * Pantalla de chat interactivo con el avatar inteligente de Miguel Hidalgo.
+ * Implementa una interfaz de conversación histórica guiada con burbujas de mensaje estilizadas y renderizado Markdown ligero.
+ *
+ * @since 2026-08-05
  */
 
 package mx.utng.ecoguiawear.ui.screens
@@ -37,8 +38,10 @@ import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 import mx.utng.ecoguiawear.ui.viewmodel.ChatViewModel
 
 /**
- * Función auxiliar para formatear texto con negritas sencillas (**texto**) 
- * y viñetas (* o -).
+ * Función auxiliar para formatear texto con negritas y viñetas en formato visual legible.
+ *
+ * @param text Texto plano recibido del modelo de lenguaje.
+ * @return Cadena anotada [AnnotatedString] con estilos aplicados.
  */
 fun formatAIText(text: String): AnnotatedString {
     // Primero reemplazamos viñetas de texto (* ) por caracteres de punto (• )
@@ -66,7 +69,11 @@ fun formatAIText(text: String): AnnotatedString {
 }
 
 /**
- * Composable que representa la interfaz de chat con Miguel Hidalgo IA.
+ * Pantalla composable de conversación con el asistente virtual de Miguel Hidalgo.
+ *
+ * @param onKnowledgeBaseClick Callback para navegar a la base de conocimiento IA (solo Super Admin).
+ * @param isSuperAdmin Indica si el usuario cuenta con permisos de administración total del bot.
+ * @param viewModel ViewModel de orquestación de la sesión de chat con Gemini.
  */
 @Composable
 fun MiguelHidalgoChatScreen(

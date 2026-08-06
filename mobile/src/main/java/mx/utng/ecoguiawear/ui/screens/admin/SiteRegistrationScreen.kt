@@ -1,8 +1,9 @@
 /**
  * Archivo: SiteRegistrationScreen.kt
- * Autor: Zahir Rodriguez
- * Fecha de última actualización: 2026-07-24
- * Descripción: Pantalla inicial para dar de alta un sitio histórico (Paso 1).
+ *
+ * Pantalla inicial para dar de alta un nuevo sitio histórico y cultural (Paso 1: Datos Generales).
+ *
+ * @since 2026-08-05
  */
 
 package mx.utng.ecoguiawear.ui.screens.admin
@@ -31,6 +32,12 @@ import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 import mx.utng.ecoguiawear.ui.viewmodel.SiteRegistrationViewModel
 
+/**
+ * Pantalla composable del paso 1 para capturar nombre, categoría y dirección postal sugerida del sitio.
+ *
+ * @param viewModel ViewModel que mantiene el estado del formulario multidimensional.
+ * @param onNext Callback para avanzar al paso 2.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SiteRegistrationScreen(

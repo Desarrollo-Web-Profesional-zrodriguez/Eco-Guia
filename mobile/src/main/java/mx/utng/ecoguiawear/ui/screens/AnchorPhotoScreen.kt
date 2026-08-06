@@ -1,9 +1,10 @@
 /**
  * Archivo: AnchorPhotoScreen.kt
- * Autores: ZahirAndres, CesarEnrique
- * Fecha de última actualización: 2026-07-26
- * Descripción: Pantalla de anclaje de fotografía capturada a las coordenadas GPS del sitio histórico.
+ *
+ * Pantalla de anclaje de fotografía capturada a las coordenadas GPS del sitio histórico.
  * Muestra una vista previa de la foto real y envía el nuevo Geo-Drop a la base de datos Neon PostgreSQL.
+ *
+ * @since 2026-08-05
  */
 
 package mx.utng.ecoguiawear.ui.screens
@@ -47,6 +48,7 @@ import mx.utng.ecoguiawear.ui.components.GeoDropSavingDialog
  * Pantalla que permite titular, agregar descripción y anclar la foto a la ubicación GPS actual.
  *
  * @param onAnchorClick Callback invocado tras completar exitosamente el anclaje.
+ * @param userId Identificador del usuario autenticado.
  * @param geoDropViewModel ViewModel de estado de Geo-Drops y foto capturada.
  * @param locationViewModel ViewModel para obtener las coordenadas GPS del anclaje.
  */

@@ -1,8 +1,10 @@
 /**
  * Archivo: EcoNavigation.kt
- * Autor: ZahirMora
- * Fecha de última actualización: 2026-07-21
- * Descripción: Componentes de navegación centralizados, incluyendo la barra inferior optimizada.
+ *
+ * Componentes de navegación global de la aplicación: barra de navegación inferior ([NavigationBar]),
+ * riel de navegación lateral ([NavigationRail]) para formato apaisado y tarjetas de acceso a opciones.
+ *
+ * @since 2026-08-05
  */
 
 package mx.utng.ecoguiawear.ui.components
@@ -25,7 +27,12 @@ import androidx.compose.ui.unit.sp
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 
 /**
- * Barra de navegación inferior personalizada para Eco-Guía.
+ * Barra de navegación inferior principal de la aplicación móvil.
+ *
+ * @param currentRoute Ruta activa actualmente seleccionada.
+ * @param onNavigate Callback invocado al seleccionar un destino de navegación.
+ * @param onOpenSidebar Callback invocado al presionar el botón de menú lateral/contextual.
+ * @param isRouteActive Indica si hay una ruta turística activa en navegación GPS.
  */
 @Composable
 fun EcoBottomBar(
@@ -101,7 +108,12 @@ fun EcoBottomBar(
 }
 
 /**
- * Barra de navegación lateral (NavigationRail) para modo horizontal (Landscape).
+ * Barra de navegación lateral ([NavigationRail]) diseñada para orientaciones apaisadas (Landscape) o pantallas grandes.
+ *
+ * @param currentRoute Ruta activa actualmente seleccionada.
+ * @param onNavigate Callback invocado al seleccionar un destino de navegación.
+ * @param onOpenSidebar Callback invocado al presionar el botón de menú.
+ * @param isRouteActive Indica si hay una ruta turística activa en navegación GPS.
  */
 @Composable
 fun EcoNavigationRail(
@@ -180,7 +192,13 @@ fun EcoNavigationRail(
 }
 
 /**
- * Item genérico para menús de opciones (utilizado en MoreOptionsScreen).
+ * Tarjeta de opción para menús de navegación en cuadrícula o lista (por ejemplo en MoreOptionsScreen).
+ *
+ * @param title Título principal de la opción.
+ * @param subtitle Descripción breve de la funcionalidad.
+ * @param icon Ícono vectorial representativo.
+ * @param enabled Indica si la tarjeta está habilitada para interacción.
+ * @param onClick Callback invocado al pulsar sobre la tarjeta.
  */
 @Composable
 fun MenuOptionItem(

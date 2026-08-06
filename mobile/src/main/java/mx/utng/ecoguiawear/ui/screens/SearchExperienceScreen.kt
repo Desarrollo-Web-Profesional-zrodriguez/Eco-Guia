@@ -1,13 +1,10 @@
 /**
  * Archivo: SearchExperienceScreen.kt
- * Autor: Zahir Andres
- * Fecha de última actualización: 2026-07-25
- * Descripción: Pantalla de exploración y búsqueda de experiencias. Muestra el catálogo de rutas
- * turísticas disponibles desde Neon PostgreSQL, permitiendo iniciar cualquiera de ellas.
  *
- * Funciones destacadas:
- * - SearchExperienceScreen: Muestra el catálogo dinámico de rutas y accesos rápidos a IA y mapas.
- * - RouteCatalogItem: Tarjeta interactiva con título, descripción y botón "Iniciar Recorrido".
+ * Pantalla de exploración y búsqueda de experiencias turísticas. Muestra el catálogo de rutas
+ * disponibles desde Neon PostgreSQL, permitiendo iniciar cualquiera de ellas o filtrarlas.
+ *
+ * @since 2026-08-05
  */
 
 package mx.utng.ecoguiawear.ui.screens
@@ -46,7 +43,13 @@ import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 import mx.utng.ecoguiawear.ui.viewmodel.RouteViewModel
 
 /**
- * Pantalla que presenta las rutas turísticas disponibles para el usuario.
+ * Pantalla que presenta el catálogo de rutas turísticas disponibles para el usuario.
+ *
+ * @param onSelectRoute Callback ejecutado al seleccionar e iniciar una ruta.
+ * @param onCreateRoute Callback para navegar al formulario de creación de rutas (moderadores/admins).
+ * @param isModerator Indica si el usuario actual posee permisos de moderación o administración.
+ * @param routeViewModel ViewModel para la consulta y activación de rutas.
+ * @param locationViewModel ViewModel para calcular la distancia a las rutas respecto a la ubicación actual.
  */
 @Composable
 fun SearchExperienceScreen(

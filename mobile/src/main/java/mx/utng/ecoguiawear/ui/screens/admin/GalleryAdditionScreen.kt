@@ -1,8 +1,9 @@
-﻿/**
+/**
  * Archivo: GalleryAdditionScreen.kt
- * Autor: ZahirMora
- * Fecha de última actualización: 2026-07-22
- * Descripción: Pantalla para agregar nuevas fotografías a la galería oficial del sitio.
+ *
+ * Pantalla para agregar nuevas fotografías y metadatos a la galería oficial del sitio histórico.
+ *
+ * @since 2026-08-05
  */
 
 package mx.utng.ecoguiawear.ui.screens.admin
@@ -29,6 +30,12 @@ import mx.utng.ecoguiawear.ui.components.EcoTextField
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 
+/**
+ * Pantalla composable para subir nuevos recursos fotográficos a la galería de administración.
+ *
+ * @param onAddClick Callback invocado para guardar la fotografía y sus etiquetas.
+ * @param onNavigate Callback para navegar entre secciones de administración.
+ */
 @Composable
 fun GalleryAdditionScreen(
     onAddClick: () -> Unit,

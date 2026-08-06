@@ -1,9 +1,10 @@
 /**
  * Archivo: SiteRegistrationViewModel.kt
- * Autor: Zahir Rodriguez
- * Fecha de última actualización: 2026-07-24
- * Descripción: Gestiona el flujo de registro de un nuevo sitio histórico en 4 pasos,
- * manteniendo el estado temporal y capturando la ubicación GPS actual.
+ *
+ * Gestiona el formulario wizard de registro de nuevos sitios turísticos e históricos en 4 pasos,
+ * autocompletado de direcciones con Google Places y captura de coordenadas GPS.
+ *
+ * @since 2026-08-05
  */
 
 package mx.utng.ecoguiawear.ui.viewmodel
@@ -24,6 +25,11 @@ import mx.utng.ecoguia.shared.data.repository.EcoGuiaRepositoryImpl
 import mx.utng.ecoguia.shared.domain.model.RemoteCategory
 import mx.utng.ecoguia.shared.domain.repository.EcoGuiaRepository
 
+/**
+ * ViewModel que preserva el estado del formulario de alta de sitios y orquesta su persistencia en la base de datos remota.
+ *
+ * @param repository Repositorio de datos para consulta de categorías y creación de sitios históricos.
+ */
 class SiteRegistrationViewModel(
     private val repository: EcoGuiaRepository = EcoGuiaRepositoryImpl()
 ) : ViewModel() {
@@ -83,6 +89,9 @@ class SiteRegistrationViewModel(
         }
     }
 
+    /**
+     * Consulta el catálogo de categorías disponibles desde la base de datos remota.
+     */
     fun loadCategories() {
         viewModelScope.launch {
             _isLoadingCategories.value = true
@@ -103,7 +112,10 @@ class SiteRegistrationViewModel(
     }
 
     /**
-     * Busca sugerencias de dirección usando Google Places API.
+     * Busca sugerencias de dirección en tiempo real usando Google Places Autocomplete API.
+     *
+     * @param context Contexto de la aplicación.
+     * @param query Texto de búsqueda ingresado.
      */
     fun searchAddress(context: Context, query: String) {
         if (query.length < 3) {
@@ -132,13 +144,20 @@ class SiteRegistrationViewModel(
             }
     }
 
+    /**
+     * Aplica la predicción de dirección seleccionada por el usuario.
+     *
+     * @param prediction Predicción seleccionada de la lista autocompletada.
+     */
     fun onAddressSelected(prediction: AutocompletePrediction) {
         address.value = prediction.getFullText(null).toString()
         _addressSuggestions.value = emptyList()
     }
 
     /**
-     * Captura la ubicación actual del dispositivo para anclar el sitio.
+     * Captura las coordenadas GPS actuales del dispositivo en alta precisión para asignarlas al nuevo sitio.
+     *
+     * @param context Contexto de la aplicación.
      */
     @SuppressLint("MissingPermission")
     fun captureCurrentLocation(context: Context) {

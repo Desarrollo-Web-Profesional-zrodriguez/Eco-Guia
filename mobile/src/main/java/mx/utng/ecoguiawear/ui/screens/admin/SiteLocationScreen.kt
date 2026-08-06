@@ -1,8 +1,9 @@
 /**
  * Archivo: SiteLocationScreen.kt
- * Autor: Zahir Rodriguez
- * Fecha de última actualización: 2026-07-24
- * Descripción: Configuración de geolocalización y radio de detección para un sitio (Paso 3).
+ *
+ * Configuración de geolocalización, coordenadas GPS y radio de detección para un sitio histórico (Paso 3).
+ *
+ * @since 2026-08-05
  */
 
 package mx.utng.ecoguiawear.ui.screens.admin
@@ -36,6 +37,12 @@ import mx.utng.ecoguiawear.ui.theme.EcoGuiaMobileTheme
 import mx.utng.ecoguiawear.ui.viewmodel.SiteRegistrationViewModel
 import androidx.compose.ui.platform.LocalContext
 
+/**
+ * Pantalla composable del paso 3 para ajustar geocerca y posición en mapa satelital interactivo.
+ *
+ * @param viewModel ViewModel compartido de registro del sitio.
+ * @param onNext Callback para continuar al siguiente paso.
+ */
 @Composable
 fun SiteLocationScreen(
     viewModel: SiteRegistrationViewModel,

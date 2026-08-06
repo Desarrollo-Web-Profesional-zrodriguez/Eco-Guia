@@ -1,8 +1,10 @@
 /**
  * Archivo: UserManagementViewModel.kt
- * Autores: ZahirAndres, CesarEnrique
- * Fecha de última actualización: 2026-07-26
- * Descripción: ViewModel para gestionar la lista de usuarios y la promoción/degradación de sus roles.
+ *
+ * ViewModel para el panel de administración encargado de consultar la lista de usuarios registrados
+ * y gestionar la asignación, promoción o degradación de roles y permisos.
+ *
+ * @since 2026-08-05
  */
 
 package mx.utng.ecoguiawear.ui.viewmodel
@@ -16,6 +18,11 @@ import mx.utng.ecoguia.shared.data.repository.EcoGuiaRepositoryImpl
 import mx.utng.ecoguia.shared.domain.model.RemoteUser
 import mx.utng.ecoguia.shared.domain.repository.EcoGuiaRepository
 
+/**
+ * ViewModel que expone el catálogo de usuarios del sistema y permite a los administradores modificar sus roles.
+ *
+ * @param repository Repositorio de datos para operaciones de administración de usuarios.
+ */
 class UserManagementViewModel(
     private val repository: EcoGuiaRepository = EcoGuiaRepositoryImpl()
 ) : ViewModel() {
@@ -31,7 +38,7 @@ class UserManagementViewModel(
     }
 
     /**
-     * Carga la lista de usuarios desde la BD remota excluyendo al super admin.
+     * Carga la lista de usuarios registrados en el sistema desde la base de datos remota.
      */
     fun loadUsers() {
         viewModelScope.launch {
@@ -47,7 +54,12 @@ class UserManagementViewModel(
     }
 
     /**
-     * Cambia el rol de un usuario (ej: de visitor a moderator) en la BD.
+     * Actualiza el rol de un usuario (ej: visitor, moderator, museum_hotel) en la base de datos remota.
+     *
+     * @param userId Identificador único del usuario a modificar.
+     * @param newRole Clave del nuevo rol a asignar.
+     * @param onSuccess Callback ejecutado al actualizar exitosamente.
+     * @param onError Callback invocado si ocurre un error.
      */
     fun changeRole(
         userId: String,
