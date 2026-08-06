@@ -26,14 +26,29 @@ class RadarViewModel(
 
     fun startDemo() {
         repository.startRadar()
+        repository.refreshNearbyTargets() // Refresh from Neon
         pulse(HapticPulse.LINKED)
         sendPhoneEvent(PhoneMessageClient.PATH_RADAR_STATE, "demo-started")
+    }
+
+    fun refreshFromCloud() {
+        repository.refreshNearbyTargets()
     }
 
     fun toggleRadar() {
         repository.toggleRadar()
         pulse(HapticPulse.TOGGLE)
         sendPhoneEvent(PhoneMessageClient.PATH_RADAR_STATE, state.value.mode.name)
+    }
+
+    fun selectNextAutoTarget() {
+        repository.selectNextAutoTarget()
+        pulse(HapticPulse.TOGGLE)
+    }
+
+    fun selectPreviousAutoTarget() {
+        repository.selectPreviousAutoTarget()
+        pulse(HapticPulse.TOGGLE)
     }
 
     fun toggleStealthMode() {
@@ -62,6 +77,11 @@ class RadarViewModel(
         pulse(HapticPulse.TOGGLE)
     }
 
+    fun dismissRouteCompleted() {
+        repository.dismissRouteCompleted()
+        pulse(HapticPulse.TOGGLE)
+    }
+
     fun openPhoneCamera() {
         sendPhoneEvent(PhoneMessageClient.PATH_OPEN_CAMERA, state.value.target.id)
     }
@@ -69,6 +89,16 @@ class RadarViewModel(
     fun updateHaptics(enabled: Boolean, strength: HapticStrength = state.value.hapticSettings.strength) {
         repository.updateHaptics(enabled, strength)
         if (enabled) pulse(HapticPulse.TOGGLE)
+    }
+
+    fun deleteAlert(id: String) {
+        repository.deleteAlert(id)
+        pulse(HapticPulse.TOGGLE)
+    }
+
+    fun clearAllAlerts() {
+        repository.clearAllAlerts()
+        pulse(HapticPulse.TOGGLE)
     }
 
     private fun pulse(type: HapticPulse) {

@@ -25,7 +25,7 @@ fun CompassScreen(
     onBack: () -> Unit = {},
     requestFocus: Boolean = true
 ) {
-    val title = if (state.target.distanceMeters <= 20) "GEO-DROP CERCA" else "SIGUE LA FLECHA"
+    val title = if (state.target.distanceMeters <= 1000) "SITIO CERCA" else "SIGUE LA FLECHA"
     
     EcoWearScaffold(requestFocus = requestFocus) {
         item {
@@ -37,7 +37,7 @@ fun CompassScreen(
         
         item {
             CompassArrow(
-                bearingDegrees = state.target.bearingDegrees,
+                bearingDegrees = state.target.bearingDegrees - state.currentHeading,
                 modifier = Modifier.size(120.dp)
             )
         }

@@ -37,3 +37,11 @@ data class AlertEntity(
     val type: String, // "GEODROP", "SITE", "INFO"
     val timestamp: Long
 )
+
+@Entity(tableName = "sync_pending_actions")
+data class SyncPendingActionEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val actionType: String, // "MARK_VISITED", "SAVE_GEODROP", "DELETE_SITE"
+    val payloadJson: String,
+    val timestamp: Long = System.currentTimeMillis()
+)

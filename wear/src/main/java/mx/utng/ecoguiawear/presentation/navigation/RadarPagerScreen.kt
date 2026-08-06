@@ -33,35 +33,17 @@ fun RadarPagerScreen(
     onNavigateToAlerts: () -> Unit
 ) {
     val state by viewModel.state.collectAsState()
-    val pagerState = rememberPagerState(pageCount = { 4 })
+    val isRouteActive = state.routeSummary.waypoints.isNotEmpty()
+    val pageCount = if (isRouteActive) 4 else 3
+    val pagerState = rememberPagerState(pageCount = { pageCount })
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     
-    // Feedback háptico seguro al cambiar de página
-    LaunchedEffect(pagerState.currentPage) {
-        val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val vibratorManager = context.getSystemService(android.content.Context.VIBRATOR_MANAGER_SERVICE) as? android.os.VibratorManager
-            vibratorManager?.defaultVibrator
-        } else {
-            @Suppress("DEPRECATION")
-            context.getSystemService(android.content.Context.VIBRATOR_SERVICE) as? Vibrator
-        }
-        
-        vibrator?.let {
-            if (it.hasVibrator()) {
-                it.vibrate(VibrationEffect.createOneShot(45, VibrationEffect.DEFAULT_AMPLITUDE))
-            }
-        }
-    }
-
     Box(modifier = Modifier.fillMaxSize()) {
         HorizontalPager(
             state = pagerState,
-            modifier = Modifier.fillMaxSize(),
-            beyondViewportPageCount = 1 
+            modifier = Modifier.fillMaxSize()
         ) { page ->
-            // Forzamos un pequeño retraso y re-evaluación del foco cuando la página cambia
-            // para asegurar que el sistema rotativo se enganche a la nueva pantalla activa.
             val isActive = pagerState.currentPage == page
             
             when (page) {
@@ -82,11 +64,14 @@ fun RadarPagerScreen(
                         scope.launch { pagerState.animateScrollToPage(2) }
                     },
                     onOpenAlert = onNavigateToAlerts,
-                    onOpenArrival = { /* Handled by arrival mode */ },
+                    onOpenArrival = { },
                     onOpenSummary = { 
-                        scope.launch { pagerState.animateScrollToPage(3) }
+                        if (isRouteActive) scope.launch { pagerState.animateScrollToPage(3) }
                     },
-                    onOpenSettings = { /* Page 0 handles settings back */ },
+                    onOpenSettings = { },
+                    onSelectNextAutoTarget = viewModel::selectNextAutoTarget,
+                    onSelectPreviousAutoTarget = viewModel::selectPreviousAutoTarget,
+                    onRefresh = viewModel::refreshFromCloud,
                     onNavigateBack = { 
                         scope.launch { pagerState.animateScrollToPage(0) }
                     },
@@ -95,26 +80,30 @@ fun RadarPagerScreen(
                 2 -> CompassScreen(
                     state = state,
                     onNext = { 
-                        scope.launch { pagerState.animateScrollToPage(3) }
+                        if (isRouteActive) scope.launch { pagerState.animateScrollToPage(3) }
                     },
                     onBack = { 
                         scope.launch { pagerState.animateScrollToPage(1) }
                     },
                     requestFocus = isActive
                 )
-                3 -> RouteSummaryScreen(
-                    state = state,
-                    onBackToRadar = { 
-                        scope.launch { pagerState.animateScrollToPage(1) }
-                    },
-                    requestFocus = isActive
-                )
+                3 -> {
+                    if (isRouteActive) {
+                        RouteSummaryScreen(
+                            state = state,
+                            onBackToRadar = { 
+                                scope.launch { pagerState.animateScrollToPage(1) }
+                            },
+                            requestFocus = isActive
+                        )
+                    }
+                }
             }
         }
 
         HorizontalPageIndicator(
             pageIndicatorState = object : PageIndicatorState {
-                override val pageCount: Int = 4
+                override val pageCount: Int = pageCount
                 override val pageOffset: Float = pagerState.currentPageOffsetFraction
                 override val selectedPage: Int = pagerState.currentPage
             },

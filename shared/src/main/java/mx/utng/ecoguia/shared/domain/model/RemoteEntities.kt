@@ -1,0 +1,184 @@
+/**
+ * Archivo: RemoteEntities.kt
+ * Autor: Zahir Rodriguez
+ * Fecha de última actualización: 2026-07-24
+ * Descripción: Modelos de datos serializables para la comunicación con la base de datos remota.
+ * Incluye soporte para coordenadas geográficas necesarias en el flujo de exploración.
+ */
+
+package mx.utng.ecoguia.shared.domain.model
+
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+
+/**
+ * Representa un usuario en el sistema.
+ */
+@Serializable
+data class RemoteUser(
+    val id: String,
+    val email: String,
+    @SerialName("display_name") val displayName: String,
+    val role: String,
+    val bio: String? = null,
+    @SerialName("avatar_url") val avatarUrl: String? = null,
+    @SerialName("created_at") val createdAt: String? = null
+)
+
+/**
+ * Representa un dispositivo o sesión activa en la base de datos Neon PostgreSQL.
+ */
+@Serializable
+data class RemoteDevice(
+    val id: String,
+    @SerialName("user_id") val userId: String,
+    val type: String, // 'phone', 'wearable', 'tv'
+    val name: String,
+    @SerialName("device_identifier") val deviceIdentifier: String? = null,
+    @SerialName("is_active") val isActive: Boolean = true,
+    @SerialName("last_seen_at") val lastSeenAt: String? = null
+)
+
+/**
+ * Representa una vinculación o pairing vía código/QR entre dispositivos.
+ */
+@Serializable
+data class RemoteDevicePairing(
+    val id: String,
+    @SerialName("user_id") val userId: String,
+    @SerialName("pairing_code") val pairingCode: String,
+    @SerialName("is_active") val isActive: Boolean = true
+)
+
+/**
+ * Representa un elemento en la colección del usuario (Sitio, Foto, Ruta).
+ */
+@Serializable
+
+data class RemoteCollectionItem(
+    val id: String,
+    @SerialName("raw_id") val rawId: String? = null,
+    val title: String,
+    val subtitle: String,
+    val type: String, // 'site', 'photo', 'route'
+    val status: String? = "approved", // 'approved', 'pending', 'rejected'
+    @SerialName("media_url") val mediaUrl: String? = null,
+    @SerialName("author_id") val authorId: String? = null,
+    @SerialName("created_at") val createdAt: String? = null,
+    @SerialName("site_type") val siteType: String? = null,
+    val address: String? = null,
+    @SerialName("historical_description") val historicalDescription: String? = null,
+    @SerialName("cost_info") val costInfo: String? = null,
+    @SerialName("opening_hours") val openingHours: String? = null,
+    val accessibility: String? = null,
+    @SerialName("site_name") val siteName: String? = null,
+    @SerialName("estimated_minutes") val estimatedMinutes: Int? = null,
+    @SerialName("distance_m") val distanceM: Int? = null,
+    val latitude: Double? = null,
+    val longitude: Double? = null
+)
+
+
+
+/**
+ * Representa un sitio histórico o museo.
+ */
+@Serializable
+data class RemoteHistoricalSite(
+    val id: String,
+    val name: String,
+    val slug: String,
+    @SerialName("site_type") val siteType: String,
+    @SerialName("short_description") val shortDescription: String? = null,
+    @SerialName("historical_description") val historicalDescription: String? = null,
+    val address: String? = null,
+    val location: String? = null,
+    val latitude: Double? = null,
+    val longitude: Double? = null,
+    @SerialName("detection_radius_m") val detectionRadiusM: Int = 50,
+    @SerialName("created_by") val createdBy: String? = null,
+    @SerialName("is_active") val isActive: Boolean = true
+) {
+    fun getComputedLatitude(): Double? {
+        if (latitude != null && latitude != 0.0) return latitude
+        if (location.isNullOrBlank()) return null
+        return try {
+            // Parses "POINT(-101.2117261 21.4806382)"
+            val coordsStr = location.substringAfter("(").substringBefore(")")
+            val parts = coordsStr.trim().split(" ")
+            if (parts.size >= 2) parts[1].toDoubleOrNull() else null
+        } catch (e: Exception) { null }
+    }
+
+    fun getComputedLongitude(): Double? {
+        if (longitude != null && longitude != 0.0) return longitude
+        if (location.isNullOrBlank()) return null
+        return try {
+            // Parses "POINT(-101.2117261 21.4806382)"
+            val coordsStr = location.substringAfter("(").substringBefore(")")
+            val parts = coordsStr.trim().split(" ")
+            if (parts.size >= 2) parts[0].toDoubleOrNull() else null
+        } catch (e: Exception) { null }
+    }
+}
+
+/**
+ * Representa una categoría de sitio (Catálogo).
+ */
+@Serializable
+data class RemoteCategory(
+    val id: String? = null,
+    val name: String,
+    val slug: String? = null,
+    val icon: String? = null
+)
+
+/**
+ * Representa una ruta turística.
+ */
+@Serializable
+data class RemoteRoute(
+    val id: String,
+    val title: String,
+    val slug: String? = null,
+    val description: String? = null,
+    @SerialName("estimated_minutes") val estimatedMinutes: Int? = null,
+    @SerialName("distance_m") val distanceM: Int? = null,
+    @SerialName("is_active") val isActive: Boolean = true
+)
+
+/**
+ * Representa una cápsula de información (Geo-Drop) creada por un usuario.
+ */
+@Serializable
+data class RemoteGeoDrop(
+    val id: String? = null,
+    @SerialName("site_id") val siteId: String? = null,
+    @SerialName("author_id") val authorId: String? = null,
+    val title: String,
+    val description: String? = null,
+    val type: String = "photo",
+    @SerialName("media_url") val mediaUrl: String? = null,
+    val location: String? = null,
+    val latitude: Double? = null,
+    val longitude: Double? = null,
+    @SerialName("detection_radius_m") val detectionRadiusM: Int = 50,
+    @SerialName("status") val status: String = "pending",
+    @SerialName("likes_count") val likesCount: Int = 0,
+    @SerialName("created_at") val createdAt: String? = null
+)
+
+
+/**
+ * Representa un artículo o pregunta/respuesta curada de conocimiento para la IA.
+ */
+@Serializable
+data class RemoteKnowledgeArticle(
+    val id: String? = null,
+    val title: String,
+    val content: String,
+    @SerialName("created_by") val createdBy: String? = null,
+    @SerialName("is_active") val isActive: Boolean = true,
+    @SerialName("created_at") val createdAt: String? = null
+)
+

@@ -5,12 +5,12 @@ plugins {
 
 android {
     namespace = "mx.utng.ecoguiawear"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "mx.utng.ecoguiawear"
         minSdk = 30
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 1
         versionName = "1.0.0"
     }
@@ -41,6 +41,12 @@ android {
     }
 }
 
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(17))
+    }
+}
+
 dependencies {
     implementation(project(":shared"))
     implementation(libs.activity.compose)
@@ -51,6 +57,7 @@ dependencies {
     implementation(libs.lifecycle.viewmodel.compose)
     implementation(libs.lifecycle.viewmodel.ktx)
     implementation(libs.play.services.wearable)
+    implementation(libs.play.services.location)
 
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)

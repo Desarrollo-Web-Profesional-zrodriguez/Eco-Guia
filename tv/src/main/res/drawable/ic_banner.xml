@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="320dp"
+    android:height="180dp"
+    android:viewportWidth="320"
+    android:viewportHeight="180">
+    <!-- Background -->
+    <path
+        android:fillColor="#071B2C"
+        android:pathData="M0,0h320v180h-320z" />
+
+    <!-- Logo Symbol (Centered) -->
+    <!-- Stylized Leaf (Eco) in Jade -->
+    <path
+        android:fillColor="#1EA896"
+        android:pathData="M160,50 C160,50 140,70 140,84 C140,95 149,104 160,104 C171,104 180,95 180,84 C180,70 160,50 160,50 Z" />
+
+    <!-- Compass Needle (Guia) in Gold -->
+    <path
+        android:fillColor="#C9A24A"
+        android:pathData="M160,65 L168,84 L160,80 L152,84 Z" />
+
+    <!-- Lower part of the needle (Secondary Gold/Accent) -->
+    <path
+        android:fillColor="#A6833D"
+        android:pathData="M160,95 L152,84 L160,88 L168,84 Z" />
+</vector>

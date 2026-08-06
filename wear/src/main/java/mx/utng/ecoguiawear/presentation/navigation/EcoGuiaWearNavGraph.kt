@@ -79,10 +79,10 @@ fun EcoGuiaWearNavGraph(viewModel: RadarViewModel) {
                         AlertsScreen(
                             state = state,
                             onBack = {
-                                navController.navigate(WearRoutes.PAIRING) {
-                                    popUpTo(WearRoutes.PAIRING) { inclusive = true }
-                                }
-                            }
+                                navController.popBackStack()
+                            },
+                            onDeleteAlert = viewModel::deleteAlert,
+                            onClearAll = viewModel::clearAllAlerts
                         )
                     }
                 }
@@ -116,13 +116,23 @@ fun EcoGuiaWearNavGraph(viewModel: RadarViewModel) {
                 }
             }
 
-            // Overlay ArrivalScreen
-            if (state.mode == RadarMode.ARRIVED) {
+            // Diálogo emergente de llegada: se activa únicamente si hay una RUTA ACTIVA y NO ha finalizado
+            if (state.mode == RadarMode.ARRIVED && state.routeSummary.waypoints.isNotEmpty() && !state.isRouteCompleted) {
                 Dialog(onDismissRequest = { }) {
                     ArrivalScreen(
                         state = state,
                         onOpenPhone = viewModel::openPhoneCamera,
                         onContinue = viewModel::completeArrival
+                    )
+                }
+            }
+
+            // Diálogo emergente de Felicitación / Ruta Completada desde Móvil
+            if (state.isRouteCompleted) {
+                Dialog(onDismissRequest = { viewModel.dismissRouteCompleted() }) {
+                    mx.utng.ecoguiawear.presentation.screens.RouteCompletedWearScreen(
+                        state = state,
+                        onDismiss = { viewModel.dismissRouteCompleted() }
                     )
                 }
             }
