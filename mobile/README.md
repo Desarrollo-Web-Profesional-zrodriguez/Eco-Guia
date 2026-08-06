@@ -1,543 +1,845 @@
-<div align="center">
-  <h1>📱 Módulo <code>mobile</code> — Eco-Guía Android Phone</h1>
-  <p><strong>Guía de Desarrollo — Archivos e Indicaciones por Paso</strong></p>
-  <div>
-    <img src="https://img.shields.io/badge/Kotlin-2.1.0-blue?style=for-the-badge&logo=kotlin">
-    <img src="https://img.shields.io/badge/Jetpack_Compose-BOM_2025-4285F4?style=for-the-badge&logo=jetpackcompose">
-    <img src="https://img.shields.io/badge/minSdk-24-green?style=for-the-badge&logo=android">
-    <img src="https://img.shields.io/badge/compileSdk-37-green?style=for-the-badge&logo=android">
-    <img src="https://img.shields.io/badge/Android_Studio-Meerkat_2025.1.1-3DDC84?style=for-the-badge&logo=androidstudio">
-  </div>
-</div>
+# Guía Paso a Paso: Construyendo el Módulo Mobile de Eco-Guía
 
-<br>
-
-> ⚠️ **Dependencia obligatoria:** El módulo `:shared` debe estar compilado y sincronizado antes de trabajar en cualquier archivo de este módulo. Toda la lógica de acceso a datos, modelos de dominio y clientes remotos (Neon, Groq, MQTT) reside en `shared`. Consulta el [README raíz](../README.md) para la configuración del entorno global.
-
-<br>
+Esta guía documenta y desglosa paso a paso la arquitectura, configuración y construcción completa del módulo **Mobile (Android Phone)** de **Eco-Guía Dolores Hidalgo**, explicando las decisiones técnicas, patrones de diseño y bloques de código esenciales.
 
 ---
 
-## 📋 Versiones y Configuración del Módulo
+## Objetivo de Esta Guía
 
-| Parámetro | Valor |
-|-----------|-------|
-| `namespace` | `mx.utng.ecoguiawear` |
-| `applicationId` | `mx.utng.ecoguiawear` |
-| `compileSdk` | 37 |
-| `minSdk` | 24 |
-| `targetSdk` | 37 |
-| `versionName` | 1.0.0 |
-| `JVM Target` | 17 |
-| `buildFeatures` | `compose = true`, `buildConfig = true` |
+Al estudiar y seguir esta guía, comprenderás:
 
-<br>
+1. Cómo estructurar un proyecto Android profesional moderno con **Kotlin 2.1** y **Jetpack Compose (Material 3)**.
+2. Cómo implementar la arquitectura **MVVM (Model-View-ViewModel)** con flujo unidireccional de datos (*Unidirectional Data Flow - UDF*) y estados reactivos (`StateFlow`, `State`).
+3. Cómo integrar servicios de hardware avanzados: **Google Maps Compose**, **CameraX**, geolocalización en primer plano (**Foreground Services** con `FusedLocationProviderClient`) y notificaciones persistentes.
+4. Cómo orquestar la comunicación multicanal: integración de base de datos remota **Neon Serverless PostgreSQL**, correos transaccionales con **Brevo API v3**, sincronización con **Wear OS Data Layer** y conectividad IoT con **Smart TVs**.
 
 ---
 
-## 🗂️ Estructura Completa del Módulo
+## FASE 1: Configuración Inicial del Entorno y Build System
 
-```
-mobile/
-└── src/main/java/mx/utng/ecoguiawear/
-    ├── MainActivity.kt
-    ├── data/
-    │   ├── BootReceiver.kt
-    │   ├── ProximityNotificationHelper.kt
-    │   ├── ProximityService.kt
-    │   ├── remote/
-    │   │   ├── EmailService.kt
-    │   │   └── FirebaseStorageRepository.kt
-    │   └── wear/
-    │       ├── MobileWearListenerService.kt
-    │       └── WearMessageClient.kt
-    ├── worker/
-    │   └── SyncOfflineWorker.kt
-    └── ui/
-        ├── theme/
-        │   ├── Color.kt
-        │   └── Theme.kt
-        ├── navigation/
-        │   └── AppNavHost.kt
-        ├── components/
-        │   ├── AdminNavigation.kt
-        │   ├── BottomMenu.kt
-        │   ├── CommonComponents.kt
-        │   ├── EcoNavigation.kt
-        │   └── GeoDropSavingDialog.kt
-        ├── feature/
-        │   ├── exploration/
-        │   │   ├── ExplorationMapContent.kt
-        │   │   ├── ExplorationSiteList.kt
-        │   │   ├── MapMarkerUtils.kt
-        │   │   └── SiteDetailSheet.kt
-        │   └── collection/
-        │       └── CollectionItemCard.kt
-        ├── screens/
-        │   ├── SplashScreen.kt
-        │   ├── LoginScreen.kt
-        │   ├── SignUpScreen.kt
-        │   ├── RecoveryScreen.kt
-        │   ├── PermissionsScreen.kt
-        │   ├── ExplorationScreen.kt
-        │   ├── SearchExperienceScreen.kt
-        │   ├── MyCollectionScreen.kt
-        │   ├── ProfileScreen.kt
-        │   ├── EditProfileScreen.kt
-        │   ├── SecurityScreen.kt
-        │   ├── MoreOptionsScreen.kt
-        │   ├── ActiveRouteScreen.kt
-        │   ├── OfflineRouteScreen.kt
-        │   ├── AnchorPhotoScreen.kt
-        │   ├── CameraGeoDropScreen.kt
-        │   ├── CreateRouteScreen.kt
-        │   ├── DeviceStatusScreen.kt
-        │   ├── LinkedDevicesScreen.kt
-        │   ├── ManageDevicesScreen.kt
-        │   ├── IAKnowledgeBaseScreen.kt
-        │   ├── MiguelHidalgoChatScreen.kt
-        │   ├── NoInternetScreen.kt
-        │   ├── ProximityAlertsScreen.kt
-        │   ├── TvCameraScreen.kt
-        │   └── admin/
-        │       ├── AdminSummaryScreen.kt
-        │       ├── UserManagementScreen.kt
-        │       ├── ModerateCommunityScreen.kt
-        │       ├── ModerationListScreen.kt
-        │       ├── ReportDetailScreen.kt
-        │       ├── ReportDecisionScreen.kt
-        │       ├── ReviewDetailScreen.kt
-        │       ├── SecurityReportsScreen.kt
-        │       ├── SiteRegistrationScreen.kt
-        │       ├── SiteLocationScreen.kt
-        │       ├── SiteContentScreen.kt
-        │       ├── SiteOperationScreen.kt
-        │       ├── CampaignDevicesScreen.kt
-        │       ├── TVCampaignScreen.kt
-        │       ├── MuseumPortal360Screen.kt
-        │       ├── CapsuleGalleryScreen.kt
-        │       ├── GalleryAdditionScreen.kt
-        │       ├── ManualGeoDropScreen.kt
-        │       └── VisitorAnalyticsScreen.kt
-        └── viewmodel/
-            ├── AuthViewModel.kt
-            ├── ChatViewModel.kt
-            ├── CollectionViewModel.kt
-            ├── GeoDropViewModel.kt
-            ├── LocationViewModel.kt
-            ├── ModerationViewModel.kt
-            ├── NotificationViewModel.kt
-            ├── RouteViewModel.kt
-            ├── SiteRegistrationViewModel.kt
-            └── UserManagementViewModel.kt
+### Paso 1.1: Configurar el Catálogo de Versiones (`gradle/libs.versions.toml`)
+
+El catálogo de dependencias centraliza las versiones y librerías utilizadas en todos los submódulos del proyecto (`:shared`, `:mobile`, `:wear`, `:tv`).
+
+```toml
+[versions]
+agp = "8.8.0"
+kotlin = "2.1.0"
+composeBom = "2025.01.00"
+coreKtx = "1.15.0"
+lifecycle = "2.8.7"
+navigationCompose = "2.8.5"
+playServicesLocation = "21.3.0"
+playServicesMaps = "19.0.0"
+mapsCompose = "6.4.0"
+camerax = "1.4.1"
+ktor = "3.0.3"
+room = "2.6.1"
+work = "2.10.0"
+playServicesWearable = "19.0.0"
+
+[libraries]
+androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycle" }
+androidx-lifecycle-viewmodel-compose = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "lifecycle" }
+androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
+androidx-ui = { group = "androidx.compose.ui", name = "ui" }
+androidx-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
+androidx-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
+androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
+androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
+play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
+maps-compose = { group = "com.google.maps.android", name = "maps-compose", version.ref = "mapsCompose" }
+play-services-wearable = { group = "com.google.android.gms", name = "play-services-wearable", version.ref = "playServicesWearable" }
 ```
 
-<br>
+> **CONCEPTO CLAVE:** El archivo `libs.versions.toml` permite versionar dependencias de manera determinista, evitando conflictos entre módulos y asegurando que las versiones de Compose y Kotlin permanezcan alineadas mediante el BOM (*Bill of Materials*).
 
 ---
 
-## 📄 Descripción Línea a Línea por Archivo
+### Paso 1.2: Configurar `mobile/build.gradle.kts`
+
+El archivo de configuración del módulo `mobile` gestiona la inyección de credenciales seguras (como la API Key de Brevo) y enlaza el módulo de lógica compartida `:shared`.
+
+```kotlin
+import java.util.Properties
+
+plugins {
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.compose)
+    id("com.google.gms.google-services")
+}
+
+// Lectura segura de credenciales desde local.properties
+val localProperties = Properties().apply {
+    val localPropertiesFile = rootProject.file("local.properties")
+    if (localPropertiesFile.exists()) {
+        load(localPropertiesFile.inputStream())
+    }
+}
+val brevoApiKey = localProperties.getProperty("BREVO_API_KEY") ?: ""
+
+android {
+    namespace = "mx.utng.ecoguiawear"
+    compileSdk = 35
+
+    defaultConfig {
+        applicationId = "mx.utng.ecoguiawear"
+        minSdk = 24
+        targetSdk = 35
+        versionCode = 1
+        versionName = "1.0"
+
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField("String", "BREVO_API_KEY", "\"$brevoApiKey\"")
+    }
+
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
+    }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+    buildFeatures {
+        compose = true
+        buildConfig = true
+    }
+}
+
+dependencies {
+    implementation(project(":shared"))
+
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.activity.compose)
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.ui)
+    implementation(libs.androidx.material3)
+    implementation(libs.androidx.navigation.compose)
+
+    // Hardware & Servicios
+    implementation(libs.play.services.location)
+    implementation(libs.maps.compose)
+    implementation(libs.play.services.wearable)
+
+    // Red y Serialización
+    implementation(libs.ktor.client.core)
+    implementation(libs.ktor.client.okhttp)
+    implementation(libs.ktor.client.content.negotiation)
+    implementation(libs.ktor.serialization.kotlinx.json)
+}
+```
+
+> **CONCEPTO CLAVE:** `buildConfigField` inyecta valores en tiempo de compilación a la clase `BuildConfig`, permitiendo que clases como `EmailService` utilicen claves de API sin exponerlas en el control de versiones público.
 
 ---
 
-### `mobile/build.gradle.kts`
+### Paso 1.3: Configurar Permisos y Componentes en `AndroidManifest.xml`
 
-- **Línea 1-7:** Bloque de lectura de `local.properties` para extraer la variable `BREVO_API_KEY` de forma segura; no codificar la clave directamente en el código fuente.
-- **Línea 8:** Declaración de la variable `brevoKey` con la API key leída; si no existe en `local.properties`, retorna cadena vacía.
-- **Línea 10-14:** Bloque `plugins`: aplicar `android.application`, `kotlin.compose` y `google.services` (Firebase).
-- **Línea 16-55:** Bloque `android`: declarar `namespace`, `compileSdk = 37`, `defaultConfig` con `applicationId`, `minSdk = 24`, `targetSdk = 37`, `versionCode` y `versionName`.
-- **Línea 30:** `buildConfigField` para inyectar `BREVO_API_KEY` al `BuildConfig`; necesario para que `EmailService` la lea en tiempo de ejecución.
-- **Línea 42-50:** `compileOptions` y `kotlin.compilerOptions` para JVM 17.
-- **Línea 51-54:** `buildFeatures`: activar `compose = true` y `buildConfig = true`.
-- **Línea 63:** Inicio del bloque `dependencies`; primera línea debe ser `implementation(project(":shared"))`.
-- **Líneas siguientes:** Declarar dependencias de Compose BOM, Material 3, Navigation Compose, Google Maps, CameraX, Play Services Wearable, Room, WorkManager, Ktor Client, Firebase BOM + Storage, Coil Compose y Google Code Scanner.
+Para permitir la geolocalización en segundo plano, la captura de fotografías y el soporte para Wear OS, declaramos los permisos y componentes del sistema:
 
----
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-### `mobile/src/main/AndroidManifest.xml`
+    <!-- Permisos de Red y Conectividad -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
-- **Permisos requeridos:** `INTERNET`, `ACCESS_FINE_LOCATION`, `ACCESS_COARSE_LOCATION`, `CAMERA`, `POST_NOTIFICATIONS`, `RECEIVE_BOOT_COMPLETED`, `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_LOCATION`.
-- **`MainActivity`:** Declarar como launcher con intent-filter `MAIN` + `LAUNCHER`; incluir la meta-data de Google Maps API Key.
-- **`ProximityService`:** Declarar como `<service>` con `foregroundServiceType="location"`.
-- **`BootReceiver`:** Declarar como `<receiver>` con `RECEIVE_BOOT_COMPLETED` y `enabled = true`, `exported = true`.
-- **`MobileWearListenerService`:** Declarar como `<service>` heredando de `WearableListenerService`; agregar intent-filter con la acción `com.google.android.gms.wearable.MESSAGE_RECEIVED`.
-- **`SyncOfflineWorker`:** No requiere declaración en manifiesto; WorkManager lo registra automáticamente.
+    <!-- Permisos de Geolocalización -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
 
----
+    <!-- Permisos de Cámara y Notificaciones -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
-### `MainActivity.kt`
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.EcoGuiaWear">
 
-- **Bloque 1 — Cabecera KDoc:** Descripción del archivo, autores (`Zahir Andrés Rodríguez Mora`, `Cesar Enrique Garay García`), fecha `2026-07-26`.
-- **Bloque 2 — `MainActivity : ComponentActivity`:** Punto de entrada; llama a `enableEdgeToEdge()` para diseño de pantalla completa; en `onCreate` instancia `EcoGuiaDatabase` y `EcoGuiaRepositoryImpl` del módulo `shared`; luego llama a `setContent` con `EcoGuiaTheme` y el composable `MainAppContainer`.
-- **Bloque 3 — `MainAppContainer`:** Composable orquestador de estado global; observa el estado de sesión del usuario desde `AuthViewModel`; maneja permisos de ubicación y cámara; detecta la orientación (portrait/landscape) para adaptar el `Scaffold`; incluye el `SnackbarHost` para notificaciones reactivas.
-- **Bloque 4 — `Scaffold` principal:** Configura `topBar` (barra de navegación superior o vacía según pantalla), `bottomBar` (menú inferior), `snackbarHost` y el contenido central delegado a `AppNavHost`.
-- **Bloque 5 — `sendMessage`:** Función que envía un mensaje al nodo Wear OS usando `Wearable.getMessageClient`; recibe el `nodeId` y el `payload`; se usa para pruebas internas del panel de control.
+        <!-- Actividad Principal -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
 
----
+        <!-- Servicio en Primer Plano de Monitoreo GPS -->
+        <service
+            android:name=".data.ProximityService"
+            android:exported="false"
+            android:foregroundServiceType="location" />
 
-### `data/BootReceiver.kt`
+        <!-- Receptor de Reinicio del Sistema -->
+        <receiver
+            android:name=".data.BootReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
 
-- **Bloque 1 — KDoc:** Descripción: reinicia el `ProximityService` al arrancar el dispositivo; autores y fecha.
-- **Bloque 2 — `BootReceiver : BroadcastReceiver`:** Hereda de `BroadcastReceiver`; sobreescribe `onReceive`; verifica que la acción del intent sea `ACTION_BOOT_COMPLETED`; si es así, lanza un `Intent` apuntando a `ProximityService` y lo inicia con `startForegroundService`.
+        <!-- Listener de Comunicación con Wear OS -->
+        <service
+            android:name=".data.wear.MobileWearListenerService"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.google.android.gms.wearable.MESSAGE_RECEIVED" />
+                <data android:scheme="wear" android:host="*" android:pathPrefix="/wear" />
+            </intent-filter>
+        </service>
 
----
+    </application>
+</manifest>
+```
 
-### `data/ProximityNotificationHelper.kt`
-
-- **Bloque 1 — KDoc:** Descripción: construye y gestiona las notificaciones de proximidad; autores y fecha.
-- **Bloque 2 — Constantes:** Definir el ID del canal de notificación (`PROXIMITY_CHANNEL_ID`) y el ID numérico de notificación.
-- **Bloque 3 — `createNotificationChannel`:** Crea el `NotificationChannel` para Android 8+; nombre del canal: "Alertas de Proximidad Eco-Guía"; importancia `IMPORTANCE_HIGH`; llamar desde el `Service` antes de mostrar la primera notificación.
-- **Bloque 4 — `buildProximityNotification`:** Recibe el nombre del sitio histórico y la distancia en metros; retorna una `Notification` de `NotificationCompat.Builder` con ícono, título ("¡Sitio cercano!"), descripción y pendingIntent al abrir la app.
-- **Bloque 5 — `showNotification`:** Recibe el contexto y la notificación construida; la muestra usando `NotificationManagerCompat`.
-
----
-
-### `data/ProximityService.kt`
-
-- **Bloque 1 — KDoc:** Descripción: `ForegroundService` de monitoreo GPS continuo; autores y fecha.
-- **Bloque 2 — Campos:** `FusedLocationProviderClient`, coroutine scope del servicio, lista de sitios históricos cargada desde el repositorio, umbral de distancia en metros (configurable).
-- **Bloque 3 — `onCreate`:** Crear canal de notificación via `ProximityNotificationHelper`; inicializar el `FusedLocationProviderClient`; llamar a `startForeground` con una notificación persistente ("Eco-Guía monitoreando ubicación...").
-- **Bloque 4 — `onStartCommand`:** Iniciar el loop de actualización de ubicación; cargar los sitios desde `EcoGuiaRepositoryImpl`; para cada actualización GPS calcular la distancia a cada sitio; si algún sitio está dentro del umbral, llamar a `ProximityNotificationHelper.showNotification`.
-- **Bloque 5 — `onDestroy`:** Cancelar el scope de corrutinas; detener las actualizaciones de ubicación.
-
----
-
-### `data/remote/EmailService.kt`
-
-- **Bloque 1 — KDoc:** Descripción: cliente REST para Brevo API v3; autores y fecha.
-- **Bloque 2 — Configuración Ktor:** Crear un `HttpClient` con el plugin de content negotiation y serialización JSON; la `BASE_URL` es `https://api.brevo.com/v3`.
-- **Bloque 3 — `sendOtpEmail(to, otp)`:** Función suspendida; construye el cuerpo del request con el destinatario, asunto ("Tu código OTP - Eco-Guía"), contenido HTML con el código OTP; agrega el header `api-key` con `BuildConfig.BREVO_API_KEY`; realiza el POST a `/smtp/email`; retorna `true` si el código HTTP es 2xx.
-- **Bloque 4 — Plantilla HTML del correo:** Cuerpo HTML institucional con el logo de Eco-Guía, el código OTP resaltado y el mensaje de expiración (15 minutos).
-
----
-
-### `data/remote/FirebaseStorageRepository.kt`
-
-- **Bloque 1 — KDoc:** Descripción: repositorio de subida/descarga de imágenes en Firebase Storage; autores y fecha.
-- **Bloque 2 — `uploadGeoDropImage(imageBytes, fileName)`:** Función suspendida; referencia a `FirebaseStorage.getInstance().reference.child("geodrops/$fileName")`; sube los bytes de la imagen; retorna la URL de descarga pública como `String`.
-- **Bloque 3 — `uploadSiteImage(imageBytes, siteId)`:** Similar al anterior pero en la ruta `"sites/$siteId/cover.jpg"`; retorna URL de descarga.
-- **Bloque 4 — `deleteImage(url)`:** Elimina la imagen dado su URL de Firebase Storage; útil al rechazar un GeoDrop.
+> **CONCEPTO CLAVE:** En Android 14+ (API 34+), todo `ForegroundService` debe declarar explícitamente su tipo (`foregroundServiceType="location"`), de lo contrario el sistema arrojará una `SecurityException` en tiempo de ejecución.
 
 ---
 
-### `data/wear/MobileWearListenerService.kt`
+## FASE 2: Capa de Datos y Servicios de Red
 
-- **Bloque 1 — KDoc:** Descripción: `WearableListenerService` que recibe mensajes del reloj; autores y fecha.
-- **Bloque 2 — `onMessageReceived(messageEvent)`:** Sobreescribe el método de `WearableListenerService`; verifica el path del mensaje; si el path es `/wear-arrival`, procesa la llegada al sitio; si el path es `/wear-haptic-request`, responde con datos del sitio más cercano; delegar el procesamiento al `WearMessageClient`.
+```
+data/
+├── BootReceiver.kt
+├── ProximityNotificationHelper.kt
+├── ProximityService.kt
+├── remote/
+│   ├── EmailService.kt
+│   └── FirebaseStorageRepository.kt
+└── wear/
+    ├── MobileWearListenerService.kt
+    └── WearMessageClient.kt
+```
 
----
+### Paso 2.1: Implementar el Servicio de Correo Transaccional (`EmailService.kt`)
 
-### `data/wear/WearMessageClient.kt`
+`EmailService` se comunica directamente con la API REST v3 de Brevo para enviar códigos OTP de verificación de cuenta y recuperación de contraseñas.
 
-- **Bloque 1 — KDoc:** Descripción: cliente de envío de mensajes al nodo Wear OS activo; autores y fecha.
-- **Bloque 2 — `getConnectedNodes(context)`:** Función suspendida; usa `Wearable.getNodeClient(context).connectedNodes.await()` para obtener la lista de relojes conectados.
-- **Bloque 3 — `sendSiteToWatch(context, site)`:** Serializa el objeto `HistoricalSite` a JSON; llama a `Wearable.getMessageClient(context).sendMessage(nodeId, "/eco-site-selected", payload)` para cada nodo conectado.
-- **Bloque 4 — `sendRouteToWatch(context, route)`:** Serializa la ruta activa a JSON; la envía al reloj por el path `/eco-route-sync`.
+```kotlin
+package mx.utng.ecoguiawear.data.remote
 
----
+import io.ktor.client.HttpClient
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.request.header
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.http.ContentType
+import io.ktor.http.contentType
+import io.ktor.http.isSuccess
+import io.ktor.serialization.kotlinx.json.json
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import mx.utng.ecoguiawear.BuildConfig
 
-### `worker/SyncOfflineWorker.kt`
+@Serializable
+data class SendSmtpEmail(
+    val sender: EmailSender,
+    val to: List<EmailRecipient>,
+    val subject: String,
+    val htmlContent: String
+)
 
-- **Bloque 1 — KDoc:** Descripción: `CoroutineWorker` de WorkManager para sincronizar GeoDrops offline con Neon DB; autores y fecha.
-- **Bloque 2 — `doWork()`:** Sobreescribe el método principal; instancia `EcoGuiaDatabase` y `EcoGuiaRepositoryImpl`; consulta en Room los GeoDrops con estado `pendiente_sync`; para cada uno llama al repositorio para subirlos a Neon DB; si todos se sincronizan correctamente retorna `Result.success()`; si falla con reintento posible, retorna `Result.retry()`.
-- **Bloque 3 — Companion object:** Define la constante con el nombre único del worker (`SYNC_WORKER_TAG`) usada al encolar con `WorkManager`.
+@Serializable
+data class EmailSender(val name: String, val email: String)
 
----
+@Serializable
+data class EmailRecipient(val email: String, val name: String? = null)
 
-### `ui/theme/Color.kt`
+class EmailService {
 
-- **Bloque único:** Define las constantes de color como `val` de tipo `Color`; incluir colores primarios (verdes Eco-Guía), colores de fondo (oscuro y claro), colores de acento (café histórico, dorado colonial), colores de error y colores de texto; todos en formato hexadecimal.
+    private val client = HttpClient {
+        install(ContentNegotiation) {
+            json(Json {
+                ignoreUnknownKeys = true
+                isLenient = true
+            })
+        }
+    }
 
----
+    suspend fun sendVerificationEmail(recipientEmail: String, recipientName: String, otp: String): Boolean {
+        val apiKey = BuildConfig.BREVO_API_KEY
+        if (apiKey.isBlank()) return false
 
-### `ui/theme/Theme.kt`
+        val html = """
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+                <h2 style="color: #2E7D32;">Eco-Guía Dolores Hidalgo</h2>
+                <p>Hola <strong>$recipientName</strong>,</p>
+                <p>Tu código de verificación para completar el registro es:</p>
+                <div style="font-size: 28px; font-weight: bold; color: #1B5E20; letter-spacing: 5px; text-align: center; padding: 15px; background: #E8F5E9; border-radius: 6px;">
+                    $otp
+                </div>
+                <p style="color: #757575; font-size: 12px; margin-top: 20px;">Este código expira en 15 minutos.</p>
+            </div>
+        """.trimIndent()
 
-- **Bloque 1 — `EcoGuiaColorScheme` (dark):** Define el `darkColorScheme` usando los colores de `Color.kt` para modo oscuro.
-- **Bloque 2 — `EcoGuiaColorScheme` (light):** Define el `lightColorScheme` para modo claro.
-- **Bloque 3 — `EcoGuiaTypography`:** Tipografía personalizada con fuente importada de Google Fonts; definir `titleLarge`, `bodyMedium`, `labelSmall` con los pesos y tamaños del diseño.
-- **Bloque 4 — `EcoGuiaTheme`:** Composable público que envuelve `MaterialTheme`; detecta si el sistema está en modo oscuro con `isSystemInDarkTheme()`; aplica el color scheme y tipografía correspondiente; es el único punto de entrada del tema en toda la app.
+        val payload = SendSmtpEmail(
+            sender = EmailSender(name = "Eco-Guía Dolores", email = "no-reply@ecoguia.mx"),
+            to = listOf(EmailRecipient(email = recipientEmail, name = recipientName)),
+            subject = "Código de Verificación - Eco-Guía",
+            htmlContent = html
+        )
 
----
+        return try {
+            val response = client.post("https://api.brevo.com/v3/smtp/email") {
+                header("api-key", apiKey)
+                contentType(ContentType.Application.Json)
+                setBody(payload)
+            }
+            response.status.isSuccess()
+        } catch (e: Exception) {
+            false
+        }
+    }
+}
+```
 
-### `ui/navigation/AppNavHost.kt`
-
-- **Bloque 1 — KDoc:** Descripción: define el grafo de navegación completo de la app; autores y fecha.
-- **Bloque 2 — Rutas de navegación (`Routes` object):** Declara todas las rutas como constantes `String`; incluir rutas con argumentos (ej. `"site_detail/{siteId}"`); agrupar por sección: Auth, Main, Admin, Devices.
-- **Bloque 3 — `AppNavHost` composable:** Recibe el `NavController` y el `EcoGuiaRepository`; configura `NavHost` con `startDestination = Routes.SPLASH`; declara cada `composable("ruta") { }` con los argumentos de navegación necesarios.
-- **Bloque 4 — Lógica de redirección:** Si no hay sesión activa → navegar a `Routes.LOGIN`; si hay sesión → navegar a `Routes.EXPLORATION`; si faltan permisos → navegar a `Routes.PERMISSIONS`.
-- **Bloque 5 — Rutas protegidas:** Las rutas del grupo Admin solo son accesibles si el `userRole` es `admin` o `moderator`; de lo contrario redirigir a `Routes.EXPLORATION`.
-
----
-
-### `ui/components/CommonComponents.kt`
-
-- **Bloque 1 — KDoc:** Descripción: biblioteca de componentes UI reutilizables; autores y fecha.
-- **Bloque 2 — `EcoButton`:** Composable de botón primario con el estilo de Eco-Guía; parámetros: `text`, `onClick`, `enabled`, `isLoading`; muestra un `CircularProgressIndicator` cuando `isLoading = true`.
-- **Bloque 3 — `EcoTextField`:** Campo de texto estilizado; parámetros: `value`, `onValueChange`, `label`, `isError`, `errorMessage`, soporte para campo de contraseña con toggle de visibilidad.
-- **Bloque 4 — `EcoCard`:** Card base con esquinas redondeadas, sombra y fondo adaptativo; usada como contenedor en listas y detalles.
-- **Bloque 5 — `EcoBadge`:** Indicador de nivel de explorador (ej. "Guardián del Patrimonio"); recibe el nivel como `String` y asigna el color del badge automáticamente.
-- **Bloque 6 — `EcoLoadingScreen`:** Pantalla de carga con animación del logo de Eco-Guía; usada mientras se esperan respuestas del servidor.
-- **Bloque 7 — `EcoErrorMessage`:** Composable de mensaje de error con ícono y texto descriptivo; incluye botón de reintentar opcional.
-
----
-
-### `ui/components/BottomMenu.kt`
-
-- **Bloque 1 — KDoc:** Descripción: barra de navegación inferior para usuarios regulares; autores y fecha.
-- **Bloque 2 — `BottomMenuItems`:** Objeto sellado o lista que define los ítems del menú: Exploración (ícono mapa), Mi Colección (ícono estrella), IA Chat (ícono chat), Perfil (ícono persona).
-- **Bloque 3 — `BottomMenu` composable:** `NavigationBar` de Material 3; itera sobre los ítems; resalta el ítem activo comparando la ruta actual del `NavController`; al pulsar un ítem navega a la ruta correspondiente con `popUpTo` para limpiar el back stack.
-
----
-
-### `ui/components/AdminNavigation.kt`
-
-- **Bloque 1 — KDoc:** Descripción: navegación de administrador/moderador; autores y fecha.
-- **Bloque 2 — Ítems de admin:** Lista de rutas admin: Dashboard, Usuarios, Registro de Sitios, Moderación, Reportes, Campañas, Analíticas.
-- **Bloque 3 — `AdminNavigation` composable:** Barra lateral o superior según orientación; ítem activo resaltado; al seleccionar navega a la ruta admin correspondiente.
-
----
-
-### `ui/components/EcoNavigation.kt`
-
-- **Bloque 1 — KDoc:** Descripción: componente de navegación contextual; autores y fecha.
-- **Bloque 2 — `EcoNavigation` composable:** Barra superior con botón de retroceso, título de la pantalla actual y acciones opcionales (ej. filtro, búsqueda); se adapta según la ruta activa del `NavController`.
-
----
-
-### `ui/components/GeoDropSavingDialog.kt`
-
-- **Bloque 1 — KDoc:** Descripción: diálogo de confirmación al guardar un GeoDrop; autores y fecha.
-- **Bloque 2 — `GeoDropSavingDialog` composable:** `AlertDialog` de Material 3; muestra la miniatura de la foto capturada, la ubicación GPS y los campos de título y descripción; botón "Guardar" llama al `GeoDropViewModel.saveGeoDrop()`; botón "Cancelar" descarta el diálogo.
-
----
-
-### `ui/feature/exploration/MapMarkerUtils.kt`
-
-- **Bloque 1 — KDoc:** Descripción: funciones puras de cálculo geoespacial para el mapa; autores y fecha.
-- **Bloque 2 — `calculateDistance(lat1, lon1, lat2, lon2)`:** Implementación de la fórmula haversine; retorna la distancia en metros entre dos coordenadas GPS.
-- **Bloque 3 — `formatDistance(meters)`:** Formatea la distancia: si es menor a 1000m retorna "Xm", si es mayor retorna "X.Xkm".
-- **Bloque 4 — `getBitmapDescriptor(context, vectorResId)`:** Convierte un vector drawable en `BitmapDescriptor` para usarlo como marcador personalizado en Google Maps.
-- **Bloque 5 — `getMarkerColor(category)`:** Retorna el color del marcador según la categoría del sitio (Museo → azul, Monumento → dorado, Plaza → verde, etc.).
-
----
-
-### `ui/feature/exploration/ExplorationMapContent.kt`
-
-- **Bloque 1 — KDoc:** Descripción: composable del mapa principal de exploración; autores y fecha.
-- **Bloque 2 — `ExplorationMapContent` composable:** Recibe la lista de sitios históricos, la ubicación actual del usuario y callbacks; usa `GoogleMap` de Maps Compose; centra el mapa en la posición del usuario al iniciar.
-- **Bloque 3 — Marcadores de sitios:** Itera la lista de sitios y agrega un `Marker` por cada uno usando el descriptor de `MapMarkerUtils.getBitmapDescriptor`; al pulsar un marcador llama al callback `onSiteSelected(site)`.
-- **Bloque 4 — Marcador del usuario:** Marcador especial (diferente icono) en la posición GPS actual; se actualiza en tiempo real con `LocationViewModel`.
-- **Bloque 5 — Controles del mapa:** Botón flotante de "centrar en mi ubicación"; indicador de nivel de zoom; se ocultan cuando el `SiteDetailSheet` está visible.
+> **CONCEPTO CLAVE:** El uso de Ktor Client con serialización JSON nativa de Kotlin (`kotlinx.serialization`) asegura una huella de memoria ligera y un rendimiento óptimo sin depender de librerías pesadas.
 
 ---
 
-### `ui/feature/exploration/ExplorationSiteList.kt`
+### Paso 2.2: Implementar el Servicio en Primer Plano de Monitoreo GPS (`ProximityService.kt`)
 
-- **Bloque 1 — KDoc:** Descripción: lista de sitios históricos con filtros; autores y fecha.
-- **Bloque 2 — `ExplorationSiteList` composable:** `LazyColumn` de sitios; recibe la lista filtrada y el callback `onSiteSelected`.
-- **Bloque 3 — Filtros de categoría:** Fila horizontal de chips de categoría (Todos, Museo, Monumento, Plaza, Templo); al seleccionar un chip, filtra la lista.
-- **Bloque 4 — `SiteListItem`:** Composable interno; muestra la foto miniatura del sitio, nombre, categoría, distancia al usuario y un botón de guardado rápido en colección.
-- **Bloque 5 — Estado vacío:** Cuando la lista filtrada está vacía, muestra el composable `EcoErrorMessage` con el mensaje "No se encontraron sitios en esta categoría".
+Este servicio evalúa constantemente la proximidad del usuario con respecto a los sitios históricos registrados y dispara alertas hápicas y notificaciones cuando entra a su radio de cobertura.
 
----
+```kotlin
+package mx.utng.ecoguiawear.data
 
-### `ui/feature/exploration/SiteDetailSheet.kt`
+import android.annotation.SuppressLint
+import android.app.Service
+import android.content.Intent
+import android.location.Location
+import android.os.IBinder
+import com.google.android.gms.location.*
+import kotlinx.coroutines.*
+import mx.utng.ecoguia.shared.data.repository.EcoGuiaRepositoryImpl
+import mx.utng.ecoguia.shared.domain.model.HistoricalSite
+import mx.utng.ecoguia.shared.domain.repository.EcoGuiaRepository
 
-- **Bloque 1 — KDoc:** Descripción: bottom sheet de detalle de un sitio histórico; autores y fecha.
-- **Bloque 2 — `SiteDetailSheet` composable:** `ModalBottomSheet` de Material 3; se muestra al seleccionar un marcador en el mapa o un ítem de la lista.
-- **Bloque 3 — Contenido del sheet:** Imagen de portada del sitio a pantalla completa con gradiente; nombre del sitio (título H1); categoría con chip; descripción completa con scroll; coordenadas GPS.
-- **Bloque 4 — Acciones:** Botón "Guardar en colección" → llama a `CollectionViewModel.saveItem()`; botón "Enviar al reloj" → llama a `WearMessageClient.sendSiteToWatch()`; botón "Navegar ruta" si el sitio pertenece a una ruta activa.
-- **Bloque 5 — Distancia dinámica:** Muestra la distancia calculada por `MapMarkerUtils.calculateDistance` entre la posición actual del usuario y el sitio; se actualiza cada vez que cambia `LocationViewModel.currentLocation`.
+class ProximityService : Service() {
 
----
+    private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
+    private lateinit var locationCallback: LocationCallback
+    private val repository: EcoGuiaRepository = EcoGuiaRepositoryImpl()
 
-### `ui/feature/collection/CollectionItemCard.kt`
+    private var sitesList: List<HistoricalSite> = emptyList()
+    private val notifiedSiteIds = mutableSetOf<String>()
 
-- **Bloque 1 — KDoc:** Descripción: tarjeta expandible para ítems de Mi Colección; autores y fecha.
-- **Bloque 2 — `CollectionItemCard` composable:** Card expandible; en estado colapsado muestra foto miniatura, nombre y fecha de guardado; en estado expandido muestra descripción completa, coordenadas, categoría y acciones.
-- **Bloque 3 — Acciones:** Botón de eliminar de la colección; botón de compartir; botón de ver en mapa (navega a `ExplorationScreen` centrando el mapa en ese sitio).
-- **Bloque 4 — Indicador de nivel de explorador:** Al pie de la tarjeta muestra el nivel actual del usuario calculado desde el total de ítems en colección: 1-5 ítems = "Turista Reciente", 6-15 = "Explorador Cultural", 16-30 = "Cronista Local", 31+ = "Guardián del Patrimonio".
+    override fun onCreate() {
+        super.onCreate()
+        ProximityNotificationHelper.createNotificationChannel(this)
+        startForeground(
+            ProximityNotificationHelper.NOTIFICATION_ID,
+            ProximityNotificationHelper.buildForegroundNotification(this)
+        )
 
----
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+        cargarSitiosHistoricos()
+        iniciarRastreoUbicacion()
+    }
 
-### `ui/viewmodel/AuthViewModel.kt`
+    private fun cargarSitiosHistoricos() {
+        serviceScope.launch {
+            try {
+                sitesList = repository.getHistoricalSites()
+            } catch (e: Exception) {
+                // Manejo de error de red
+            }
+        }
+    }
 
-- **Bloque 1 — KDoc:** Descripción: ViewModel de autenticación y sesión; autores y fecha `2026-07-26`.
-- **Bloque 2 — Estado:** `AuthUiState` data class con campos: `isLoading`, `isLoggedIn`, `currentUser`, `errorMessage`, `otpSent`, `otpVerified`.
-- **Bloque 3 — `login(email, password)`:** Función suspendida en `viewModelScope`; llama a `repository.loginUser(email, password)`; actualiza el estado según el resultado.
-- **Bloque 4 — `register(name, email, password)`:** Valida los campos; llama a `repository.registerUser()`; navega al flujo de permisos al completar.
-- **Bloque 5 — `sendOtp(email)`:** Genera un código OTP de 6 dígitos; lo almacena en el estado; llama a `EmailService.sendOtpEmail()`.
-- **Bloque 6 — `verifyOtp(inputCode)`:** Compara el código ingresado con el almacenado; si coincide, marca `otpVerified = true` y permite restablecer contraseña.
-- **Bloque 7 — `resetPassword(email, newPassword)`:** Llama a `repository.updatePassword()`; al completar navega a `LoginScreen`.
-- **Bloque 8 — `logout()`:** Limpia el estado de sesión; navega a `LoginScreen`.
+    @SuppressLint("MissingPermission")
+    private fun iniciarRastreoUbicacion() {
+        val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 5000L)
+            .setMinUpdateIntervalMillis(3000L)
+            .setMinUpdateDistanceMeters(5f)
+            .build()
 
----
+        locationCallback = object : LocationCallback() {
+            override fun onLocationResult(result: LocationResult) {
+                result.lastLocation?.let { location ->
+                    verificarProximidad(location)
+                }
+            }
+        }
 
-### `ui/viewmodel/ChatViewModel.kt`
+        fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, mainLooper)
+    }
 
-- **Bloque 1 — KDoc:** Descripción: ViewModel del chat con Miguel Hidalgo IA (Groq); autores y fecha.
-- **Bloque 2 — Estado:** Lista mutable de mensajes `List<ChatMessage>` donde cada mensaje tiene `role` (user/assistant) y `content`.
-- **Bloque 3 — `sendMessage(userText)`:** Agrega el mensaje del usuario a la lista; llama a `GroqClient.sendChatMessage()` con el historial completo y el system prompt de Miguel Hidalgo; agrega la respuesta del modelo a la lista.
-- **Bloque 4 — System prompt:** Constante con el prompt de rol: "Eres Miguel Hidalgo y Costilla, cura de Dolores Hidalgo. Hablas en primera persona con el conocimiento histórico de la época de la Independencia de México. Responde siempre en español y con tono solemne pero accesible."
+    private fun verificarProximidad(userLocation: Location) {
+        for (site in sitesList) {
+            val siteLoc = Location("").apply {
+                latitude = site.latitude
+                longitude = site.longitude
+            }
+            val distanciaMetros = userLocation.distanceTo(siteLoc)
 
----
+            if (distanciaMetros <= site.radiusMeters && !notifiedSiteIds.contains(site.id)) {
+                notifiedSiteIds.add(site.id)
+                ProximityNotificationHelper.mostrarAlertaSitio(this, site, distanciaMetros.toInt())
+            }
+        }
+    }
 
-### `ui/viewmodel/CollectionViewModel.kt`
+    override fun onDestroy() {
+        super.onDestroy()
+        fusedLocationClient.removeLocationUpdates(locationCallback)
+        serviceScope.cancel()
+    }
 
-- **Bloque 1 — KDoc:** Descripción: ViewModel de Mi Colección; autores y fecha.
-- **Bloque 2 — Estado:** Lista de `UserSavedItem` como `StateFlow`; contador total de ítems.
-- **Bloque 3 — `loadCollection(userId)`:** Llama a `repository.getUserSavedItems(userId)`; actualiza la lista del estado.
-- **Bloque 4 — `saveItem(siteId, type)`:** Llama a `repository.saveItemToCollection()`; recarga la colección.
-- **Bloque 5 — `removeItem(itemId)`:** Llama a `repository.removeFromCollection()`; actualiza la lista localmente.
-- **Bloque 6 — `getExplorerLevel()`:** Función derivada del total de ítems; retorna el nivel de explorador como `String`.
+    override fun onBind(intent: Intent?): IBinder? = null
+}
+```
 
----
-
-### `ui/viewmodel/GeoDropViewModel.kt`
-
-- **Bloque 1 — KDoc:** Descripción: ViewModel de creación y gestión de GeoDrops; autores y fecha.
-- **Bloque 2 — Estado:** `GeoDropUiState` con: `currentPhoto`, `currentLocation`, `pendingGeoDrops`, `isSaving`, `errorMessage`.
-- **Bloque 3 — `capturePhoto(imageBytes)`:** Almacena los bytes de la imagen capturada por CameraX; obtiene la ubicación GPS actual desde `LocationViewModel`.
-- **Bloque 4 — `saveGeoDrop(title, description)`:** Sube la imagen a Firebase Storage vía `FirebaseStorageRepository`; luego llama a `repository.createGeoDrop()` con URL, título, descripción y coordenadas GPS; si no hay internet, guarda en Room para sincronización posterior.
-- **Bloque 5 — `loadNearbyGeoDrops(lat, lon)`:** Carga GeoDrops aprobados dentro de un radio de 500m desde Neon DB.
-
----
-
-### `ui/viewmodel/LocationViewModel.kt`
-
-- **Bloque 1 — KDoc:** Descripción: ViewModel de ubicación GPS en tiempo real; autores y fecha.
-- **Bloque 2 — Estado:** `currentLocation` como `StateFlow<Location?>`; `hasLocationPermission` como `StateFlow<Boolean>`.
-- **Bloque 3 — `startLocationUpdates(context)`:** Configura `FusedLocationProviderClient` con intervalo de 5 segundos; actualiza `currentLocation` con cada nueva posición.
-- **Bloque 4 — `stopLocationUpdates()`:** Remueve el listener de ubicación; cancela las corrutinas.
-- **Bloque 5 — `requestPermissions(launcher)`:** Lanza el launcher de permisos de ubicación; actualiza `hasLocationPermission` según el resultado.
-
----
-
-### `ui/viewmodel/RouteViewModel.kt`
-
-- **Bloque 1 — KDoc:** Descripción: ViewModel de rutas turísticas; autores y fecha.
-- **Bloque 2 — Estado:** Ruta activa, lista de paradas, índice de parada actual, progreso de la ruta.
-- **Bloque 3 — `loadRoutes()`:** Obtiene todas las rutas disponibles desde `repository.getRoutes()`.
-- **Bloque 4 — `startRoute(routeId)`:** Carga la ruta y sus paradas; envía la ruta al reloj via `WearMessageClient.sendRouteToWatch()`; inicia el monitoreo de proximidad hacia la primera parada.
-- **Bloque 5 — `markStopReached(stopIndex)`:** Avanza al siguiente punto de la ruta; si es la última parada, marca la ruta como completada.
-- **Bloque 6 — `createRoute(name, stops)`:** Crea una nueva ruta con sus paradas; llama a `repository.createRoute()` y `repository.createRouteStops()`.
-
----
-
-### `ui/viewmodel/SiteRegistrationViewModel.kt`
-
-- **Bloque 1 — KDoc:** Descripción: ViewModel del flujo de 4 pasos para registrar un sitio histórico; autores y fecha.
-- **Bloque 2 — Estado por paso:** `Step1State` (datos básicos: nombre, categoría, descripción), `Step2State` (ubicación GPS en mapa), `Step3State` (fotos y contenido multimedia), `Step4State` (revisión y publicación).
-- **Bloque 3 — `nextStep()` / `previousStep()`:** Navegan entre los pasos del flujo; validan que los campos requeridos del paso actual estén completos antes de avanzar.
-- **Bloque 4 — `submitSite()`:** Consolida los datos de los 4 pasos; llama a `repository.createHistoricalSite()`; sube las imágenes a Firebase Storage previamente.
+> **CONCEPTO CLAVE:** `SupervisorJob` previene que la falla de una corrutina individual (como una petición de red lenta al obtener sitios) cancele el scope completo del servicio en primer plano.
 
 ---
 
-### `ui/viewmodel/ModerationViewModel.kt`
+## FASE 3: Capa de Estado y ViewModels (MVVM)
 
-- **Bloque 1 — KDoc:** Descripción: ViewModel del panel de moderación de GeoDrops; autores y fecha.
-- **Bloque 2 — Estado:** Lista de GeoDrops pendientes de revisión como `StateFlow`.
-- **Bloque 3 — `loadPendingGeoDrops()`:** Carga los GeoDrops con estado `pending` desde el repositorio.
-- **Bloque 4 — `approveGeoDrop(id)` / `rejectGeoDrop(id, reason)`:** Llaman al repositorio para actualizar el estado del GeoDrop en Neon DB; remueven el ítem de la lista local.
+```
+ui/viewmodel/
+├── AuthViewModel.kt
+├── LocationViewModel.kt
+├── CollectionViewModel.kt
+├── RouteViewModel.kt
+├── ChatViewModel.kt
+├── SiteRegistrationViewModel.kt
+├── ModerationViewModel.kt
+├── NotificationViewModel.kt
+├── UserManagementViewModel.kt
+└── GeoDropViewModel.kt
+```
 
----
+### Paso 3.1: ViewModel de Autenticación y Flujo OTP (`AuthViewModel.kt`)
 
-### `ui/viewmodel/UserManagementViewModel.kt`
+Controla el ciclo de vida del usuario, inicio de sesión contra Neon DB, flujo de registro con verificación de 6 dígitos y recuperación de cuenta.
 
-- **Bloque 1 — KDoc:** Descripción: ViewModel de gestión de usuarios (solo super admin); autores y fecha.
-- **Bloque 2 — `loadUsers()`:** Carga la lista de usuarios desde el repositorio.
-- **Bloque 3 — `updateUserRole(userId, newRole)`:** Actualiza el rol del usuario en Neon DB; solo puede ser ejecutado por un super admin.
-- **Bloque 4 — `deleteUser(userId)`:** Elimina la cuenta del usuario del sistema.
+```kotlin
+package mx.utng.ecoguiawear.ui.viewmodel
 
----
+import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateOf
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.launch
+import mx.utng.ecoguia.shared.data.repository.EcoGuiaRepositoryImpl
+import mx.utng.ecoguia.shared.domain.model.RemoteUser
+import mx.utng.ecoguia.shared.domain.repository.EcoGuiaRepository
+import mx.utng.ecoguiawear.data.remote.EmailService
 
-### Pantallas de usuario (`ui/screens/`)
+sealed class AuthState {
+    object Idle : AuthState()
+    object Loading : AuthState()
+    data class Success(val user: RemoteUser) : AuthState()
+    data class Error(val message: String) : AuthState()
+    data class AwaitingVerification(val name: String, val email: String, val passwordHash: String, val expectedOtp: String) : AuthState()
+    data class AwaitingPasswordReset(val email: String, val expectedOtp: String) : AuthState()
+    object Registered : AuthState()
+    object PasswordResetSuccess : AuthState()
+}
 
-Cada pantalla sigue la misma estructura de archivo:
+class AuthViewModel(
+    private val repository: EcoGuiaRepository = EcoGuiaRepositoryImpl(),
+    private val emailService: EmailService = EmailService()
+) : ViewModel() {
 
-| Sección | Indicación |
-|---------|-----------|
-| **KDoc del archivo** | Nombre del archivo, descripción de la pantalla, autores, fecha |
-| **`@Composable fun NombreScreen`** | Recibe `navController` y los ViewModels necesarios como parámetros |
-| **Estado observable** | `val uiState by viewModel.uiState.collectAsState()` |
-| **Scaffold de la pantalla** | `Scaffold` con topBar (`EcoNavigation`), content y FAB si aplica |
-| **Contenido principal** | Layout específico de la pantalla con los componentes de `CommonComponents.kt` |
-| **Navegación** | Llamadas a `navController.navigate(Routes.RUTA)` en los callbacks de acción |
-| **Efectos secundarios** | `LaunchedEffect` para cargar datos iniciales al montar la pantalla |
+    private val _authState = mutableStateOf<AuthState>(AuthState.Idle)
+    val authState: State<AuthState> = _authState
 
-Pantallas y su función principal:
+    var currentUser: RemoteUser? = null
+        private set
 
-| Archivo | Función principal de la pantalla |
-|---------|----------------------------------|
-| `SplashScreen.kt` | Logo animado + verificación de sesión activa; redirige a Login o Exploration |
-| `LoginScreen.kt` | Formulario email/password; botones de "Crear cuenta" y "¿Olvidaste tu contraseña?" |
-| `SignUpScreen.kt` | Formulario de registro con validación de campos y confirmación de contraseña |
-| `RecoveryScreen.kt` | Flujo de 3 pasos: ingresar email → ingresar OTP → nueva contraseña |
-| `PermissionsScreen.kt` | Solicita permisos de ubicación, cámara y notificaciones con explicación de uso |
-| `ExplorationScreen.kt` | Pantalla principal: integra `ExplorationMapContent` y `ExplorationSiteList` en tabs |
-| `SearchExperienceScreen.kt` | Búsqueda de sitios y rutas con autocompletado y filtros avanzados |
-| `MyCollectionScreen.kt` | Lista de ítems guardados con `CollectionItemCard`; muestra el nivel de explorador |
-| `ProfileScreen.kt` | Foto de perfil, nombre, correo, nivel de explorador, estadísticas de exploración |
-| `EditProfileScreen.kt` | Formulario de edición de nombre, foto y preferencias de notificaciones |
-| `SecurityScreen.kt` | Cambio de contraseña con validación de contraseña actual |
-| `MoreOptionsScreen.kt` | Ajustes de la app: tema, idioma, notificaciones, acerca de Eco-Guía |
-| `ActiveRouteScreen.kt` | Mapa de la ruta activa con progreso, parada actual y siguiente parada |
-| `OfflineRouteScreen.kt` | Visualización de ruta sin internet usando datos en caché de Room |
-| `AnchorPhotoScreen.kt` | Preview de la foto capturada con las coordenadas GPS ancladas; confirmar o retomar |
-| `CameraGeoDropScreen.kt` | Vista de cámara CameraX para capturar foto de un GeoDrop |
-| `CreateRouteScreen.kt` | Mapa interactivo para agregar paradas y definir el orden de una nueva ruta |
-| `DeviceStatusScreen.kt` | Estado del reloj Wear OS vinculado: conexión, batería, última sincronización |
-| `LinkedDevicesScreen.kt` | Lista de todos los dispositivos vinculados: teléfonos, relojes, TVs |
-| `ManageDevicesScreen.kt` | Vinculación/desvinculación de dispositivos con código QR o código manual |
-| `IAKnowledgeBaseScreen.kt` | Base de conocimiento del chat IA: temas históricos, sugerencias de preguntas |
-| `MiguelHidalgoChatScreen.kt` | Interfaz de chat con burbujas de mensaje; input de texto y botón de envío |
-| `NoInternetScreen.kt` | Pantalla de error con animación y botón de reintentar conexión |
-| `ProximityAlertsScreen.kt` | Lista de alertas de proximidad activas; permite desactivarlas individualmente |
-| `TvCameraScreen.kt` | Vista de cámara para transmitir la posición actual a la Smart TV vía MQTT |
+    fun initiateRegistration(name: String, email: String, pass: String) {
+        viewModelScope.launch {
+            _authState.value = AuthState.Loading
+            val otp = (100000..999999).random().toString()
+            val emailSent = emailService.sendVerificationEmail(email, name, otp)
+            if (emailSent) {
+                _authState.value = AuthState.AwaitingVerification(name, email, pass, otp)
+            } else {
+                _authState.value = AuthState.Error("No se pudo enviar el correo de verificación.")
+            }
+        }
+    }
 
----
+    fun verifyAndCompleteRegistration(enteredOtp: String) {
+        val state = _authState.value as? AuthState.AwaitingVerification ?: return
+        if (enteredOtp == state.expectedOtp) {
+            viewModelScope.launch {
+                _authState.value = AuthState.Loading
+                val user = repository.registerUser(state.name, state.email, state.passwordHash)
+                if (user != null) {
+                    currentUser = user
+                    _authState.value = AuthState.Success(user)
+                } else {
+                    _authState.value = AuthState.Error("Error al registrar en base de datos.")
+                }
+            }
+        } else {
+            _authState.value = AuthState.Error("Código OTP incorrecto.")
+        }
+    }
+}
+```
 
-### Pantallas de administrador (`ui/screens/admin/`)
-
-| Archivo | Función principal de la pantalla |
-|---------|----------------------------------|
-| `AdminSummaryScreen.kt` | Dashboard con KPIs: total usuarios, GeoDrops pendientes, sitios activos, dispositivos conectados |
-| `UserManagementScreen.kt` | Tabla de usuarios con roles; botones de cambio de rol y eliminación |
-| `SiteRegistrationScreen.kt` | **Paso 1/4:** Formulario de datos básicos del sitio (nombre, categoría, descripción corta, descripción larga) |
-| `SiteLocationScreen.kt` | **Paso 2/4:** Mapa interactivo para posicionar el sitio; input de coordenadas manual; vista previa del marcador |
-| `SiteContentScreen.kt` | **Paso 3/4:** Carga de imagen de portada (Firebase Storage), imágenes adicionales, datos históricos |
-| `SiteOperationScreen.kt` | **Paso 4/4:** Resumen del sitio antes de publicar; botón de publicar o guardar como borrador |
-| `ModerateCommunityScreen.kt` | Panel general de moderación; tabs de pendientes, aprobados y rechazados |
-| `ModerationListScreen.kt` | Lista de GeoDrops pendientes con miniatura, autor, fecha y distancia al sitio relacionado |
-| `ReportDetailScreen.kt` | Detalle completo de un GeoDrop reportado: foto, texto, autor, historial de moderación |
-| `ReportDecisionScreen.kt` | Formulario de decisión: aprobar o rechazar con campo de motivo de rechazo |
-| `ReviewDetailScreen.kt` | Detalle de una revisión de contenido con línea de tiempo de cambios |
-| `SecurityReportsScreen.kt` | Reportes de seguridad: intentos de acceso fallidos, usuarios bloqueados |
-| `CampaignDevicesScreen.kt` | Lista de TVs registradas; estado de conexión MQTT; botón de transmitir a un dispositivo específico |
-| `TVCampaignScreen.kt` | Configuración de la campaña: sitio a proyectar, duración, modo de exhibición |
-| `MuseumPortal360Screen.kt` | Vista del portal 360° gestionable por museos; configuración del punto de exhibición |
-| `CapsuleGalleryScreen.kt` | Galería de GeoDrops aprobados para mostrar en la TV; ordenados por fecha/popularidad |
-| `GalleryAdditionScreen.kt` | Agregar un GeoDrop aprobado a la galería activa de la TV |
-| `ManualGeoDropScreen.kt` | Creación manual de un GeoDrop por el admin sin necesidad de foto (solo texto y coordenadas) |
-| `VisitorAnalyticsScreen.kt` | Métricas de visitantes: mapa de calor de visitas, GeoDrops por zona, tendencias temporales |
-
-<br>
-
----
-
-## 🔗 Integración con el Módulo `shared`
-
-Todos los ViewModels reciben `EcoGuiaRepository` (interfaz definida en `shared`) como parámetro de construcción. La instancia concreta `EcoGuiaRepositoryImpl` se crea en `MainActivity` y se pasa a los ViewModels mediante un `ViewModelFactory` o inyección manual. Ningún ViewModel importa directamente clases de la capa de datos; siempre usan la interfaz del dominio de `shared`.
-
-<br>
+> **CONCEPTO CLAVE:** Los estados sellados (`sealed class`) garantizan exhaustividad en el compilador al representarse en la UI mediante sentencias `when (authState) { ... }`.
 
 ---
 
-## 🧑‍💻 Desarrolladores
+## FASE 4: Componentes Reutilizables y Sistema de Diseño
 
-| Nombre | Rol |
-|--------|-----|
-| Zahir Andrés Rodríguez Mora | Desarrollador Principal |
-| Cesar Enrique Garay García | Desarrollador |
+```
+ui/
+├── theme/
+│   ├── Color.kt
+│   └── Theme.kt
+└── components/
+    ├── CommonComponents.kt
+    ├── BottomMenu.kt
+    ├── EcoNavigation.kt
+    ├── AdminNavigation.kt
+    └── GeoDropSavingDialog.kt
+```
 
-**Institución:** Universidad Tecnológica del Norte de Guanajuato (UTNG) — Grupo GIDS6092
+### Paso 4.1: Definición de Paleta y Tema Visual (`Theme.kt` & `Color.kt`)
+
+Eco-Guía utiliza tonos orgánicos y coloniales inspirados en Dolores Hidalgo (Cuna de la Independencia):
+
+```kotlin
+package mx.utng.ecoguiawear.ui.theme
+
+import androidx.compose.material3.*
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
+
+object EcoGuiaColors {
+    val GreenPrimary = Color(0xFF2E7D32)
+    val GreenDark = Color(0xFF1B5E20)
+    val GreenAccent = Color(0xFF81C784)
+    val GoldColonial = Color(0xFFC5A059)
+    val BackgroundDark = Color(0xFF121212)
+    val SurfaceDark = Color(0xFF1E1E1E)
+    val TextPrimary = Color(0xFFFFFFFF)
+    val TextSecondary = Color(0xFFB0BEC5)
+    val ErrorRed = Color(0xFFCF6679)
+}
+
+private val DarkColorScheme = darkColorScheme(
+    primary = EcoGuiaColors.GreenPrimary,
+    secondary = EcoGuiaColors.GoldColonial,
+    background = EcoGuiaColors.BackgroundDark,
+    surface = EcoGuiaColors.SurfaceDark,
+    error = EcoGuiaColors.ErrorRed
+)
+
+@Composable
+fun EcoGuiaMobileTheme(content: @Composable () -> Unit) {
+    MaterialTheme(
+        colorScheme = DarkColorScheme,
+        content = content
+    )
+}
+```
+
+---
+
+### Paso 4.2: Componentes Reutilizables (`CommonComponents.kt`)
+
+Componentes estándar como botones con estado de carga y campos de texto estilizados aseguran coherencia en más de 40 pantallas:
+
+```kotlin
+package mx.utng.ecoguiawear.ui.components
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
+
+@Composable
+fun EcoButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    isLoading: Boolean = false,
+    containerColor: Color = EcoGuiaColors.GreenPrimary
+) {
+    Button(
+        onClick = onClick,
+        modifier = modifier
+            .fillMaxWidth()
+            .height(52.dp),
+        enabled = enabled && !isLoading,
+        shape = RoundedCornerShape(12.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = containerColor,
+            disabledContainerColor = containerColor.copy(alpha = 0.5f)
+        )
+    ) {
+        if (isLoading) {
+            CircularProgressIndicator(
+                color = Color.White,
+                modifier = Modifier.size(24.dp),
+                strokeWidth = 2.dp
+            )
+        } else {
+            Text(text = text, style = MaterialTheme.typography.titleMedium)
+        }
+    }
+}
+```
+
+---
+
+## FASE 5: Grafo de Navegación y Pantallas Principales
+
+```
+ui/
+├── navigation/
+│   └── AppNavHost.kt
+└── screens/
+    ├── SplashScreen.kt
+    ├── LoginScreen.kt
+    ├── SignUpScreen.kt
+    ├── RecoveryScreen.kt
+    ├── PermissionsScreen.kt
+    ├── ExplorationScreen.kt
+    ├── MyCollectionScreen.kt
+    ├── MiguelHidalgoChatScreen.kt
+    ├── CameraGeoDropScreen.kt
+    └── ActiveRouteScreen.kt
+```
+
+### Paso 5.1: Orquestación del Grafo Central (`AppNavHost.kt`)
+
+`AppNavHost` administra la navegación protegida por roles (Usuario regular, Administrador, Moderador, Museo):
+
+```kotlin
+package mx.utng.ecoguiawear.ui.navigation
+
+import androidx.compose.runtime.Composable
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import mx.utng.ecoguiawear.ui.screens.*
+import mx.utng.ecoguiawear.ui.screens.admin.*
+import mx.utng.ecoguiawear.ui.viewmodel.*
+
+object Routes {
+    const val SPLASH = "splash"
+    const val LOGIN = "login"
+    const val SIGN_UP = "sign_up"
+    const val RECOVERY = "recovery"
+    const val PERMISSIONS = "permissions"
+    const val EXPLORATION = "exploration"
+    const val COLLECTION = "collection"
+    const val CHAT_HIDALGO = "chat_hidalgo"
+    const val CAMERA_GEODROP = "camera_geodrop"
+    const val ADMIN_SUMMARY = "admin_summary"
+    const val USER_MANAGEMENT = "user_management"
+    const val SITE_REGISTRATION = "site_registration"
+    const val MODERATION_LIST = "moderation_list"
+}
+
+@Composable
+fun AppNavHost(
+    navController: NavHostController,
+    authViewModel: AuthViewModel,
+    locationViewModel: LocationViewModel,
+    collectionViewModel: CollectionViewModel
+) {
+    NavHost(
+        navController = navController,
+        startDestination = Routes.SPLASH
+    ) {
+        composable(Routes.SPLASH) {
+            SplashScreen(
+                onNavigateToLogin = { navController.navigate(Routes.LOGIN) { popUpTo(Routes.SPLASH) { inclusive = true } } },
+                onNavigateToHome = { navController.navigate(Routes.EXPLORATION) { popUpTo(Routes.SPLASH) { inclusive = true } } }
+            )
+        }
+
+        composable(Routes.LOGIN) {
+            LoginScreen(
+                viewModel = authViewModel,
+                onLoginSuccess = { navController.navigate(Routes.EXPLORATION) { popUpTo(Routes.LOGIN) { inclusive = true } } },
+                onSignUpClick = { navController.navigate(Routes.SIGN_UP) },
+                onRecoverClick = { navController.navigate(Routes.RECOVERY) }
+            )
+        }
+
+        composable(Routes.EXPLORATION) {
+            ExplorationScreen(
+                locationViewModel = locationViewModel,
+                onOpenSite = { siteId -> /* Abrir detalle */ },
+                onNavigateToCamera = { navController.navigate(Routes.CAMERA_GEODROP) }
+            )
+        }
+
+        composable(Routes.CHAT_HIDALGO) {
+            MiguelHidalgoChatScreen(
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Routes.ADMIN_SUMMARY) {
+            AdminSummaryScreen(
+                onNavigateToUsers = { navController.navigate(Routes.USER_MANAGEMENT) },
+                onNavigateToModeration = { navController.navigate(Routes.MODERATION_LIST) },
+                onNavigateToSiteReg = { navController.navigate(Routes.SITE_REGISTRATION) }
+            )
+        }
+    }
+}
+```
+
+---
+
+### Paso 5.2: Pantalla de Exploración Cartográfica (`ExplorationScreen.kt`)
+
+Integra **Google Maps Compose**, marcadores personalizados por categoría (Museo, Monumento, Parroquia) y el menú inferior reactivo.
+
+```kotlin
+package mx.utng.ecoguiawear.ui.screens
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import com.google.android.gms.maps.model.CameraPosition
+import com.google.android.gms.maps.model.LatLng
+import com.google.maps.android.compose.*
+import mx.utng.ecoguiawear.ui.components.BottomMenu
+import mx.utng.ecoguiawear.ui.viewmodel.LocationViewModel
+
+@Composable
+fun ExplorationScreen(
+    locationViewModel: LocationViewModel,
+    onOpenSite: (String) -> Unit,
+    onNavigateToCamera: () -> Unit
+) {
+    val doloresHidalgoCenter = LatLng(21.1561, -100.9325)
+    val cameraPositionState = rememberCameraPositionState {
+        position = CameraPosition.fromLatLngZoom(doloresHidalgoCenter, 16f)
+    }
+
+    Scaffold(
+        bottomBar = {
+            BottomMenu(currentRoute = "exploration", onNavigate = { /* Navegación */ })
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = onNavigateToCamera,
+                containerColor = MaterialTheme.colorScheme.primary
+            ) {
+                Text("+ GeoDrop")
+            }
+        }
+    ) { paddingValues ->
+        Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+            GoogleMap(
+                modifier = Modifier.fillMaxSize(),
+                cameraPositionState = cameraPositionState,
+                properties = MapProperties(isMyLocationEnabled = true)
+            ) {
+                // Marcador Parroquia de Nuestra Señora de los Dolores
+                Marker(
+                    state = MarkerState(position = LatLng(21.1575, -100.9308)),
+                    title = "Parroquia de Dolores",
+                    snippet = "Cuna de la Independencia Nacional",
+                    onClick = {
+                        onOpenSite("parroquia_dolores")
+                        true
+                    }
+                )
+            }
+        }
+    }
+}
+```
+
+---
+
+## FASE 6: Módulo de Administración y Moderación Comunitaria
+
+El módulo administrativo (`ui/screens/admin/`) permite a usuarios con roles `superadmin`, `moderator` o `museum_admin` realizar tareas de gobernanza cultural:
+
+1. **`AdminSummaryScreen.kt`:** Panel de analíticas en tiempo real (visitas, GeoDrops registrados, estado de sincronización).
+2. **`SiteRegistrationScreen.kt` (Asistente 4 pasos):**
+   - **Paso 1:** Metadatos generales (Nombre, categoría, horario, costos).
+   - **Paso 2:** Localización georreferenciada y radio de proximidad.
+   - **Paso 3:** Contenido histórico y multimedia.
+   - **Paso 4:** Confirmación y publicación en Neon DB.
+3. **`ModerationListScreen.kt` / `ReportDecisionScreen.kt`:** Flujo de moderación con aprobación y rechazo fundado de cápsulas comunitarias.
+4. **`TVCampaignScreen.kt`:** Difusión de contenido multimedia y difusión de cápsulas hacia Smart TVs mediante MQTT.
+
+---
+
+## Resumen de la Arquitectura
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Capa de Presentación                     │
+│   Jetpack Compose Screens  ──▶  Componentes Reutilizables   │
+└──────────────────────────────┬──────────────────────────────┘
+                               │ Observa State / StateFlow
+                               ▼
+┌─────────────────────────────────────────────────────────────┐
+│                      Capa de ViewModel                      │
+│   AuthViewModel, LocationViewModel, CollectionViewModel...  │
+└──────────────────────────────┬──────────────────────────────┘
+                               │ Invoca casos de uso / repos
+                               ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    Módulo :shared (Dominio)                 │
+│      EcoGuiaRepository ──▶ Neon PostgreSQL / Room Local     │
+└──────────────────────────────┬──────────────────────────────┘
+                               │
+            ┌──────────────────┴──────────────────┐
+            ▼                                     ▼
+┌──────────────────────────────┐    ┌──────────────────────────────┐
+│   Hardware & Sensores        │    │    Servicios Externos        │
+│ • FusedLocation (GPS)        │    │ • Brevo API v3 (Emails OTP)  │
+│ • CameraX (Fotografía)       │    │ • Groq AI (Miguel Hidalgo)   │
+│ • Wearable Data Layer Client │    │ • HiveMQ (MQTT para TVs)     │
+└──────────────────────────────┘    └──────────────────────────────┘
+```
+
+---
+
+## Desarrolladores
+
+- **Zahir Andrés Rodríguez Mora** — Arquitectura y Desarrollo Principal
+- **Cesar Enrique Garay García** — Desarrollo e Integración Móvil
+- **Institución:** Universidad Tecnológica del Norte de Guanajuato (UTNG)
