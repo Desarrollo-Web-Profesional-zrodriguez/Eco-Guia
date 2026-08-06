@@ -24,7 +24,28 @@ Android TV requiere dependencias específicas de Leanback y Compose for TV, adem
 
 > 📋 **INSTRUCCIÓN:** Copia las dependencias de TV y Ktor desde `gradle/libs.versions.toml`:
 ```toml
-// Copiar líneas 26 a 48 de gradle/libs.versions.toml
+[versions]
+agp = "8.8.0"
+kotlin = "2.1.0"
+composeBom = "2025.01.00"
+tvFoundation = "1.0.0-alpha12"
+tvMaterial = "1.0.0"
+playServicesMaps = "19.0.0"
+mapsCompose = "6.4.0"
+zxing = "3.5.3"
+coil = "2.7.0"
+ktor = "3.0.3"
+
+[libraries]
+androidx-tv-foundation = { group = "androidx.tv", name = "tv-foundation", version.ref = "tvFoundation" }
+androidx-tv-material = { group = "androidx.tv", name = "tv-material", version.ref = "tvMaterial" }
+play-services-maps = { group = "com.google.android.gms", name = "play-services-maps", version.ref = "playServicesMaps" }
+maps-compose = { group = "com.google.maps.android", name = "maps-compose", version.ref = "mapsCompose" }
+zxing-core = { group = "com.google.zxing", name = "core", version.ref = "zxing" }
+coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }
+ktor-server-core = { group = "io.ktor", name = "ktor-server-core-jvm", version.ref = "ktor" }
+ktor-server-netty = { group = "io.ktor", name = "ktor-server-netty-jvm", version.ref = "ktor" }
+ktor-server-cors = { group = "io.ktor", name = "ktor-server-cors-jvm", version.ref = "ktor" }
 ```
 
 > **CONCEPTO CLAVE:** Compose for TV (`androidx.tv.material3`) proporciona componentes nativos como `Card`, `Button` e `Icon` con estados de foco (`focusedContainerColor`, `focusedContentColor`) diseñados para responder naturally al D-Pad del control remoto.
