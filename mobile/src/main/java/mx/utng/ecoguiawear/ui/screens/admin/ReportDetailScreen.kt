@@ -34,6 +34,7 @@ import mx.utng.ecoguiawear.ui.components.EcoButton
 import mx.utng.ecoguiawear.ui.theme.EcoGuiaColors
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import mx.utng.ecoguiawear.ui.viewmodel.ModerationViewModel
 
 /**
  * Pantalla composable para evaluar en detalle la fotografía y texto de una cápsula reportada o pendiente.
