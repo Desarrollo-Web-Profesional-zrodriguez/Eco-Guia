@@ -166,10 +166,42 @@ suspend fun EcoGuiaRepositoryImpl.deleteHistoricalSiteExt(siteId: String): Boole
     val purgeSavedQuery = "DELETE FROM user_saved_items WHERE site_id::text = $1"
     val purgeStopsQuery = "DELETE FROM route_stops WHERE site_id::text = $1"
     val disableGeoDropsQuery = "UPDATE geo_drops SET status = 'rejected'::content_status WHERE site_id::text = $1"
+
+    // Consulta para encontrar las rutas afectadas antes de eliminar el sitio de la parada
+    val findAffectedRoutesQuery = "SELECT DISTINCT route_id::text AS id FROM route_stops WHERE site_id::text = $1"
+    // Consulta para eliminar rutas que se hayan quedado totalmente sin paradas
+    val purgeEmptyRoutesQuery = """
+        DELETE FROM routes 
+        WHERE id::text IN (
+            SELECT r.id::text 
+            FROM routes r 
+            LEFT JOIN route_stops rs ON r.id = rs.route_id 
+            WHERE rs.id IS NULL
+        )
+    """.trimIndent()
+
     return try {
+        // Obtenemos los IDs de las rutas que contenían este sitio
+        val affectedRoutes = try {
+            neonClient.executeQuery<Map<String, Any?>>(findAffectedRoutesQuery, listOf(siteId))
+                .mapNotNull { it["id"]?.toString() }
+        } catch (e: Exception) {
+            emptyList()
+        }
+
         neonClient.executeCommand(purgeSavedQuery, listOf(siteId))
         neonClient.executeCommand(purgeStopsQuery, listOf(siteId))
         neonClient.executeCommand(disableGeoDropsQuery, listOf(siteId))
+
+        // Si alguna ruta se quedó sin ninguna parada, se elimina la ruta completa
+        if (affectedRoutes.isNotEmpty()) {
+            try {
+                neonClient.executeCommand(purgeEmptyRoutesQuery)
+            } catch (e: Exception) {
+                android.util.Log.e("EcoGuiaRepo", "Error limpiando rutas vacías: ${e.message}", e)
+            }
+        }
+
         val rows = neonClient.executeCommand(query, listOf(siteId))
         rows > 0
     } catch (e: Exception) {
