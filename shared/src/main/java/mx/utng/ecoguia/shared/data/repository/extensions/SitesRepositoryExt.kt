@@ -165,9 +165,11 @@ suspend fun EcoGuiaRepositoryImpl.deleteHistoricalSiteExt(siteId: String): Boole
     """.trimIndent()
     val purgeSavedQuery = "DELETE FROM user_saved_items WHERE site_id::text = $1"
     val purgeStopsQuery = "DELETE FROM route_stops WHERE site_id::text = $1"
+    val disableGeoDropsQuery = "UPDATE geo_drops SET status = 'rejected'::content_status WHERE site_id::text = $1"
     return try {
         neonClient.executeCommand(purgeSavedQuery, listOf(siteId))
         neonClient.executeCommand(purgeStopsQuery, listOf(siteId))
+        neonClient.executeCommand(disableGeoDropsQuery, listOf(siteId))
         val rows = neonClient.executeCommand(query, listOf(siteId))
         rows > 0
     } catch (e: Exception) {
