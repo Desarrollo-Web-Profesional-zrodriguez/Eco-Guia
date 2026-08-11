@@ -346,10 +346,22 @@ flowchart TD
 | **Almacenamiento de Imágenes** | Firebase Storage + Coil Compose | Fotos de GeoDrops y sitios históricos |
 
 <br>
+
 ---
-## Video Explicativo
-https://drive.google.com/file/d/1KCJCc5NWQjqrKyRHJly5vPq_We9a9RGD/view?usp=sharing
+
+<div align="center">
+
+## 📺 Video Explicativo del Proyecto
+
+Haz clic en el siguiente enlace para ver una demostración detallada de las funcionalidades y el ecosistema de **Eco-Guía**:
+
+[**▶️ VER VIDEO DEMOSTRATIVO (Google Drive)**](https://drive.google.com/file/d/1KCJCc5NWQjqrKyRHJly5vPq_We9a9RGD/view?usp=sharing)
+
+</div>
+
 ---
+
+<br>
 
 ## ✨ Funcionalidades Principales por Módulo
 
