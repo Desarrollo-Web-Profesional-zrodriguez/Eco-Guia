@@ -64,35 +64,23 @@ La plataforma permite:
 
 ## 💌 Carta del Beneficiario
 
-> **[INSTRUCCIÓN]** — Colocar aquí el texto completo de la carta emitida por el beneficiario del proyecto (institución, museo, dependencia municipal o cultural de Dolores Hidalgo) que avala el desarrollo de Eco-Guía. La carta debe incluir: nombre del beneficiario, cargo, institución, fecha de emisión y firma digitalizada.
+El proyecto Eco-Guía ha sido validado y avalado por las autoridades correspondientes para su implementación como herramienta de difusión cultural.
 
-```markdown
-# Carta del Beneficiario
-Nombre:      _________________________________________________
-Cargo:       _________________________________________________
-Institución: _________________________________________________
-Fecha:       _________________________________________________
-
-[Cuerpo de la carta]
-
-Firma: _____________________
-```
+📄 **[Descargar Carta de Validación (PDF)](resources/documents/CartaValidaciónCesarZahir.pdf)**
 
 <br>
 
 ---
 
-## 🎬 Video del Beneficiario
+## 🎤 Testimonio del Beneficiario
 
-> **[INSTRUCCIÓN]** — Insertar aquí el enlace al video donde el beneficiario presenta o avala el proyecto Eco-Guía. Puede ser un enlace de YouTube, Google Drive o cualquier plataforma de video pública.
+A continuación se presenta el testimonio de la beneficiaria del proyecto, validando el impacto de Eco-Guía en la difusión del patrimonio histórico.
 
-```markdown
-📹 Video del beneficiario:
-   URL: [PENDIENTE — insertar enlace al video]
-   Duración aproximada: ____ minutos
-   Descripción: Entrevista/testimonio del beneficiario validando el impacto de Eco-Guía
-                en la difusión del patrimonio histórico de Dolores Hidalgo.
-```
+<div align="center">
+  <img src="resources/imagen%20beneficiaria.jpeg" width="300" alt="Beneficiaria del Proyecto">
+  <br>
+  <p>🎧 <b>[Escuchar Testimonio (Audio)](resources/WhatsApp%20Audio%202026-08-09%20at%2002.32.16.mpeg)</b></p>
+</div>
 
 <br>
 
