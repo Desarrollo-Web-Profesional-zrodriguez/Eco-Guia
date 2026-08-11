@@ -4018,6 +4018,11 @@ fun NoSessionOverlay(message: String = "Vincula tu cuenta para ver el contenido"
 
 ---
 
+## Video Explicativo
+https://drive.google.com/file/d/1KCJCc5NWQjqrKyRHJly5vPq_We9a9RGD/view?usp=sharing
+
+---
+
 ## Desarrolladores
 
 | Nombre | Rol |
