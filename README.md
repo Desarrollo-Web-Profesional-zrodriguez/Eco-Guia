@@ -79,7 +79,11 @@ A continuación se presenta el testimonio de la beneficiaria del proyecto, valid
 <div align="center">
   <img src="resources/imagen%20beneficiaria.jpeg" width="300" alt="Beneficiaria del Proyecto">
   <br>
-  <p>🎧 <b>[Escuchar Testimonio (Audio)](resources/WhatsApp%20Audio%202026-08-09%20at%2002.32.16.mpeg)</b></p>
+  <p>🎧 <b>Testimonio del Beneficiario</b></p>
+  <audio controls>
+    <source src="resources/WhatsApp%20Audio%202026-08-09%20at%2002.32.16.mpeg" type="audio/mpeg">
+    Tu navegador no soporta la reproducción de audio.
+  </audio>
 </div>
 
 <br>
