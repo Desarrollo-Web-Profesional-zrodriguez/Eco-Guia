@@ -4016,10 +4016,6 @@ fun NoSessionOverlay(message: String = "Vincula tu cuenta para ver el contenido"
 3. Ingresa el PIN o escanea el QR.
 4. Pulsa **Transmitir Mapa 3D** en el teléfono: la TV cambiará automáticamente a `Portal360Screen`.
 
----
-
-## Video Explicativo
-https://drive.google.com/file/d/1KCJCc5NWQjqrKyRHJly5vPq_We9a9RGD/view?usp=sharing
 
 ---
 
